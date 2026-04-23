@@ -1,15 +1,37 @@
 export type PlayerId = "P1" | "P2";
 
 export type GameScreen = "setup" | "mulligan" | "game";
-export type GamePhase = "setup" | "mulligan" | "turnStart" | "slotResolution" | "mainTurn" | "gameOver";
+export type GamePhase =
+  | "setup"
+  | "mulligan"
+  | "turnStart"
+  | "slotResolution"
+  | "draw"
+  | "mainTurn"
+  | "combat"
+  | "turnEnd"
+  | "gameOver";
 
 export type CardType = "minion" | "spell" | "persistent" | "trap";
 export type SlotType = "jump" | "godDraw";
 export type EffectTrigger = "onPlay" | "onDeath" | "onTurnStart" | "onTriggerMet";
 export type TriggerConditionType = "enemyCastsSpell" | "enemySummonsMinion";
 export type SlotTier = "jump10" | "jump13";
-export type TalentCategory = "hpBoost" | "handLimit" | "topDeckSetup" | "slotAcceleration" | "manaOrDraw";
-export type PassiveKey = "bonusJumpOnGain" | "smallDisadvantageCountsAsMedium" | "loseJumpAtTurnStart";
+export type TalentCategory =
+  | "survival"
+  | "resource"
+  | "deckControl"
+  | "slotControl"
+  | "combat"
+  | "spell"
+  | "burst";
+export type PassiveKey =
+  | "bonusJumpOnGain"
+  | "extraGodDrawOnDisadvantage"
+  | "loseOneSlotAtTurnStart"
+  | "loseHpAtTurnStart"
+  | "gainGodDrawOnBigDamage"
+  | "healOnDrawPhase";
 
 export interface Condition {
   type: TriggerConditionType;
@@ -90,6 +112,32 @@ export interface GainManaAction {
   amount: number;
 }
 
+export interface SetIgnoreGuardAction {
+  type: "setIgnoreGuard";
+  enabled?: boolean;
+}
+
+export interface ApplyOpponentNextTurnManaPenaltyAction {
+  type: "applyOpponentNextTurnManaPenalty";
+  amount: number;
+}
+
+export interface MillDeckAction {
+  type: "millDeck";
+  target: "self" | "opponent";
+  count: number;
+}
+
+export interface SetMillOnDamageTakenAction {
+  type: "setMillOnDamageTaken";
+  amount: number;
+}
+
+export interface ExilePriorityEnemyMinionAndDamageHeroAction {
+  type: "exilePriorityEnemyMinionAndDamageHero";
+  damageHeroBy: "health" | "attackAndHealth";
+}
+
 export type EffectAction =
   | DamageAction
   | HealAction
@@ -101,7 +149,12 @@ export type EffectAction =
   | DiscardAction
   | SetTopDeckAction
   | DiscountNextDrawAction
-  | GainManaAction;
+  | GainManaAction
+  | SetIgnoreGuardAction
+  | ApplyOpponentNextTurnManaPenaltyAction
+  | MillDeckAction
+  | SetMillOnDamageTakenAction
+  | ExilePriorityEnemyMinionAndDamageHeroAction;
 
 export interface Effect {
   trigger: EffectTrigger;
@@ -183,19 +236,40 @@ export interface CharacterDefinition {
 export type TalentEffect =
   | { type: "addMaxHp"; amount: number }
   | { type: "addHandLimit"; amount: number }
-  | { type: "setTopDeckByRule"; rule: "lowestCostSpell" }
+  | { type: "setTopDeckByRule"; rule: "lowestCostSpell" | "lowestCostCard" }
   | { type: "modifySlotGain"; slot: SlotType; amount: number }
   | { type: "bonusMana"; amount: number }
-  | { type: "bonusDraw"; amount: number };
+  | { type: "bonusDraw"; amount: number }
+  | { type: "giveRushToLowCostMinions"; maxCost: number }
+  | { type: "reduceHighCostMinionCost"; threshold: number; amount: number }
+  | { type: "grantLoneMinionGuard" }
+  | { type: "increaseSpellDamage"; amount: number }
+  | { type: "healOnLowHpTurnStart"; threshold: number; amount: number }
+  | { type: "retainSlotAfterBurst"; amount: number }
+  | { type: "openingSlotBonus"; slot: SlotType; amount: number };
+
+export type TalentSeat = "first" | "second";
+export type TalentAvailability = "both" | TalentSeat;
+
+export interface TalentPricing {
+  first: number | null;
+  second: number | null;
+}
 
 export interface TalentDefinition {
   id: string;
   name: string;
   category: TalentCategory;
-  cost: number;
+  pricing: TalentPricing;
+  availableFor: TalentAvailability;
   repeatLimit: number;
   description: string;
   effect: TalentEffect;
+}
+
+export interface DeckConfig {
+  mainDeck: string[];
+  sideboard: string[];
 }
 
 export interface DeckChoice {
@@ -213,6 +287,18 @@ export interface TemporaryFlags {
   nextDrawDiscount: number;
   slotGainModifier: Record<SlotType, number>;
   openingBonusDraw: number;
+  openingBonusMana: number;
+  openingSlotBonus: Record<SlotType, number>;
+  lowCostRushMaxCost: number | null;
+  highCostMinionDiscount: { threshold: number; amount: number } | null;
+  loneMinionGuard: boolean;
+  spellDamageBonus: number;
+  lowHpTurnStartHeal: { threshold: number; amount: number } | null;
+  preserveBurstSlotAmount: number;
+  nextTurnManaPenalty: number;
+  ignoreGuardThisTurn: boolean;
+  millOnDamageTaken: number;
+  damageTakenThisTurn: number;
 }
 
 export interface PlayerState {

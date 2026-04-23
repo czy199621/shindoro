@@ -1,6 +1,7 @@
 import { CHARACTERS } from "../data/characters.js";
-import { TALENTS } from "../data/talents.js";
+import { TALENTS, getTalentCost, isTalentAvailableForSeat } from "../data/talents.js";
 import { ShinDoroGame } from "../engine/gameState.js";
+const PLAYER_TALENT_SEAT = "first";
 export function createGameStore({ game = new ShinDoroGame() } = {}) {
     const uiState = {
         setup: {
@@ -21,17 +22,27 @@ export function createGameStore({ game = new ShinDoroGame() } = {}) {
     function getTalent(talentId) {
         return TALENTS.find((item) => item.id === talentId);
     }
+    function getTalentCostForPlayer(talent) {
+        return getTalentCost(talent, PLAYER_TALENT_SEAT);
+    }
     function getTalentCount(talentId) {
         return uiState.setup.selectedTalentIds.filter((id) => id === talentId).length;
     }
     function getSpentTalentPoints() {
-        return uiState.setup.selectedTalentIds.reduce((sum, talentId) => sum + (getTalent(talentId)?.cost ?? 0), 0);
+        return uiState.setup.selectedTalentIds.reduce((sum, talentId) => {
+            const talent = getTalent(talentId);
+            return sum + (talent ? getTalentCostForPlayer(talent) ?? 0 : 0);
+        }, 0);
     }
     function getRemainingTalentPoints() {
         return getSelectedCharacter().talentPoints - getSpentTalentPoints();
     }
     function canAddTalent(talent) {
-        return getRemainingTalentPoints() >= talent.cost && getTalentCount(talent.id) < talent.repeatLimit;
+        const cost = getTalentCostForPlayer(talent);
+        return (cost !== null &&
+            isTalentAvailableForSeat(talent, PLAYER_TALENT_SEAT) &&
+            getRemainingTalentPoints() >= cost &&
+            getTalentCount(talent.id) < talent.repeatLimit);
     }
     function resetUiSelections() {
         uiState.mulliganSelection = new Set();
@@ -55,6 +66,7 @@ export function createGameStore({ game = new ShinDoroGame() } = {}) {
         getCharacter,
         getSelectedCharacter,
         getTalent,
+        getTalentCost: getTalentCostForPlayer,
         getTalentCount,
         getSpentTalentPoints,
         getRemainingTalentPoints,
@@ -64,7 +76,7 @@ export function createGameStore({ game = new ShinDoroGame() } = {}) {
         scheduleAiTurn(onChange) {
             clearAiTimer();
             const state = game.getState();
-            if (state.currentPlayer === "P2" && state.phase === "mainTurn" && !state.winner) {
+            if (state.currentPlayer === "P2" && (state.phase === "mainTurn" || state.phase === "combat") && !state.winner) {
                 uiState.aiTimer = window.setTimeout(() => {
                     game.runAiTurn();
                     uiState.selectedAttackerId = null;

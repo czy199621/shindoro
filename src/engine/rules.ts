@@ -161,7 +161,7 @@ export function createEmptyPlayerState(playerId: PlayerId, characterId: string):
     character: characterId,
     hp: 20,
     maxHp: 20,
-    handLimit: 10,
+    handLimit: 7,
     mana: 0,
     maxMana: 0,
     deck: [],
@@ -177,7 +177,19 @@ export function createEmptyPlayerState(playerId: PlayerId, characterId: string):
     temporaryFlags: {
       nextDrawDiscount: 0,
       slotGainModifier: { jump: 0, godDraw: 0 } as Record<SlotType, number>,
-      openingBonusDraw: 0
+      openingBonusDraw: 0,
+      openingBonusMana: 0,
+      openingSlotBonus: { jump: 0, godDraw: 0 } as Record<SlotType, number>,
+      lowCostRushMaxCost: null,
+      highCostMinionDiscount: null,
+      loneMinionGuard: false,
+      spellDamageBonus: 0,
+      lowHpTurnStartHeal: null,
+      preserveBurstSlotAmount: 0,
+      nextTurnManaPenalty: 0,
+      ignoreGuardThisTurn: false,
+      millOnDamageTaken: 0,
+      damageTakenThisTurn: 0
     }
   };
 }

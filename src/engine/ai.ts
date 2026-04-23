@@ -1,13 +1,28 @@
 import { getCardDefinition } from "../data/cards.js";
-import type { AiDecision, AttackTarget, GameAiAdapter, GameState, PlayerId, RuntimeCard } from "../types.js";
+import { CHARACTER_LOOKUP } from "../data/characters.js";
+import { TALENT_LOOKUP, getTalentCost } from "../data/talents.js";
+import type { AiDecision, AttackTarget, GameAiAdapter, GameState, PlayerId, RuntimeCard, TalentSeat } from "../types.js";
 
-export function chooseAiTalentIds(characterId: string): string[] {
+export function chooseAiTalentIds(characterId: string, seat: TalentSeat = "second"): string[] {
   const presets: Record<string, string[]> = {
-    character_a: ["jump_drive", "opening_insight", "foretold_scroll", "wide_grip"],
-    character_b: ["vitality_ritual", "god_drive", "opening_insight"],
-    character_c: ["mana_favor", "opening_insight", "jump_drive", "wide_grip", "foretold_scroll"]
+    character_a: ["second_counterpush", "opening_insight", "spell_focus", "vitality_ritual"],
+    character_b: ["opening_insight", "wide_grip", "desperate_recovery", "first_guardrail"],
+    character_c: ["mana_favor", "wide_grip", "burst_memory", "giant_stride"],
+    character_d: ["vitality_ritual", "giant_stride", "spell_focus", "burst_memory"],
+    character_e: ["second_counterpush", "swift_hatch", "spell_focus", "desperate_recovery"],
+    character_f: ["opening_insight", "wide_grip", "foretold_scroll", "first_guardrail"]
   };
-  return presets[characterId] ?? ["opening_insight"];
+  const budget = CHARACTER_LOOKUP[characterId]?.talentPoints ?? 0;
+  let spent = 0;
+
+  return (presets[characterId] ?? ["opening_insight"]).filter((talentId) => {
+    const talent = TALENT_LOOKUP[talentId];
+    if (!talent) return false;
+    const cost = getTalentCost(talent, seat);
+    if (cost === null || spent + cost > budget) return false;
+    spent += cost;
+    return true;
+  });
 }
 
 export function shouldAiUseJumpSlot(state: GameState, playerId: PlayerId): boolean {
@@ -155,9 +170,12 @@ function evaluateAttack(
 
 export function chooseAiAction(game: GameAiAdapter, playerId: PlayerId): AiDecision {
   const me = game.getPlayer(playerId);
-  const playableCards = me.hand
-    .map((card, index) => ({ type: "playCard" as const, index, score: evaluateCard(game, playerId, card), card }))
-    .filter(({ card }) => card.currentCost <= me.mana);
+  const playableCards =
+    game.state.phase === "mainTurn"
+      ? me.hand
+          .map((card, index) => ({ type: "playCard" as const, index, score: evaluateCard(game, playerId, card), card }))
+          .filter(({ card }) => card.currentCost <= me.mana)
+      : [];
 
   const attacks: Array<Extract<AiDecision, { type: "attack" }>> = [];
   for (const attacker of game.getReadyAttackers(playerId)) {

@@ -58,8 +58,8 @@ export function renderPlayerHUD({
         ${renderStat("牌库", `${player.deck.length}`)}
       </div>
       <div class="slot-metrics">
-        ${renderSlotMeter("跳脸槽", player.jumpSlot, "jump", "10 点可发动，13 点强制发动")}
-        ${renderSlotMeter("神抽槽", player.godDrawSlot, "god", "10 点指定牌库，13 点指定备牌")}
+        ${renderSlotMeter("跳脸槽", player.jumpSlot, "jump", "10 点可主动发动，13 点会强制触发 Overkill。")}
+        ${renderSlotMeter("神抽槽", player.godDrawSlot, "god", "10 点可以指定下一抽，13 点改为从备牌库选牌。")}
       </div>
     </button>
   `;

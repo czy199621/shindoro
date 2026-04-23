@@ -1,6 +1,6 @@
 import { CHARACTER_LOOKUP } from "../data/characters.js";
 import { getCardDefinition } from "../data/cards.js";
-import { RESERVE_DECK, STARTING_DECKS } from "../data/decks.js";
+import { STARTING_DECKS } from "../data/decks.js";
 import { TALENT_LOOKUP } from "../data/talents.js";
 import { createEmptyPlayerState, createRuntimeCard, shuffle } from "./rules.js";
 import { chooseAiTalentIds } from "./ai.js";
@@ -64,7 +64,7 @@ export class ShinDoroGame {
             playerTalentIds: [...playerTalentIds]
         };
         this.state.players[PLAYER_ID] = this.buildPlayer(PLAYER_ID, playerCharacterId, playerTalentIds);
-        this.state.players[AI_ID] = this.buildPlayer(AI_ID, aiCharacterId, chooseAiTalentIds(aiCharacterId));
+        this.state.players[AI_ID] = this.buildPlayer(AI_ID, aiCharacterId, chooseAiTalentIds(aiCharacterId, "second"));
         this.applyGameStartEffects(this.state.players[PLAYER_ID]);
         this.applyGameStartEffects(this.state.players[AI_ID]);
         this.drawOpeningHand(this.state.players[PLAYER_ID], 3);
@@ -76,12 +76,16 @@ export class ShinDoroGame {
     }
     buildPlayer(playerId, characterId, selectedTalentIds) {
         const character = this.getCharacter(characterId);
+        const deckConfig = STARTING_DECKS[characterId];
+        if (!deckConfig) {
+            throw new Error(`Missing deck config for ${characterId}`);
+        }
         const player = createEmptyPlayerState(playerId, characterId);
         player.maxHp = character.baseHp;
         player.hp = character.baseHp;
         player.selectedTalents = [...selectedTalentIds];
-        player.deck = shuffle(STARTING_DECKS[characterId].map((cardId) => createRuntimeCard(getCardDefinition(cardId))), this.rng);
-        player.reserveDeck = RESERVE_DECK.map((cardId) => createRuntimeCard(getCardDefinition(cardId)));
+        player.deck = shuffle(deckConfig.mainDeck.map((cardId) => createRuntimeCard(getCardDefinition(cardId))), this.rng);
+        player.reserveDeck = deckConfig.sideboard.map((cardId) => createRuntimeCard(getCardDefinition(cardId)));
         return player;
     }
     applyGameStartEffects(player) {
@@ -105,11 +109,38 @@ export class ShinDoroGame {
                     player.temporaryFlags.openingBonusDraw += effect.amount;
                     break;
                 case "bonusMana":
-                    player.maxMana += effect.amount;
-                    player.mana += effect.amount;
+                    player.temporaryFlags.openingBonusMana += effect.amount;
                     break;
                 case "setTopDeckByRule":
                     this.moveDeckCardToTopByRule(player, effect.rule);
+                    break;
+                case "giveRushToLowCostMinions":
+                    player.temporaryFlags.lowCostRushMaxCost = Math.max(player.temporaryFlags.lowCostRushMaxCost ?? 0, effect.maxCost);
+                    break;
+                case "reduceHighCostMinionCost":
+                    player.temporaryFlags.highCostMinionDiscount = { threshold: effect.threshold, amount: effect.amount };
+                    this.applyDeckWideDiscount(player, effect.threshold, effect.amount);
+                    break;
+                case "grantLoneMinionGuard":
+                    player.temporaryFlags.loneMinionGuard = true;
+                    break;
+                case "increaseSpellDamage":
+                    player.temporaryFlags.spellDamageBonus += effect.amount;
+                    break;
+                case "healOnLowHpTurnStart":
+                    player.temporaryFlags.lowHpTurnStartHeal = { threshold: effect.threshold, amount: effect.amount };
+                    break;
+                case "retainSlotAfterBurst":
+                    player.temporaryFlags.preserveBurstSlotAmount = Math.max(player.temporaryFlags.preserveBurstSlotAmount, effect.amount);
+                    break;
+                case "openingSlotBonus":
+                    player.temporaryFlags.openingSlotBonus[effect.slot] += effect.amount;
+                    if (effect.slot === "jump") {
+                        player.jumpSlot += effect.amount;
+                    }
+                    else {
+                        player.godDrawSlot += effect.amount;
+                    }
                     break;
                 default:
                     break;
@@ -117,19 +148,26 @@ export class ShinDoroGame {
         }
     }
     moveDeckCardToTopByRule(player, rule) {
-        if (rule !== "lowestCostSpell")
-            return;
-        const spells = player.deck
+        const candidates = player.deck
             .map((card, index) => ({ card, index }))
-            .filter(({ card }) => card.type === "spell")
+            .filter(({ card }) => (rule === "lowestCostSpell" ? card.type === "spell" : true))
             .sort((left, right) => left.card.currentCost - right.card.currentCost);
-        if (!spells.length)
+        if (!candidates.length)
             return;
-        const [{ index }] = spells;
+        const [{ index }] = candidates;
         const [picked] = player.deck.splice(index, 1);
         if (picked) {
             player.deck.unshift(picked);
         }
+    }
+    applyDeckWideDiscount(player, threshold, amount) {
+        const adjustCard = (card) => {
+            if (card.type !== "minion" || card.baseCost <= threshold)
+                return card;
+            return { ...card, currentCost: Math.max(0, card.currentCost - amount) };
+        };
+        player.deck = player.deck.map(adjustCard);
+        player.reserveDeck = player.reserveDeck.map(adjustCard);
     }
     drawOpeningHand(player, count) {
         const total = count + player.temporaryFlags.openingBonusDraw;

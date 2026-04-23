@@ -79,8 +79,7 @@ npm test
 │   ├── engine/           # 规则引擎
 │   └── store/            # 前端状态组织
 ├── tests/                # 测试
-├── game_rule.md          # 当前原型同步版规则手册
-├── game_design.md        # 设计文档
+├── design/               # 规则与设计文档目录
 ├── index.html            # 浏览器入口
 ├── package.json
 ├── server.js             # 本地静态服务器
@@ -91,10 +90,10 @@ npm test
 
 ## 文档入口
 
-- [game_rule.md](./game_rule.md)：当前已经实现的规则
-- [game_design.md](./game_design.md)：设计思路与结构建议
+- [design/game_rule.md](./design/game_rule.md)：当前规则主文档
+- [design/game_design.md](./design/game_design.md)：设计思路与结构建议
 
-如果规则与实现有冲突，现阶段请优先以 `game_rule.md` 和实际运行结果为准。
+如果规则与实现有冲突，现阶段请优先以 `design/game_rule.md` 和实际运行结果为准。
 
 ---
 

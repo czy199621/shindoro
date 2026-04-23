@@ -1,214 +1,177 @@
 # Architecture
 
-## 项目概览
+## 目的
 
-`Shindoro` 是一个卡牌对战原型项目，代码主体位于 `src/`，通过 TypeScript 编译到 `dist/`，再由 `server.js` 提供静态访问。
+`memory-bank/architecture.md` 是这个项目给代理和协作者使用的结构入口文档。
+修改代码前应先查看这里与 `memory-bank/progress.md`，修改后再回写相关变更。
 
-这个项目虽然使用了 `.tsx` 文件，但当前并不是 React 运行时项目。`src/components/` 和 `src/App.tsx` 主要是在拼接 HTML 字符串，再通过事件委托驱动交互。
+## 当前项目状态
 
-## 技术栈与运行方式
+- 项目类型：TypeScript 卡牌对战原型
+- 规则基准：`design/game_rule.md` v1.2
+- 角色数量：6 名角色，编号 A-F
+- 卡组结构：`50` 张主卡组 + `3` 张备牌库
+- 天赋体系：先后手动态定价，支持座位限制
+- 关键阶段：`turnStart -> slotResolution -> draw -> mainTurn -> combat -> turnEnd`
+- 测试方式：测试直接运行 `dist/` 下的编译产物
 
-- 语言：TypeScript
-- 模块系统：ES Modules
-- 构建：`tsc -p tsconfig.json`
-- 启动：`node server.js`
-- 测试：Node 原生测试框架 `node:test`
+## 根目录
 
-常用命令：
+- `AGENT.md`
+  - 代理协作规则与默认工作方式
+- `SKILL.md`
+  - 内容更新任务的执行准则
+- `design/`
+  - 规则文档与设计文档
+- `memory-bank/`
+  - 持续维护的项目记忆
+- `src/`
+  - 源码
+- `dist/`
+  - TypeScript 编译产物
+- `tests/`
+  - 基于 `dist/` 的测试
+- `package.json`
+  - 构建、启动、测试命令
+- `server.js`
+  - 本地静态服务入口
 
-```powershell
-npm run build
-npm start
-npm test
-```
+## 源码结构
 
-## 根目录结构
+### `src/App.tsx`
 
-```text
-.
-├─ src/                    # 源码
-├─ dist/                   # 构建产物，index.html 直接引用
-├─ memory-bank/            # 面向代理和协作者的项目知识库
-├─ tests/                  # 测试
-├─ public/                 # 静态资源说明与预留目录
-├─ AGENT.md                # 代理协作规则
-├─ SKILL.md                # 内容更新类任务的执行技能
-├─ game_rule.md            # 游戏规则文档
-├─ game_design.md          # 设计说明文档
-├─ index.html              # 页面入口，加载 src/style.css 和 dist/main.js
-├─ package.json            # 脚本定义
-├─ server.js               # 静态文件服务器
-└─ tsconfig.json           # TypeScript 编译配置
-```
+- UI 顶层入口
+- 负责 `setup / mulligan / game` 三个主要界面切换
 
-## `src/` 结构拆解
+### `src/store/useGameStore.ts`
 
-```text
-src/
-├─ main.ts
-├─ App.tsx
-├─ style.css
-├─ types.ts
-├─ components/
-├─ data/
-├─ engine/
-└─ store/
-```
+- UI 与 `ShinDoroGame` 的桥接层
+- 将游戏状态、玩家操作与 AI 执行整理成前端可直接消费的接口
 
-### 入口层
+### `src/types.ts`
 
-- `src/main.ts`
-  - 查找 `#app` 根节点。
-  - 调用 `mountApp(app)` 启动整个应用。
+- 全局共享类型
+- 包含角色、卡牌、天赋、阶段、效果动作与游戏状态结构
 
-- `src/App.tsx`
-  - 负责根据当前 `screen` 渲染 `setup / mulligan / game` 三个阶段。
-  - 用 `data-action` 做统一事件分发。
-  - 把用户点击转换成 `store` 方法调用。
-  - 在每次渲染后安排 AI 回合执行。
+## 数据层 `src/data/`
 
-- `src/style.css`
-  - 定义整套界面样式，包括 setup、battle、HUD、卡牌、弹层和响应式布局。
-
-- `src/types.ts`
-  - 整个项目的核心类型中心。
-  - 包含游戏状态、卡牌定义、角色、天赋、效果、AI 决策、回合阶段等类型声明。
-
-### 状态与编排层
-
-- `src/store/useGameStore.ts`
-  - 这是 UI 和底层游戏引擎之间的桥接层。
-  - 内部持有 `ShinDoroGame` 实例。
-  - 维护只属于前端交互的状态，比如：
-    - 角色选择
-    - 天赋选择
-    - Mulligan 勾选
-    - 当前选中的攻击者
-    - AI 延时定时器
-  - 向 UI 暴露统一操作接口，比如 `startGame()`、`playCard()`、`attackHero()`、`endTurn()`。
-
-### 渲染层
-
-- `src/components/Board.tsx`
-  - 游戏主战场渲染器，负责战斗界面、手牌区、场地区、侧栏和日志等内容。
-
-- `src/components/Card.tsx`
-  - 各类卡牌视图渲染，包括手牌、Mulligan 卡牌、随从卡、持续物卡。
-
-- `src/components/PlayerHUD.tsx`
-  - 玩家 HUD 区块渲染，展示血量、法力、角色信息等。
-
-- `src/components/ResolutionPanel.tsx`
-  - 负责待处理选择和结算提示内容。
-
-- `src/components/SlotMeter.tsx`
-  - 渲染 Jump / God Draw 进度条与相关展示。
-
-- `src/components/html.ts`
-  - 提供 `escapeHtml()`，用于基础的 HTML 转义。
-
-### 数据层
+### 根入口
 
 - `src/data/cards.ts`
-  - 卡牌总表 `CARD_LIBRARY`。
-  - 提供 `CARD_LOOKUP` 和 `getCardDefinition()`。
-
+  - 卡牌总入口
+  - 对外提供 `CARD_LIBRARY`、`CARD_LOOKUP`、`getCardDefinition()`
 - `src/data/characters.ts`
-  - 角色定义与角色被动信息。
-
+  - 角色总入口
+  - 对外提供 `CHARACTERS`、`CHARACTER_LOOKUP`
 - `src/data/talents.ts`
-  - 天赋定义、花费、上限与效果配置。
-
+  - 天赋总入口
+  - 对外提供 `TALENTS`、`TALENT_LOOKUP`、`getTalentCost()`、`isTalentAvailableForSeat()`
 - `src/data/decks.ts`
-  - 起始卡组和保留卡组配置。
+  - 六名角色的默认卡组配置
 
-### 游戏引擎层
+### 角色模块
 
-- `src/engine/gameState.ts`
-  - 核心门面类 `ShinDoroGame`。
-  - 持有全局 `GameState`。
-  - 对外暴露游戏生命周期与交互方法。
-  - 也是上层 `store` 直接调用的主要入口。
+- `src/data/characters/characterA.ts`
+- `src/data/characters/characterB.ts`
+- `src/data/characters/characterC.ts`
+- `src/data/characters/characterD.ts`
+- `src/data/characters/characterE.ts`
+- `src/data/characters/characterF.ts`
 
-- `src/engine/rules.ts`
-  - 基础规则与通用工具函数。
-  - 包括运行时卡牌构建、洗牌、威胁值计算、优势值计算、空玩家状态创建等。
+每个角色文件独立维护：
 
-- `src/engine/effects.ts`
-  - 处理出牌、攻击、抽牌、召唤、亡语、陷阱触发、死亡检测、胜负判断等效果执行。
+- 角色基础资料
+- 被动能力
+- `jump10 / jump13` 对应的大招配置
 
-- `src/engine/phases.ts`
-  - 处理回合阶段流转。
-  - 包括 Mulligan、回合开始、起始队列处理、待选项处理、回合结束、AI 回合执行。
+### 卡牌模块
 
-- `src/engine/slotResolver.ts`
-  - 处理 Jump / God Draw 槽位相关规则、阈值奖励和角色槽位能力。
+- `src/data/cards/minions.ts`
+  - 全部使魔定义
+- `src/data/cards/spells.ts`
+  - 全部法术定义
+- `src/data/cards/persistents.ts`
+  - 全部持续物定义
+- `src/data/cards/traps.ts`
+  - 全部陷阱定义
 
-- `src/engine/ai.ts`
-  - AI 天赋预设与行动决策逻辑。
-  - 包括出牌评分、攻击评分、God Draw 选牌和回合动作选择。
+卡牌现在按类型拆分，新增或修改某一类卡牌时，优先只动对应模块，再由 `src/data/cards.ts` 聚合输出。
 
-## `memory-bank/` 结构
+### 天赋模块
 
-```text
-memory-bank/
-├─ architecture.md         # 项目结构、模块职责和运行链路
-└─ progress.md             # 修改履历与阶段性进展记录
-```
+- `src/data/talents/survival.ts`
+- `src/data/talents/resource.ts`
+- `src/data/talents/deckControl.ts`
+- `src/data/talents/combat.ts`
+- `src/data/talents/spell.ts`
+- `src/data/talents/burst.ts`
+- `src/data/talents/slotControl.ts`
 
-- `memory-bank/architecture.md`
-  - 用于快速理解仓库结构、模块边界和运行方式。
+天赋现在按功能类别拆分，动态费用、可选座位与重复限制都保留在各自的 `TalentDefinition` 内。
 
-- `memory-bank/progress.md`
-  - 用于记录重要修改的时间、目的、影响范围和后续注意事项。
-  - 适合作为代理在改代码前后的优先检查文档。
+## 引擎层 `src/engine/`
 
-## `dist/` 的角色
+- `gameState.ts`
+  - `ShinDoroGame` 主入口
+  - 负责游戏状态创建、角色/天赋应用与对外 API
+- `phases.ts`
+  - 阶段推进、回合开始/结束、Mulligan 与 AI 回合调度
+- `effects.ts`
+  - 卡牌与能力效果执行
+- `slotResolver.ts`
+  - 跳脸槽与神抽槽计算、角色大招解析
+- `rules.ts`
+  - 通用规则、优势值计算、运行时对象创建
+- `ai.ts`
+  - AI 选天赋与出牌/攻击决策
 
-`dist/` 是 `src/` 的编译输出目录，目前已提交到仓库中，且被运行链路直接使用：
+## 组件层 `src/components/`
 
-- `index.html` 直接加载 `./dist/main.js`
-- `tests/engine.test.js` 直接从 `dist/` 导入模块
-
-这意味着：
-
-1. 修改 `src/` 后，需要重新构建，`dist/` 才会同步更新。
-2. 测试依赖最新构建结果，而不是直接执行 `src/`。
-
-## 测试结构
-
-- `tests/engine.test.js`
-  - 主要验证核心规则和回合逻辑。
-  - 当前覆盖点包括：
-    - 优势值计算
-    - 槽位增长断点
-    - 角色被动生效
-    - Mulligan 后进入主回合
-    - 随从跨回合后可攻击
+- `Board.tsx`
+  - 棋盘与战场区展示
+- `Card.tsx`
+  - 单卡渲染
+- `PlayerHUD.tsx`
+  - 玩家面板、生命、法力、手牌等摘要信息
+- `ResolutionPanel.tsx`
+  - 槽位与额外选择的提示面板
+- `SlotMeter.tsx`
+  - 槽位进度展示
 
 ## 运行链路
 
-项目当前的实际执行路径可以概括为：
+1. `npm run build`
+   - 将 `src/` 编译到 `dist/`
+2. `src/main.ts`
+   - 调用应用挂载逻辑
+3. `src/App.tsx`
+   - 读取 `useGameStore` 状态并渲染界面
+4. `useGameStore.ts`
+   - 调用 `ShinDoroGame`
+5. `ShinDoroGame`
+   - 分派到 `phases / effects / slotResolver / rules / ai`
 
-1. `npm run build` 使用 TypeScript 将 `src/` 编译到 `dist/`
-2. `index.html` 加载 `src/style.css` 和 `dist/main.js`
-3. `dist/main.js` 对应 `src/main.ts`，调用 `mountApp()`
-4. `App.tsx` 根据 `store.getState()` 渲染不同界面
-5. `useGameStore.ts` 接收 UI 操作，并转发给 `ShinDoroGame`
-6. `ShinDoroGame` 再调用 `rules / effects / phases / slotResolver / ai` 等模块完成规则结算
-7. `server.js` 负责把这些静态文件通过本地端口提供出来
+## 测试与构建
 
-## 维护建议
+- `npm run build`
+  - 只负责编译
+- `npm test`
+  - 会先重新构建，再跑 `tests/engine.test.js`
+- 因为测试依赖 `dist/`，只改 `src/` 后如果不构建，测试不会看到最新代码
 
-- 当前 `memory-bank/` 已包含结构文档和修改履历文档。
+## 修改约定
 
-- 如果后续继续扩展 `memory-bank/`，建议再补充：
-  - `game-flow.md`：记录 setup 到 battle 的状态流转
-  - `engine-map.md`：专门整理引擎模块关系
-  - `data-dictionary.md`：梳理卡牌、角色、天赋的数据结构
+- 改代码前先确认：
+  - `memory-bank/architecture.md`
+  - `memory-bank/progress.md`
+  - `design/game_rule.md`
+- 改代码后要更新：
+  - `memory-bank/progress.md`
+  - 如结构有变化，再更新 `memory-bank/architecture.md`
+- 写代码尽量模块化，避免把过多职责堆进单个文件或函数
+- 若只是调整数据内容，优先保持 `src/data/*.ts` 根入口接口稳定，减少联动改动
 
-- 当前项目一个很重要的实现特点是：
-  - UI 层是“字符串渲染 + DOM 事件委托”
-  - 游戏逻辑层是“集中式状态机 + 规则模块”
-  - 测试和运行都依赖 `dist/` 编译产物
-  - 协作层同时依赖根目录的 `AGENT.md` 与 `SKILL.md` 约束代理行为
+## 关联修正结论
+
+- 当前业务代码统一从 `src/data/cards.ts`、`src/data/characters.ts`、`src/data/talents.ts` 取数
+- 因为根入口保持稳定，角色、卡牌、天赋的模块化拆分不会强迫 UI、引擎、测试同步改 import

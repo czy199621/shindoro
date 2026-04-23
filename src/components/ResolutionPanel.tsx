@@ -13,7 +13,7 @@ export function renderPendingChoice(choice: PendingChoice | null): string {
           <p>${escapeHtml(choice.description)}</p>
           <div class="modal-actions">
             <button class="secondary-btn" data-action="pending-use-jump">发动</button>
-            <button class="ghost-btn" data-action="pending-skip">暂不发动</button>
+            <button class="ghost-btn" data-action="pending-skip">跳过</button>
           </div>
         </div>
       </div>
@@ -26,13 +26,9 @@ export function renderPendingChoice(choice: PendingChoice | null): string {
         <div class="modal-card">
           <div class="flex-between">
             <h3>${escapeHtml(choice.title)}</h3>
-            ${
-              choice.type === "optionalGodDraw"
-                ? `<button class="ghost-btn" data-action="pending-skip">暂不发动</button>`
-                : ""
-            }
+            ${choice.type === "optionalGodDraw" ? `<button class="ghost-btn" data-action="pending-skip">跳过</button>` : ""}
           </div>
-          <p class="small-note">${escapeHtml(choice.description ?? "选择一张牌。")}</p>
+          <p class="small-note">${escapeHtml(choice.description ?? "请选择一张牌。")}</p>
           <div class="deck-choice-grid">
             ${choice.choices.length
               ? choice.choices
@@ -43,12 +39,12 @@ export function renderPendingChoice(choice: PendingChoice | null): string {
                         <h4>${escapeHtml(definition.name)}</h4>
                         <p>${escapeHtml(definition.description)}</p>
                         <p><strong>费用：</strong>${definition.cost}</p>
-                        <p>数量：${entry.count}</p>
+                        <p>剩余数量：${entry.count}</p>
                       </button>
                     `;
                   })
                   .join("")
-              : `<p class="empty-text">没有可选牌。</p>`}
+              : `<p class="empty-text">当前没有可选的牌。</p>`}
           </div>
         </div>
       </div>
@@ -63,10 +59,10 @@ export function renderGameOver(state: GameState): string {
   return `
     <div class="modal-backdrop">
       <div class="modal-card">
-        <h3>${state.winner === "P1" ? "你赢下了这局对战" : "AI 获得胜利"}</h3>
-        <p class="small-note">你可以直接重新回到设定界面再打一局。</p>
+        <h3>${state.winner === "P1" ? "你获得了胜利" : "AI 获得了胜利"}</h3>
+        <p class="small-note">可以直接重新开始一局，继续验证新的角色、天赋和阶段流程。</p>
         <div class="modal-actions">
-          <button class="primary-btn" data-action="restart">返回开局界面</button>
+          <button class="primary-btn" data-action="restart">重新开始</button>
         </div>
       </div>
     </div>

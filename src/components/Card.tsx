@@ -1,6 +1,17 @@
 import type { MinionInstance, PlayerState, RuntimeCard } from "../types.js";
 import { escapeHtml } from "./html.js";
 
+function renderMinionStats(attack: number | undefined, health: number | undefined, maxHealth?: number): string {
+  if (attack === undefined || health === undefined) return "";
+  const hpText = maxHealth === undefined ? `${health}` : `${health}/${maxHealth}`;
+  return `
+    <div class="stats-line">
+      <span class="stat-badge">攻 ${attack}</span>
+      <span class="stat-badge">血 ${hpText}</span>
+    </div>
+  `;
+}
+
 export function renderHandCard(card: RuntimeCard, disabled = false, extraClass = ""): string {
   return `
     <button class="card ${escapeHtml(card.type)} ${disabled ? "disabled" : ""} ${extraClass}" data-action="play-card" data-runtime-id="${escapeHtml(card.runtimeId)}" ${disabled ? "disabled" : ""}>
@@ -8,11 +19,7 @@ export function renderHandCard(card: RuntimeCard, disabled = false, extraClass =
       <h4>${escapeHtml(card.name)}</h4>
       <p class="card-meta">${escapeHtml(card.type)}${card.tags?.length ? ` · ${escapeHtml(card.tags.join(" / "))}` : ""}</p>
       <p>${escapeHtml(card.description)}</p>
-      ${
-        card.type === "minion"
-          ? `<div class="stats-line"><span class="stat-badge">攻 ${card.attack}</span><span class="stat-badge">命 ${card.health}</span></div>`
-          : ""
-      }
+      ${card.type === "minion" ? renderMinionStats(card.attack, card.health) : ""}
     </button>
   `;
 }
@@ -24,12 +31,8 @@ export function renderMulliganCard(card: RuntimeCard, selected: boolean): string
       <h4>${escapeHtml(card.name)}</h4>
       <p class="card-meta">${escapeHtml(card.type)}</p>
       <p>${escapeHtml(card.description)}</p>
-      ${
-        card.type === "minion"
-          ? `<div class="stats-line"><span class="stat-badge">攻 ${card.attack}</span><span class="stat-badge">命 ${card.health}</span></div>`
-          : ""
-      }
-      <p class="small-note">${selected ? "再次点击取消替换" : "点击标记替换"}</p>
+      ${card.type === "minion" ? renderMinionStats(card.attack, card.health) : ""}
+      <p class="small-note">${selected ? "已标记为换牌" : "点击以选择换牌"}</p>
     </button>
   `;
 }
@@ -58,11 +61,8 @@ export function renderMinionCard(
     <button class="${classes.join(" ")}" data-action="${action}" data-minion-id="${escapeHtml(minion.instanceId)}">
       <h4>${escapeHtml(minion.name)}</h4>
       <p class="minion-meta">${escapeHtml(minion.description)}</p>
-      <div class="stats-line">
-        <span class="stat-badge">攻 ${minion.attack}</span>
-        <span class="stat-badge">命 ${minion.health}/${minion.maxHealth}</span>
-      </div>
-      <p class="small-note">${minion.canAttack && isPlayer ? "可攻击" : "待机中"}</p>
+      ${renderMinionStats(minion.attack, minion.health, minion.maxHealth)}
+      <p class="small-note">${minion.canAttack && isPlayer ? "可以攻击" : "暂时不能攻击"}</p>
     </button>
   `;
 }

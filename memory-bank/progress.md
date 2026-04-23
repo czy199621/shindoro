@@ -1,105 +1,157 @@
 # Progress
 
-## 目的
+## 用途
 
-这份文档用于记录项目的重要修改履历，帮助后续代理或协作者快速确认：
-
-- 最近改了什么
-- 为什么要改
-- 改动影响了哪些文件或模块
-- 后续还有哪些同步事项需要注意
-
-## 使用规则
-
-- 在开始修改代码前，先查看最近几条记录，确认当前上下文。
-- 在完成重要修改后，追加一条新记录。
-- 记录尽量聚焦“有协作价值的变更”，不必把每一次微小试验都写进去。
-- 如果改动同时涉及代码、文档和构建流程，尽量在一条记录里写清楚关联关系。
-- 如果发现工作区存在与你当前任务无关的现有变更，可在记录中注明“未处理”，避免误解。
+`memory-bank/progress.md` 用来记录项目已经发生过的重要修改，方便代理在动手前快速确认最近履历，避免重复判断或漏掉联动项。
 
 ## 记录模板
 
 ```md
 ## YYYY-MM-DD
 
-### 标题
-
-- 背景：
-- 修改：
+### 主题
 - 涉及文件：
-- 影响：
-- 后续：
+- 本次改动：
+- 验证：
+- 关联修正检查：
 ```
-
-## 修改履历
 
 ## 2026-04-23
 
-### 初始化 `memory-bank/project-structure.md`
+### 建立 memory-bank 与协作文档
 
-- 背景：需要先为仓库建立一个可供代理快速理解项目结构的知识库入口。
-- 修改：新增 `memory-bank/project-structure.md`，整理了项目目录、模块职责、运行链路和测试结构。
-- 涉及文件：`memory-bank/project-structure.md`
-- 影响：后续代理可以先从该文档了解 `src/`、`dist/`、`engine/`、`store/` 等模块关系。
-- 后续：如果目录结构、模块边界或运行方式变化，需要同步更新这份文档。
+- 涉及文件：
+  - `memory-bank/`
+  - `AGENT.md`
+  - `SKILL.md`
+- 本次改动：
+  - 建立 `memory-bank` 目录
+  - 新增项目结构与履历文档
+  - 补充代理工作规则与内容更新准则
+- 验证：
+  - 文档创建与链接检查
+- 关联修正检查：
+  - 属于协作文档初始化，无需联动修改源码
 
-### 新增根目录 `AGENT.md`
+### `project-structure.md` 改名为 `architecture.md`
 
-- 背景：需要为进入仓库的代理提供统一协作规则和项目工作方式说明。
-- 修改：新增根目录 `AGENT.md`，写入项目概览、模块边界、改动流程、风险区域和默认工作方式。
-- 涉及文件：`AGENT.md`
-- 影响：代理可以基于这份指南更稳定地开展改动，减少误改 `dist/` 或跨层混写的风险。
-- 后续：如果工作流、目录职责或协作规范变化，需要同步更新。
+- 涉及文件：
+  - `memory-bank/architecture.md`
+  - `memory-bank/progress.md`
+  - `AGENT.md`
+- 本次改动：
+  - 将 `project-structure.md` 统一改名为 `architecture.md`
+  - 同步修正相关文档引用
+- 验证：
+  - 文档引用检查
+- 关联修正检查：
+  - 仅文档层联动，无需改业务代码
 
-### 将 `AGENT.md` 调整为中文版
+### 规则文档切换到 v1.2
 
-- 背景：当前协作主要使用中文，希望规则文档更易读。
-- 修改：将 `AGENT.md` 改写为中文版，同时保留命令、路径和代码标识的英文形式。
-- 涉及文件：`AGENT.md`
-- 影响：提升中文协作可读性，同时保留对代理较友好的结构。
-- 后续：如需兼容更多外部工具，可考虑改成中英混合标题。
+- 涉及文件：
+  - `design/game_rule.md`
+  - `README.md`
+  - `AGENT.md`
+  - `memory-bank/architecture.md`
+  - `src/App.tsx`
+  - `dist/App.js`
+- 本次改动：
+  - 以 `design/new_rule.md` 为准更新规则主文档
+  - 将项目内相关引用统一指向新的规则主文档
+- 验证：
+  - 构建通过
+- 关联修正检查：
+  - 主要是文档与引用修正，没有直接修改核心游戏逻辑
 
-### 增加“改代码前后确认 `memory-bank/`”规则
+### `game_design` 按 `game_rule` 重写并补方案
 
-- 背景：希望代理在改代码前后都能同步确认知识库，而不是只改代码不更新文档。
-- 修改：在 `AGENT.md` 中加入规则，要求改代码前先查看 `memory-bank/`，改代码后更新 `memory-bank/`。
-- 涉及文件：`AGENT.md`
-- 影响：把知识库维护纳入默认工作流程。
-- 后续：如果 `memory-bank/` 继续扩展，应明确各文档的职责。
+- 涉及文件：
+  - `design/game_design.md`
+  - `design/game_design_update_plan.md`
+  - `memory-bank/architecture.md`
+  - `memory-bank/progress.md`
+- 本次改动：
+  - 将 `game_design.md` 对齐到 v1.2 规则
+  - 新增按 `SKILL.md` 编写的更新方案文档
+- 验证：
+  - 文档结构检查
+- 关联修正检查：
+  - 属于设计同步，无需联动修改源码
 
-### 新增 `memory-bank/progress.md`
+### v1.2 第一版规则实装
 
-- 背景：需要一个专门记录修改履历的文件，便于代理确认最近变更。
-- 修改：新增 `memory-bank/progress.md`，并在 `AGENT.md`、`memory-bank/project-structure.md` 中加入对它的说明。
-- 涉及文件：`memory-bank/progress.md`、`AGENT.md`、`memory-bank/project-structure.md`
-- 影响：后续代理可以通过这份文档快速确认近期修改历史，并在完成改动后持续补充。
-- 后续：新增功能、规则调整、目录重构或重要修复时，都应追加记录。
+- 涉及文件：
+  - `src/types.ts`
+  - `src/data/characters.ts`
+  - `src/data/talents.ts`
+  - `src/data/decks.ts`
+  - `src/engine/ai.ts`
+  - `src/engine/gameState.ts`
+  - `src/engine/phases.ts`
+  - `src/engine/effects.ts`
+  - `src/engine/slotResolver.ts`
+  - `src/store/useGameStore.ts`
+  - `src/App.tsx`
+  - `src/components/`
+  - `tests/engine.test.js`
+- 本次改动：
+  - 扩展阶段到 `draw / combat / turnEnd`
+  - 角色从 A-C 扩展到 A-F
+  - 卡组升级为 `50` 张主卡组 + `3` 张备牌库
+  - 天赋升级为先后手动态定价与座位限制
+  - 接入守护、磨牌、法术增伤、低费使魔冲锋、大招后保留槽位等第一版规则效果
+- 验证：
+  - `cmd /c npm run build`
+  - `cmd /c npm test`
+- 关联修正检查：
+  - UI、引擎、测试均已同步到新规则结构
 
-### 将 `memory-bank/project-structure.md` 改名为 `memory-bank/architecture.md`
+### 角色与技能模块化
 
-- 背景：知识库入口文件改名为更贴近用途的 `architecture.md`。
-- 修改：将原 `memory-bank/project-structure.md` 改名为 `memory-bank/architecture.md`，并同步更新 `AGENT.md` 与知识库内部引用。
-- 涉及文件：`memory-bank/architecture.md`、`AGENT.md`、`memory-bank/progress.md`
-- 影响：后续代理应以 `memory-bank/architecture.md` 作为架构入口文档，不再查找旧文件名。
-- 后续：如再调整知识库文件名，应继续在本履历中记录重命名历史。
+- 涉及文件：
+  - `src/data/characters.ts`
+  - `src/data/characters/characterA.ts`
+  - `src/data/characters/characterB.ts`
+  - `src/data/characters/characterC.ts`
+  - `src/data/characters/characterD.ts`
+  - `src/data/characters/characterE.ts`
+  - `src/data/characters/characterF.ts`
+  - `memory-bank/architecture.md`
+- 本次改动：
+  - 将角色定义拆分到独立模块
+  - 每个角色文件独立维护基础资料、被动与大招
+  - `src/data/characters.ts` 保持聚合出口，避免影响现有调用方
+- 验证：
+  - `cmd /c npm run build`
+  - `cmd /c npm test`
+- 关联修正检查：
+  - 因为根入口接口未变，其他业务模块无需改 import
 
-### 在 `AGENT.md` 中增加“写代码尽量模块化”规则
+### 卡牌与天赋模块化
 
-- 背景：希望后续代码改动默认朝着更易维护、更易拆分的方向推进。
-- 修改：在 `AGENT.md` 的“推荐默认做法”中加入“写代码时尽量保持模块化，避免把过多职责堆进单个文件或函数”。
-- 涉及文件：`AGENT.md`、`memory-bank/progress.md`
-- 影响：后续代理在实现功能时会更倾向于拆分职责、保持清晰边界。
-- 后续：如果团队对模块划分有更具体标准，可继续在 `AGENT.md` 或 `memory-bank/architecture.md` 中补充。
-
-### 新增根目录 `SKILL.md` 用于内容更新流程
-
-- 背景：需要一份专门面向“内容更新”任务的技能文档，明确分析与实现顺序。
-- 修改：新增根目录 `SKILL.md`，要求先对比当前内容与更新后内容的差分，再按“现状 / 实装后的预想 / 如何实装 / 具体的步骤”整理，最后检查关联代码、数据、测试和文档是否需要同步修正。
-- 涉及文件：`SKILL.md`、`AGENT.md`、`memory-bank/architecture.md`、`memory-bank/progress.md`
-- 影响：后续代理在处理内容更新类任务时，会有统一的输出结构和关联检查流程。
-- 后续：如果内容更新流程继续细化，可在 `SKILL.md` 中补充更多仓库专用检查项。
-
-## 说明
-
-- 这份履历目前主要记录本轮协作中由代理新增或调整的知识库与协作文档。
-- 工作区中若存在与当前任务无关的其它变更，应由实际发起改动的一方决定是否纳入本履历。
+- 涉及文件：
+  - `src/data/cards.ts`
+  - `src/data/cards/minions.ts`
+  - `src/data/cards/spells.ts`
+  - `src/data/cards/persistents.ts`
+  - `src/data/cards/traps.ts`
+  - `src/data/talents.ts`
+  - `src/data/talents/survival.ts`
+  - `src/data/talents/resource.ts`
+  - `src/data/talents/deckControl.ts`
+  - `src/data/talents/combat.ts`
+  - `src/data/talents/spell.ts`
+  - `src/data/talents/burst.ts`
+  - `src/data/talents/slotControl.ts`
+  - `memory-bank/architecture.md`
+- 本次改动：
+  - 将卡牌定义按 `minion / spell / persistent / trap` 拆分到独立模块
+  - 将天赋定义按功能类别拆分到独立模块
+  - 保留 `src/data/cards.ts` 与 `src/data/talents.ts` 作为对外聚合入口
+  - 重写拆分文件内容，修复拆分过程中引入的语法问题
+- 验证：
+  - `cmd /c npm run build`
+  - `cmd /c npm test`
+- 关联修正检查：
+  - `engine`、`store`、`tests` 与 UI 层继续通过根入口取数，因此无需联动修改 import

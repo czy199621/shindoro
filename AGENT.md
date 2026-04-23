@@ -43,9 +43,9 @@ npm test
   - 加载 `src/style.css` 和 `dist/main.js`。
 - `server.js`
   - 最小化静态文件服务器。
-- `game_rule.md`
+- `design/game_rule.md`
   - 游戏规则参考文档。
-- `game_design.md`
+- `design/game_design.md`
   - 更高层的设计说明。
 - `SKILL.md`
   - 内容更新类任务的执行技能文档。
@@ -163,8 +163,8 @@ npm test
 
 如果你修改了游戏规则、卡牌行为、槽位规则或回合流程，请检查这些文档是否也需要同步：
 
-- `game_rule.md`
-- `game_design.md`
+- `design/game_rule.md`
+- `design/game_design.md`
 - `memory-bank/architecture.md`
   - 如果架构或文件职责发生变化，也应更新
 

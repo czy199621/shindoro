@@ -1,4 +1,7 @@
 import { removeFirstMatching } from "./rules.js";
+function getPreservedSlotValue(game, playerId) {
+    return Math.max(0, game.getPlayer(playerId).temporaryFlags.preserveBurstSlotAmount);
+}
 export function resolveUltimateGodDraw(game, playerId, cardId) {
     const player = game.getPlayer(playerId);
     const picked = removeFirstMatching(player.reserveDeck, (card) => card.id === cardId) ?? player.reserveDeck.shift();
@@ -6,8 +9,8 @@ export function resolveUltimateGodDraw(game, playerId, cardId) {
         return;
     player.deck.unshift({ ...picked, currentCost: picked.currentCost, baseCost: picked.baseCost });
     player.temporaryFlags.nextDrawDiscount = Math.max(player.temporaryFlags.nextDrawDiscount, 2);
-    player.godDrawSlot = 0;
-    game.log(`${game.getCharacter(player.character).name} 以 13 点神抽从备牌库指定了 ${picked.name}。`, "alert");
+    player.godDrawSlot = getPreservedSlotValue(game, playerId);
+    game.log(`${game.getCharacter(player.character).name} 通过 13 点神抽槽把 ${picked.name} 放到了牌库顶。`, "alert");
 }
 export function resolveOptionalGodDraw(game, playerId, cardId) {
     const player = game.getPlayer(playerId);
@@ -15,8 +18,8 @@ export function resolveOptionalGodDraw(game, playerId, cardId) {
     if (!picked)
         return;
     player.deck.unshift(picked);
-    player.godDrawSlot -= 10;
-    game.log(`${game.getCharacter(player.character).name} 发动神抽，将 ${picked.name} 置于牌库顶。`);
+    player.godDrawSlot = Math.max(player.godDrawSlot - 10, getPreservedSlotValue(game, playerId));
+    game.log(`${game.getCharacter(player.character).name} 指定了下一抽为 ${picked.name}。`);
 }
 export function resolveCharacterSlot(game, playerId, tier) {
     const player = game.getPlayer(playerId);
@@ -24,7 +27,7 @@ export function resolveCharacterSlot(game, playerId, tier) {
     const ability = character.slotAbilities[tier];
     if (!ability)
         return;
-    game.log(`${character.name} 发动 ${ability.name}。`, "alert");
+    game.log(`${character.name} 发动了 ${ability.name}。`, "alert");
     for (const action of ability.effects) {
         game.resolveAction(playerId, action, {});
     }
@@ -47,22 +50,22 @@ export function adjustSlot(game, playerId, slot, amount, reason = "效果", opti
     const gained = player[key] - before;
     if (gained > 0) {
         const slotName = slot === "jump" ? "跳脸槽" : "神抽槽";
-        game.log(`${character.name} 因 ${reason} 获得 ${gained} 点${slotName}。`);
+        game.log(`${character.name} 因 ${reason} 获得了 ${gained} 点${slotName}。`);
     }
     return gained;
 }
 export function applyAdvantageSlots(game, value, gain) {
     if (gain === 0) {
-        game.log("本回合势能为 0，双方均未获得槽位。");
+        game.log("本回合势能差为 0，双方都不会获得槽位。");
         return;
     }
     const advantagedId = value > 0 ? "P1" : "P2";
     const disadvantagedId = value > 0 ? "P2" : "P1";
     const disadvantagedCharacter = game.getCharacter(game.getPlayer(disadvantagedId).character);
-    game.log(`势能结算：V = ${value >= 0 ? "+" : ""}${value}，档位为 ${gain}。`, Math.abs(value) >= 4 ? "alert" : "neutral");
-    if (disadvantagedCharacter.passive.key === "smallDisadvantageCountsAsMedium" && gain === 1) {
-        game.adjustSlot(disadvantagedId, "godDraw", 2, "角色被动");
-        game.log(`${disadvantagedCharacter.name} 的被动生效：小劣势改判为中劣势。`, "alert");
+    game.log(`势能差结算为 ${value >= 0 ? "+" : ""}${value}，本次槽位收益为 ${gain}。`, Math.abs(value) >= 4 ? "alert" : "neutral");
+    if (disadvantagedCharacter.passive.key === "extraGodDrawOnDisadvantage" && gain === 1) {
+        game.adjustSlot(disadvantagedId, "godDraw", gain + 2, "角色被动");
+        game.log(`${disadvantagedCharacter.name} 的被动额外强化了劣势方的神抽槽。`, "alert");
         return;
     }
     game.adjustSlot(advantagedId, "jump", gain, "势能结算");

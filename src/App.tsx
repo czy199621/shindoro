@@ -9,36 +9,40 @@ import type { GameState } from "./types.js";
 function renderSetupScreen(store: GameStore): string {
   const playerCharacter = store.getSelectedCharacter();
   const remaining = store.getRemainingTalentPoints();
+  const selectedTalents = store.uiState.setup.selectedTalentIds
+    .map((talentId) => store.getTalent(talentId)?.name ?? talentId)
+    .join(" / ");
 
   return `
     <div class="app-shell">
       <section class="hero">
         <div>
-          <h1>神どろ Prototype</h1>
+          <h1>神どろ Prototype v1.2</h1>
           <p>
-            这是一版从规则文档直接落地出来的浏览器原型。你可以在这里完成角色选择、赛前天赋购买、
-            Mulligan、对战、势能结算、双槽发动以及 AI 对局。
+            当前实装已经切到 v1.2 规则骨架：6 名角色、50 张主卡组、备牌库和先后手动态天赋价格都在这里完成配置。
+            这版仍然保持玩家对 AI 的数字原型节奏，便于继续迭代角色技能、关键词和日志表现。
           </p>
         </div>
         <div class="hero-stats">
-          <div class="pill"><strong>模式</strong><br />玩家 vs AI</div>
-          <div class="pill"><strong>实现</strong><br />TypeScript + 原生模块</div>
-          <div class="pill"><strong>当前目标</strong><br />完整打一局</div>
-          <div class="pill"><strong>规则主源</strong><br />game_rule.md</div>
+          <div class="pill"><strong>对局模式</strong><br />玩家 vs AI</div>
+          <div class="pill"><strong>规则主源</strong><br />design/game_rule.md</div>
+          <div class="pill"><strong>当前目标</strong><br />v1.2 规则骨架</div>
+          <div class="pill"><strong>实现方式</strong><br />TypeScript + 原生 DOM</div>
         </div>
       </section>
 
       <div class="setup-grid">
         <section class="setup-panel">
           <div class="flex-between">
-            <h2>1. 选择你的角色</h2>
-            <span class="small-note">角色决定基础天赋点与槽位被动</span>
+            <h2>1. 选择玩家角色</h2>
+            <span class="small-note">不同角色拥有不同天赋点、被动和 10 / 13 点爆发</span>
           </div>
           <div class="character-grid">
             ${CHARACTERS.map(
               (character) => `
                 <button class="option-card ${store.uiState.setup.playerCharacterId === character.id ? "selected" : ""}" data-action="select-player-character" data-character-id="${escapeHtml(character.id)}">
                   <h3>${escapeHtml(character.name)}</h3>
+                  <p>${escapeHtml(character.title)}</p>
                   <p>${escapeHtml(character.description)}</p>
                   <p><strong>天赋点：</strong>${character.talentPoints}</p>
                   <p><strong>被动：</strong>${escapeHtml(character.passive.description)}</p>
@@ -49,7 +53,7 @@ function renderSetupScreen(store: GameStore): string {
 
           <div class="flex-between" style="margin-top:18px;">
             <h2>2. 选择 AI 角色</h2>
-            <span class="small-note">AI 会按角色预设购买天赋</span>
+            <span class="small-note">AI 会按后手预算使用该角色的预设天赋</span>
           </div>
           <div class="character-grid">
             ${CHARACTERS.map(
@@ -66,25 +70,27 @@ function renderSetupScreen(store: GameStore): string {
 
         <section class="setup-panel">
           <div class="flex-between">
-            <h2>3. 购买赛前天赋</h2>
+            <h2>3. 购买开局天赋</h2>
             <div class="pill">剩余点数 ${remaining}</div>
           </div>
           <p class="small-note">
-            当前角色：${escapeHtml(playerCharacter.name)}。基础天赋点 ${playerCharacter.talentPoints}，
-            你可以按自己的起手计划搭配生命、手牌上限、槽位调律和开局补强。
+            当前角色是 ${escapeHtml(playerCharacter.name)}，可用天赋点为 ${playerCharacter.talentPoints}。
+            玩家默认按先手价格结算，标记为 “-” 的后手 / 先手价格代表该天赋不能由对应座次购买。
           </p>
           <div class="talent-grid">
             ${TALENTS.map((talent) => {
               const count = store.getTalentCount(talent.id);
+              const activeCost = store.getTalentCost(talent);
               const disabled = !store.canAddTalent(talent);
               return `
                 <div class="option-card ${count > 0 ? "selected" : ""}">
                   <h4>${escapeHtml(talent.name)}</h4>
                   <p>${escapeHtml(talent.description)}</p>
-                  <p><strong>费用：</strong>${talent.cost} 点</p>
-                  <p><strong>已选：</strong>${count}/${talent.repeatLimit}</p>
+                  <p><strong>当前费用：</strong>${activeCost ?? "不可购买"} 点</p>
+                  <p><strong>先手 / 后手：</strong>${talent.pricing.first ?? "-"} / ${talent.pricing.second ?? "-"}</p>
+                  <p><strong>已购次数：</strong>${count}/${talent.repeatLimit}</p>
                   <div class="row">
-                    <button class="secondary-btn" data-action="add-talent" data-talent-id="${escapeHtml(talent.id)}" ${disabled ? "disabled" : ""}>加入</button>
+                    <button class="secondary-btn" data-action="add-talent" data-talent-id="${escapeHtml(talent.id)}" ${disabled ? "disabled" : ""}>购买</button>
                     <button class="ghost-btn" data-action="remove-talent" data-talent-id="${escapeHtml(talent.id)}" ${count === 0 ? "disabled" : ""}>移除</button>
                   </div>
                 </div>
@@ -94,7 +100,7 @@ function renderSetupScreen(store: GameStore): string {
 
           <div class="setup-toolbar">
             <div class="small-note">
-              已选天赋：${store.uiState.setup.selectedTalentIds.length ? escapeHtml(store.uiState.setup.selectedTalentIds.join(" / ")) : "暂无"}
+              已选天赋：${selectedTalents || "暂无"}
             </div>
             <button class="primary-btn" data-action="start-game" ${remaining < 0 ? "disabled" : ""}>开始对局</button>
           </div>
@@ -110,23 +116,22 @@ function renderMulliganScreen(store: GameStore, state: GameState): string {
     <div class="app-shell">
       <section class="hero">
         <div>
-          <h1>换牌阶段</h1>
+          <h1>起手换牌</h1>
           <p>
-            点击想替换的起手牌。AI 已经完成自己的 Mulligan。
-            这一步完成后，对局会直接进入你的第一个回合。
+            选择你想换掉的起手牌。AI 会自动完成自己的 Mulligan，确认后就会进入你的第一个回合。
           </p>
         </div>
         <div class="hero-stats">
-          <div class="pill"><strong>你的角色</strong><br />${escapeHtml(store.getCharacter(player.character).name)}</div>
-          <div class="pill"><strong>生命</strong><br />${player.hp}/${player.maxHp}</div>
+          <div class="pill"><strong>玩家角色</strong><br />${escapeHtml(store.getCharacter(player.character).name)}</div>
+          <div class="pill"><strong>生命值</strong><br />${player.hp}/${player.maxHp}</div>
           <div class="pill"><strong>手牌上限</strong><br />${player.handLimit}</div>
-          <div class="pill"><strong>起手张数</strong><br />${player.hand.length}</div>
+          <div class="pill"><strong>当前手牌</strong><br />${player.hand.length}</div>
         </div>
       </section>
 
       <section class="setup-panel" style="margin-top:18px;">
         <div class="flex-between">
-          <h2>选择要替换的牌</h2>
+          <h2>选择要换掉的牌</h2>
           <span class="small-note">已标记 ${store.uiState.mulliganSelection.size} 张</span>
         </div>
         <div class="mulligan-grid">

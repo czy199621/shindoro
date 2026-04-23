@@ -2,6 +2,71 @@ import { getCardDefinition } from "../data/cards.js";
 import { createMinionInstance, createPersistentInstance, createRuntimeCard, removeFirstMatching } from "./rules.js";
 const PLAYER_ID = "P1";
 const AI_ID = "P2";
+function getBaseCost(card) {
+    return "baseCost" in card ? card.baseCost : card.cost;
+}
+function getSpellDamageBonus(game, playerId, context) {
+    return context.sourceCard?.type === "spell" ? game.getPlayer(playerId).temporaryFlags.spellDamageBonus : 0;
+}
+function getGuardMinions(game, playerId) {
+    const player = game.getPlayer(playerId);
+    const taggedGuards = player.board.filter((minion) => minion.tags.includes("guard"));
+    if (taggedGuards.length)
+        return taggedGuards;
+    if (player.temporaryFlags.loneMinionGuard && player.board.length === 1) {
+        return [...player.board];
+    }
+    return [];
+}
+function findPriorityEnemyMinion(game, playerId) {
+    const opponent = game.getOpponent(playerId);
+    return [...opponent.board].sort((left, right) => {
+        if (right.threat !== left.threat)
+            return right.threat - left.threat;
+        if (right.health !== left.health)
+            return right.health - left.health;
+        return right.attack - left.attack;
+    })[0] ?? null;
+}
+function millCards(game, sourcePlayerId, target, count) {
+    const targetPlayer = target === "self" ? game.getPlayer(sourcePlayerId) : game.getOpponent(sourcePlayerId);
+    const milled = targetPlayer.deck.splice(0, count);
+    if (!milled.length)
+        return;
+    for (const card of milled) {
+        targetPlayer.graveyard.push({ id: card.id, name: card.name, runtimeId: card.runtimeId });
+    }
+    game.log(`${game.getCharacter(targetPlayer.character).name} 被磨掉了 ${milled.length} 张牌。`);
+}
+function dealHeroDamage(game, targetPlayerId, amount) {
+    if (amount <= 0)
+        return;
+    const player = game.getPlayer(targetPlayerId);
+    const character = game.getCharacter(player.character);
+    player.hp -= amount;
+    player.temporaryFlags.damageTakenThisTurn += amount;
+    if (character.passive.key === "gainGodDrawOnBigDamage" && amount > 3) {
+        game.adjustSlot(targetPlayerId, "godDraw", 1, "角色被动");
+    }
+    if (player.temporaryFlags.millOnDamageTaken > 0) {
+        millCards(game, targetPlayerId, "opponent", amount * player.temporaryFlags.millOnDamageTaken);
+    }
+}
+function resolvePriorityExile(game, playerId, mode) {
+    const opponent = game.getOpponent(playerId);
+    const target = findPriorityEnemyMinion(game, playerId);
+    if (!target)
+        return;
+    opponent.board = opponent.board.filter((minion) => minion.instanceId !== target.instanceId);
+    opponent.graveyard.push({
+        id: target.sourceCardId,
+        name: target.name,
+        runtimeId: target.instanceId
+    });
+    const damage = mode === "health" ? Math.max(0, target.health) : Math.max(0, target.attack + target.health);
+    dealHeroDamage(game, game.getOpponentId(playerId), damage);
+    game.log(`${target.name} 被除外，并结算了 ${damage} 点伤害。`, "alert");
+}
 export function resolveOnTurnStart(game, playerId) {
     const player = game.getPlayer(playerId);
     const boardEffects = player.board.flatMap((minion) => minion.effects
@@ -21,7 +86,7 @@ export function drawCards(game, playerId, count, reason = "抽牌") {
             if (!player.hand.length) {
                 game.state.winner = game.getOpponentId(playerId);
                 game.state.phase = "gameOver";
-                game.log(`${game.getCharacter(player.character).name} 已无牌可抽且无手牌可用，判负。`, "alert");
+                game.log(`${game.getCharacter(player.character).name} 牌库见底且无法再抽牌，败北。`, "alert");
             }
             return;
         }
@@ -51,6 +116,8 @@ export function playCard(game, runtimeId) {
     return game.playCardAtIndex(player.id, index);
 }
 export function playCardAtIndex(game, playerId, index) {
+    if (game.state.phase !== "mainTurn")
+        return false;
     const player = game.getPlayer(playerId);
     const card = player.hand[index];
     if (!card)
@@ -83,10 +150,15 @@ export function playCardAtIndex(game, playerId, index) {
 export function summonMinion(game, playerId, card, { triggerOnPlay = false, canTriggerTrap = false } = {}) {
     const player = game.getPlayer(playerId);
     if (player.board.length >= 7) {
-        game.log(`${card.name} 因战场已满无法被召唤。`);
+        game.log(`${card.name} 因场地已满而无法召唤。`);
         return null;
     }
     const instance = createMinionInstance(card, playerId);
+    const lowCostRushMaxCost = player.temporaryFlags.lowCostRushMaxCost;
+    if (lowCostRushMaxCost !== null && getBaseCost(card) <= lowCostRushMaxCost && !instance.tags.includes("rush")) {
+        instance.tags.push("rush");
+        instance.canAttack = true;
+    }
     player.board.push(instance);
     if (triggerOnPlay) {
         game.resolveEffects(playerId, card.effects.filter((effect) => effect.trigger === "onPlay"), {
@@ -113,7 +185,7 @@ export function triggerTraps(game, ownerId, conditionType, context) {
         owner.traps = owner.traps.filter((item) => item.instanceId !== trap.instanceId);
         for (const effect of trap.effects) {
             if (effect.trigger === "onTriggerMet" && effect.condition?.type === conditionType) {
-                game.log(`${game.getCharacter(owner.character).name} 的陷阱 ${trap.name} 被触发。`, "alert");
+                game.log(`${game.getCharacter(owner.character).name} 触发了陷阱 ${trap.name}。`, "alert");
                 game.resolveAction(ownerId, effect.action, context);
             }
         }
@@ -167,6 +239,21 @@ export function resolveAction(game, playerId, action, context = {}) {
         case "gainMana":
             player.mana = Math.min(10, player.mana + action.amount);
             break;
+        case "setIgnoreGuard":
+            player.temporaryFlags.ignoreGuardThisTurn = action.enabled ?? true;
+            break;
+        case "applyOpponentNextTurnManaPenalty":
+            opponent.temporaryFlags.nextTurnManaPenalty = Math.max(opponent.temporaryFlags.nextTurnManaPenalty, action.amount);
+            break;
+        case "millDeck":
+            millCards(game, playerId, action.target, action.count);
+            break;
+        case "setMillOnDamageTaken":
+            player.temporaryFlags.millOnDamageTaken = Math.max(player.temporaryFlags.millOnDamageTaken, action.amount);
+            break;
+        case "exilePriorityEnemyMinionAndDamageHero":
+            resolvePriorityExile(game, playerId, action.damageHeroBy);
+            break;
         default:
             break;
     }
@@ -175,12 +262,14 @@ export function resolveAction(game, playerId, action, context = {}) {
 function resolveDamageAction(game, playerId, action, context) {
     const opponent = game.getOpponent(playerId);
     const player = game.getPlayer(playerId);
+    const bonus = getSpellDamageBonus(game, playerId, context);
+    const amount = action.amount + bonus;
     if (action.target === "enemyHero") {
-        opponent.hp -= action.amount;
+        dealHeroDamage(game, opponent.id, amount);
         return;
     }
     if (action.target === "selfHero") {
-        player.hp -= action.amount;
+        dealHeroDamage(game, player.id, amount);
         return;
     }
     const affected = [];
@@ -204,7 +293,7 @@ function resolveDamageAction(game, playerId, action, context) {
         affected.push(context.triggeredMinion);
     }
     for (const unit of affected) {
-        unit.health -= action.amount;
+        unit.health -= amount;
     }
 }
 function resolveBuffAction(game, playerId, action, context) {
@@ -261,7 +350,7 @@ function resolveSetTopDeck(game, playerId, cardId) {
 }
 export function attack(game, attackerId, targetId, targetType) {
     const player = game.getCurrentPlayer();
-    if (player.id !== PLAYER_ID || game.state.phase !== "mainTurn")
+    if (player.id !== PLAYER_ID || (game.state.phase !== "mainTurn" && game.state.phase !== "combat"))
         return false;
     return game.attackWith(player.id, attackerId, targetId, targetType);
 }
@@ -270,11 +359,21 @@ export function attackWith(game, playerId, attackerId, targetId, targetType) {
     const attacker = player.board.find((minion) => minion.instanceId === attackerId);
     if (!attacker || !attacker.canAttack)
         return false;
-    const opponent = game.getOpponent(playerId);
+    const opponentId = game.getOpponentId(playerId);
+    const opponent = game.getPlayer(opponentId);
+    const guardMinions = player.temporaryFlags.ignoreGuardThisTurn ? [] : getGuardMinions(game, opponentId);
+    if (guardMinions.length && targetType === "hero")
+        return false;
+    if (guardMinions.length && targetType === "minion" && !guardMinions.some((minion) => minion.instanceId === targetId)) {
+        return false;
+    }
     attacker.canAttack = false;
+    if (game.state.phase === "mainTurn") {
+        game.state.phase = "combat";
+    }
     if (targetType === "hero") {
-        opponent.hp -= attacker.attack;
-        game.log(`${attacker.name} 对敌方角色造成了 ${attacker.attack} 点伤害。`, "alert");
+        dealHeroDamage(game, opponent.id, attacker.attack);
+        game.log(`${attacker.name} 对敌方英雄造成了 ${attacker.attack} 点伤害。`, "alert");
     }
     else {
         const defender = opponent.board.find((minion) => minion.instanceId === targetId);
@@ -282,7 +381,7 @@ export function attackWith(game, playerId, attackerId, targetId, targetType) {
             return false;
         defender.health -= attacker.attack;
         attacker.health -= defender.attack;
-        game.log(`${attacker.name} 与 ${defender.name} 进行了交战。`);
+        game.log(`${attacker.name} 与 ${defender.name} 发生了战斗。`);
     }
     game.checkForDeaths();
     game.checkGameOver();
@@ -293,9 +392,14 @@ export function getAttackTargets(game, attackerId, playerId) {
     const attacker = player.board.find((minion) => minion.instanceId === attackerId);
     if (!attacker || !attacker.canAttack)
         return [];
-    const opponent = game.getOpponent(playerId);
+    const opponentId = game.getOpponentId(playerId);
+    const opponent = game.getPlayer(opponentId);
+    const guardMinions = player.temporaryFlags.ignoreGuardThisTurn ? [] : getGuardMinions(game, opponentId);
+    if (guardMinions.length) {
+        return guardMinions.map((minion) => ({ type: "minion", id: minion.instanceId, label: minion.name }));
+    }
     return [
-        { type: "hero", id: `${game.getOpponentId(playerId)}_hero`, label: "敌方角色" },
+        { type: "hero", id: `${opponentId}_hero`, label: "敌方英雄" },
         ...opponent.board.map((minion) => ({ type: "minion", id: minion.instanceId, label: minion.name }))
     ];
 }
@@ -326,7 +430,7 @@ export function checkForDeaths(game) {
                     name: minion.name,
                     runtimeId: minion.instanceId
                 });
-                game.log(`${minion.name} 被送入墓地。`);
+                game.log(`${minion.name} 被击破并进入墓地。`);
                 const deathEffects = minion.effects.filter((effect) => effect.trigger === "onDeath");
                 for (const effect of deathEffects) {
                     game.resolveAction(playerId, effect.action, { source: minion });
@@ -341,19 +445,19 @@ export function checkGameOver(game) {
     if (player.hp <= 0 && ai.hp <= 0) {
         game.state.winner = AI_ID;
         game.state.phase = "gameOver";
-        game.log("双方同时倒下，判定为玩家败北。", "alert");
+        game.log("双方角色同时倒下，判定 AI 获胜。", "alert");
         return true;
     }
     if (player.hp <= 0) {
         game.state.winner = AI_ID;
         game.state.phase = "gameOver";
-        game.log("你的生命值归零。", "alert");
+        game.log("你的生命值归零，战斗失败。", "alert");
         return true;
     }
     if (ai.hp <= 0) {
         game.state.winner = PLAYER_ID;
         game.state.phase = "gameOver";
-        game.log("敌方生命值归零。你赢了。", "alert");
+        game.log("敌方生命值归零，你获得了胜利。", "alert");
         return true;
     }
     return false;

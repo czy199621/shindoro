@@ -1,5 +1,25 @@
 # Architecture
 
+## 2026-04-24 Desktop Battle Layout
+
+- `src/components/Board.tsx`
+  - The battle screen now uses two horizontal battlefield halves plus a compact hand zone, so desktop screens can spend width on the board instead of stacking every section vertically.
+  - The in-match header now separates the left-side title/status copy from a centered battle-info strip, so turn and phase information sits in the visual middle of wide desktop headers.
+  - The battle log now lives in the right side of the in-match header, while the right sidebar focuses on the momentum panel only.
+  - The header log card is intentionally minimal and now shows only the latest log entries; the restart control has moved into the hand-zone toolbar.
+- `src/style.css`
+  - Added `.game-shell`-scoped desktop layout rules that keep the battle UI inside the viewport and push overflow into internal panels such as the battle log instead of the page itself.
+  - The in-match layout no longer caps desktop width at a fixed maximum and now uses viewport-aware `clamp(...)` sizing for the sidebar, HUD columns, and card widths.
+  - Rows that hold cards now prefer fixed readable card widths with internal horizontal scrolling instead of squeezing cards to fit, and the momentum panel now stacks player and AI breakdowns vertically for readability inside the sidebar.
+  - Hero passive text in the HUD is now treated as its own readable info block instead of being squeezed into a narrow corner.
+  - HP and Mana resource badges are now compacted further so their labels stay fully inside the badge, and slot badges use a dedicated compact header/note layout to fit more cleanly inside player HUD panels.
+- `src/components/SlotMeter.tsx`
+  - Slot meter cards now expose dedicated header, label, count, and note classes so the HUD can tune slot badge density without affecting unrelated panels.
+  - Slot meter cards currently render only the slot name, progress bar, and counter, without extra explanatory copy.
+- `src/components/MomentumPanel.tsx`
+  - The momentum panel header now shows just the title and current V badge, without the earlier descriptive subtitle.
+  - When there is no previous settlement result yet, the panel now omits the old default settlement hint box instead of showing placeholder copy.
+
 ## 2026-04-24 Design And Rule Sync
 
 - `SKILL.md`

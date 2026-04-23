@@ -40,7 +40,7 @@ function renderMomentumSide(title: string, breakdown: AdvantageBreakdown, tone: 
 
 function renderLastSettlement(lastAdvantage: LastAdvantage | null): string {
   if (!lastAdvantage) {
-    return `<p class="small-note momentum-settlement">回合结束时会根据当前 V 值为优势方分配跳脸槽，并为劣势方分配神抽槽补偿。</p>`;
+    return "";
   }
 
   const breakdown = lastAdvantage.p1Breakdown;
@@ -87,7 +87,6 @@ export function renderMomentumPanel({
       <div class="flex-between momentum-header">
         <div>
           <h2 class="section-title">势能面板</h2>
-          <p class="small-note">实时显示双方的手牌、血量、威胁值和特殊扣分，方便直接核对当前势能差。</p>
         </div>
         <span class="pill momentum-pill ${toneClass}">当前 V ${formatSigned(currentValue)}</span>
       </div>

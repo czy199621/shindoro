@@ -546,6 +546,26 @@ button:disabled {
   border: 1px solid var(--line);
 }
 
+.slot-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+}
+
+.slot-card-label {
+  line-height: 1.2;
+}
+
+.slot-card-count {
+  flex-shrink: 0;
+}
+
+.slot-card-note {
+  margin: 8px 0 0;
+  line-height: 1.4;
+}
+
 .zone {
   padding: 14px;
   border-radius: 22px;
@@ -926,6 +946,473 @@ button:disabled {
   font-size: 14px;
 }
 
+#app {
+  min-height: 100vh;
+}
+
+.game-shell {
+  width: 100%;
+  max-width: none;
+  height: 100vh;
+  margin: 0;
+  padding: 12px 14px 14px;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  gap: 12px;
+  overflow: hidden;
+}
+
+.game-shell > * {
+  min-width: 0;
+}
+
+.game-shell .hero {
+  display: grid;
+  grid-template-columns: minmax(320px, 1fr) minmax(460px, 620px) minmax(320px, 1fr);
+  align-items: center;
+  padding: 16px 20px;
+  gap: 16px;
+}
+
+.game-shell .hero-copy {
+  grid-column: 1;
+  min-width: 0;
+}
+
+.game-shell .hero p {
+  margin-top: 6px;
+  max-width: 760px;
+  font-size: 14px;
+  line-height: 1.45;
+}
+
+.game-shell .hero-stats {
+  grid-column: 2;
+  justify-self: center;
+  width: 100%;
+  min-width: 320px;
+  gap: 8px;
+}
+
+.game-shell .battle-hero-stats {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.game-shell .hero-log-card {
+  grid-column: 3;
+  align-self: stretch;
+  min-width: 0;
+  padding: 8px 10px;
+  display: grid;
+  grid-template-rows: minmax(0, 1fr);
+}
+
+.game-shell .hero-log-card .log-list {
+  min-height: 0;
+  max-height: 112px;
+}
+
+.game-shell .pill {
+  padding: 8px 10px;
+  font-size: 13px;
+}
+
+.game-shell .board-shell {
+  margin-top: 0;
+  padding: 12px;
+  min-height: 0;
+  display: flex;
+}
+
+.game-shell .battle-layout {
+  flex: 1;
+  min-height: 0;
+  grid-template-columns: minmax(0, 1fr) clamp(320px, 19vw, 400px);
+  gap: 12px;
+}
+
+.game-shell .battle-main,
+.game-shell .sidebar,
+.game-shell .field-zone,
+.game-shell .hand-zone,
+.game-shell .log-card,
+.game-shell .sidebar-card,
+.game-shell .momentum-panel {
+  min-height: 0;
+  min-width: 0;
+}
+
+.game-shell .battle-main {
+  grid-template-rows: minmax(0, 1fr) minmax(0, 1fr) auto;
+  gap: 12px;
+}
+
+.game-shell .battlefield-half {
+  min-height: 0;
+  display: grid;
+  gap: 12px;
+  align-items: stretch;
+}
+
+.game-shell .enemy-half {
+  grid-template-columns: clamp(284px, 16vw, 352px) minmax(0, 1fr);
+}
+
+.game-shell .player-half {
+  grid-template-columns: minmax(0, 1fr) clamp(284px, 16vw, 352px);
+}
+
+.game-shell .field-zone,
+.game-shell .hand-zone {
+  display: grid;
+  grid-template-rows: auto 1fr;
+  overflow: hidden;
+}
+
+.game-shell .zone {
+  padding: 12px;
+}
+
+.game-shell .zone-header {
+  margin-bottom: 8px;
+  gap: 8px 12px;
+  flex-wrap: wrap;
+}
+
+.game-shell .zone-stack {
+  min-height: 0;
+  display: grid;
+  gap: 8px;
+  align-content: start;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+.game-shell .zone-stack-player {
+  grid-template-rows: auto auto 1fr;
+}
+
+.game-shell .zone-lane {
+  margin-top: 0 !important;
+}
+
+.game-shell .minion-row,
+.game-shell .persistent-row,
+.game-shell .hand-row {
+  gap: 8px;
+  min-width: 0;
+  min-height: 0;
+  flex-wrap: nowrap;
+  align-items: stretch;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding-bottom: 4px;
+  scrollbar-width: thin;
+  scroll-snap-type: x proximity;
+  overscroll-behavior-x: contain;
+}
+
+.game-shell .minion-row > .minion-card,
+.game-shell .persistent-row > .persistent-card,
+.game-shell .hand-row > .card {
+  min-width: 0;
+  flex-shrink: 0;
+  scroll-snap-align: start;
+}
+
+.game-shell .minion-row > .minion-card {
+  width: clamp(156px, 8.4vw, 186px);
+  flex-basis: clamp(156px, 8.4vw, 186px);
+}
+
+.game-shell .persistent-row > .persistent-card {
+  width: clamp(162px, 8.8vw, 194px);
+  flex-basis: clamp(162px, 8.8vw, 194px);
+}
+
+.game-shell .hand-row > .card {
+  width: clamp(136px, 7.6vw, 168px);
+  flex-basis: clamp(136px, 7.6vw, 168px);
+}
+
+.game-shell .minion-row > .empty-text,
+.game-shell .persistent-row > .empty-text,
+.game-shell .hand-row > .empty-text {
+  margin: 0;
+  align-self: center;
+}
+
+.game-shell .card,
+.game-shell .minion-card,
+.game-shell .persistent-card {
+  padding: 10px;
+  border-radius: 16px;
+}
+
+.game-shell .card {
+  min-height: 172px;
+}
+
+.game-shell .minion-card {
+  min-height: 148px;
+}
+
+.game-shell .persistent-card {
+  min-height: 118px;
+}
+
+.game-shell .card h4,
+.game-shell .minion-card h4,
+.game-shell .persistent-card h4 {
+  font-size: 15px;
+}
+
+.game-shell .card p,
+.game-shell .minion-card p,
+.game-shell .persistent-card p {
+  margin: 8px 0 0;
+  line-height: 1.35;
+  font-size: 12px;
+}
+
+.game-shell .card-meta,
+.game-shell .minion-meta,
+.game-shell .persistent-meta,
+.game-shell .small-note {
+  font-size: 12px;
+}
+
+.game-shell .card-cost {
+  top: 8px;
+  right: 8px;
+  min-width: 28px;
+  padding: 5px 7px;
+  font-size: 12px;
+}
+
+.game-shell .stats-line {
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.game-shell .stat-badge {
+  padding: 5px 6px;
+  font-size: 12px;
+}
+
+.game-shell .hud {
+  height: 100%;
+  padding: 10px 12px;
+  border-radius: 18px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.game-shell .hud-header {
+  display: grid;
+  gap: 8px;
+}
+
+.game-shell .hud-passive {
+  max-width: none;
+  font-size: 12px;
+  text-align: left;
+  padding: 8px 10px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.66);
+  border: 1px solid rgba(36, 29, 23, 0.08);
+}
+
+.game-shell .hud-resource-row {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.game-shell .hud-resource {
+  grid-template-columns: 40px 1fr;
+  gap: 8px;
+  padding: 8px 9px;
+  border-radius: 14px;
+}
+
+.game-shell .hud-resource-emblem {
+  width: 36px;
+  height: 36px;
+  border-radius: 12px;
+}
+
+.game-shell .hud-resource-glyph.hp {
+  width: 16px;
+  height: 16px;
+}
+
+.game-shell .hud-resource-glyph.hp::after {
+  top: 3px;
+  left: 3px;
+  width: 5px;
+  height: 7px;
+}
+
+.game-shell .hud-resource-glyph.mana {
+  width: 18px;
+  height: 18px;
+}
+
+.game-shell .hud-resource-glyph.mana::before {
+  width: 10px;
+  height: 10px;
+}
+
+.game-shell .hud-resource-glyph.mana::after {
+  width: 13px;
+}
+
+.game-shell .hud-resource-copy {
+  gap: 2px;
+  min-width: 0;
+  justify-content: center;
+}
+
+.game-shell .hud-resource-label {
+  font-size: 9px;
+  letter-spacing: 0.08em;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.game-shell .hud-resource-value {
+  font-size: 23px;
+  white-space: nowrap;
+}
+
+.game-shell .hud-stats {
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.game-shell .hud-stat {
+  padding: 6px 10px;
+  font-size: 12px;
+}
+
+.game-shell .slot-metrics {
+  gap: 4px;
+  margin-top: 6px;
+}
+
+.game-shell .slot-card {
+  padding: 7px 8px;
+  border-radius: 12px;
+  display: grid;
+  gap: 5px;
+}
+
+.game-shell .slot-card-header {
+  gap: 6px;
+}
+
+.game-shell .slot-card-label {
+  font-size: 12px;
+}
+
+.game-shell .slot-card-count {
+  font-size: 10px;
+}
+
+.game-shell .slot-card .slot-bar {
+  height: 10px;
+}
+
+.game-shell .slot-card-note {
+  margin: 0;
+  font-size: 10px;
+  line-height: 1.28;
+}
+
+.game-shell .sidebar {
+  grid-template-rows: auto minmax(0, 1fr);
+  gap: 12px;
+}
+
+.game-shell .sidebar-card,
+.game-shell .log-card {
+  padding: 12px;
+}
+
+.game-shell .momentum-panel {
+  gap: 10px;
+}
+
+.game-shell .momentum-grid {
+  grid-template-columns: 1fr;
+  gap: 8px;
+}
+
+.game-shell .momentum-side {
+  display: grid;
+  padding: 10px;
+  border-radius: 14px;
+  gap: 8px;
+}
+
+.game-shell .momentum-side-title {
+  font-size: 16px;
+}
+
+.game-shell .momentum-rows {
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.game-shell .momentum-row {
+  padding: 6px 8px;
+}
+
+.game-shell .momentum-settlement {
+  padding: 10px;
+  border-radius: 14px;
+}
+
+.game-shell .log-card {
+  display: grid;
+  grid-template-rows: auto 1fr;
+}
+
+.game-shell .log-list {
+  min-height: 0;
+  max-height: none;
+}
+
+.game-shell .log-item {
+  padding: 6px 8px;
+  font-size: 12px;
+  line-height: 1.35;
+}
+
+.game-shell .hero-log-card .log-list {
+  gap: 6px;
+}
+
+.game-shell .game-toolbar {
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.game-shell .zone-header .small-note {
+  max-width: 56ch;
+  line-height: 1.4;
+}
+
+.game-shell .primary-btn,
+.game-shell .secondary-btn,
+.game-shell .danger-btn,
+.game-shell .ghost-btn {
+  padding: 10px 14px;
+}
+
 @keyframes attack-lunge {
   0% {
     transform: translate3d(0, 0, 0) scale(1);
@@ -1044,6 +1531,61 @@ button:disabled {
 }
 
 @media (max-width: 1180px) {
+  .game-shell {
+    width: auto;
+    height: auto;
+    max-width: 1380px;
+    padding: 20px 18px 28px;
+    display: block;
+    overflow: visible;
+  }
+
+  .game-shell .hero {
+    display: flex;
+    flex-wrap: wrap;
+    padding: 24px 26px;
+  }
+
+  .game-shell .battle-hero-stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .game-shell .hero-log-card {
+    width: 100%;
+    max-height: 240px;
+  }
+
+  .game-shell .board-shell {
+    display: block;
+    min-height: auto;
+    padding: 16px;
+  }
+
+  .game-shell .battle-main {
+    grid-template-rows: none;
+  }
+
+  .game-shell .battlefield-half,
+  .game-shell .enemy-half,
+  .game-shell .player-half {
+    grid-template-columns: 1fr;
+  }
+
+  .game-shell .minion-row,
+  .game-shell .persistent-row,
+  .game-shell .hand-row {
+    flex-wrap: wrap;
+    overflow: visible;
+  }
+
+  .game-shell .minion-row > .minion-card,
+  .game-shell .persistent-row > .persistent-card,
+  .game-shell .hand-row > .card {
+    flex: 0 0 auto;
+    width: auto;
+    max-width: none;
+  }
+
   .battle-layout,
   .setup-grid {
     grid-template-columns: 1fr;

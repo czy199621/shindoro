@@ -2,6 +2,157 @@
 
 ## 2026-04-24
 
+### Removed the empty-state settlement hint box
+
+- Files
+  - `src/components/MomentumPanel.tsx`
+  - `memory-bank/architecture.md`
+  - `memory-bank/progress.md`
+- Summary
+  - Removed the default settlement hint box that appeared in the momentum panel before any actual settlement result existed.
+  - The settlement area now renders only when `lastAdvantage` is available.
+- Verification
+  - `cmd /c npm run build`
+- Related updates checked
+  - Kept the real `上次结算` block unchanged, so only the no-data placeholder was removed.
+
+### Moved restart control into the hand toolbar
+
+- Files
+  - `src/components/Board.tsx`
+  - `src/style.css`
+  - `memory-bank/architecture.md`
+  - `memory-bank/progress.md`
+- Summary
+  - Moved the `重新开始` button out of the header log card and into the hand-zone toolbar, placing it to the left of `取消攻击选择`.
+  - Simplified the header log card again so it now renders only the scrollable log content.
+- Verification
+  - `cmd /c npm run build`
+- Related updates checked
+  - Kept the hand toolbar order explicit in markup so the restart control stays left of cancel-attack on the current desktop layout.
+
+### Slimmed down the header log card
+
+- Files
+  - `src/components/Board.tsx`
+  - `src/style.css`
+  - `memory-bank/architecture.md`
+  - `memory-bank/progress.md`
+- Summary
+  - Removed the header log title and left only a compact restart control above the log entries.
+  - Reduced the header log card padding, visible log height, button size, and log item density so the card sits flatter inside the header.
+- Verification
+  - `cmd /c npm run build`
+- Related updates checked
+  - Kept the full log content and scroll behavior intact while only compressing the header log presentation.
+
+### Moved the battle log into the header right side
+
+- Files
+  - `src/components/Board.tsx`
+  - `src/style.css`
+  - `memory-bank/architecture.md`
+  - `memory-bank/progress.md`
+- Summary
+  - Moved the battle log out of the right sidebar and into the right side of the in-match header.
+  - Added a dedicated `hero-log-card` layout so the header now reads as left status, center match info, and right log.
+- Verification
+  - `cmd /c npm run build`
+- Related updates checked
+  - Kept a narrow-screen fallback so the header log can wrap beneath the other header content instead of breaking the layout.
+
+### Removed extra explanatory copy from battle UI panels
+
+- Files
+  - `src/components/Board.tsx`
+  - `src/components/MomentumPanel.tsx`
+  - `src/components/PlayerHUD.tsx`
+  - `src/components/SlotMeter.tsx`
+  - `src/style.css`
+  - `memory-bank/architecture.md`
+  - `memory-bank/progress.md`
+- Summary
+  - Removed the descriptive subtitle from the momentum panel header.
+  - Removed the explanatory text from jump-slot and god-draw-slot badges.
+  - Removed the separate slot-tip sidebar card so the right sidebar now stays focused on momentum and battle log content.
+- Verification
+  - `cmd /c npm run build`
+- Related updates checked
+  - Adjusted the desktop sidebar row sizing after removing the slot-tip card so the remaining panels still fill the area cleanly.
+
+### Moved battle info into the header center area
+
+- Files
+  - `src/components/Board.tsx`
+  - `src/style.css`
+  - `memory-bank/architecture.md`
+  - `memory-bank/progress.md`
+- Summary
+  - Split the in-match header into a left title/status block and a centered battle-info strip so turn, current actor, phase, and attack state no longer sit at the far right.
+  - Added a desktop-only three-column hero grid and kept the smaller-screen fallback so the centered info strip collapses cleanly on narrower layouts.
+- Verification
+  - `cmd /c npm run build`
+- Related updates checked
+  - Limited the change to the in-match header layout and kept the rest of the battlefield, sidebar, and mobile fallback structure unchanged.
+
+### Tightened the HUD resource and slot badges
+
+- Files
+  - `src/components/SlotMeter.tsx`
+  - `src/style.css`
+  - `memory-bank/architecture.md`
+  - `memory-bank/progress.md`
+- Summary
+  - Reduced the desktop HUD HP and Mana label sizing and tightened the resource badge spacing so the label text stays fully contained within the badge.
+  - Added dedicated slot badge classes and compressed the slot card header, counter, and note text so jump-slot and god-draw-slot cards fit more cleanly inside player info panels.
+- Verification
+  - `cmd /c npm run build`
+- Related updates checked
+  - Kept the adjustment scoped to the in-match HUD layout and slot meter component, without changing rules or other card panel structures.
+
+### Rebalanced the desktop UI around information readability
+
+- Files
+  - `src/style.css`
+  - `memory-bank/architecture.md`
+  - `memory-bank/progress.md`
+- Summary
+  - Changed battle rows to keep cards at readable fixed widths and use internal horizontal scrolling instead of shrinking cards until descriptions become cramped.
+  - Stacked the momentum panel vertically and turned the HUD passive description into a dedicated readable block so dense sidebar and HUD information can be read more naturally.
+- Verification
+  - `cmd /c npm run build`
+- Related updates checked
+  - Kept the smaller-screen fallback rules intact, so these readability-focused desktop adjustments stay scoped to the in-match desktop layout.
+
+### Expanded the in-match UI to use more monitor width
+
+- Files
+  - `src/style.css`
+  - `memory-bank/architecture.md`
+  - `memory-bank/progress.md`
+- Summary
+  - Removed the fixed maximum width from `.game-shell` so the in-match screen can stretch closer to the full monitor width.
+  - Switched the sidebar, HUD columns, and desktop card widths to `clamp(...)` sizing so large screens use extra width more naturally.
+- Verification
+  - `cmd /c npm run build`
+- Related updates checked
+  - Kept the smaller-screen fallback in the existing `@media (max-width: 1180px)` block so this wider desktop behavior does not leak into narrow layouts.
+
+### Reworked the battle UI for desktop screens
+
+- Files
+  - `src/components/Board.tsx`
+  - `src/style.css`
+  - `memory-bank/architecture.md`
+  - `memory-bank/progress.md`
+- Summary
+  - Reorganized the game board into two horizontal battlefield halves with a dedicated compact hand zone so the main match view uses monitor width more effectively.
+  - Added `.game-shell` desktop-only layout rules that keep the battle screen inside the viewport and move overflow into internal panels like the battle log.
+- Verification
+  - `cmd /c npm run build`
+- Related updates checked
+  - Scoped the new layout rules to the in-match screen so setup and mulligan screens keep their previous responsive layout behavior.
+
 ### Added SKILL sync rules for game design and game rule
 
 - Files

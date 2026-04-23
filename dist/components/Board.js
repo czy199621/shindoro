@@ -91,17 +91,22 @@ export function renderBoard(store, state) {
                     : `当前由你行动，阶段：${state.phase}。`
                 : `当前由 AI 行动，阶段：${state.phase}。`;
     return `
-    <div class="app-shell">
-      <section class="hero">
-        <div>
+    <div class="app-shell game-shell">
+      <section class="hero game-hero">
+        <div class="hero-copy">
           <h1>Shin Doro 对局中</h1>
           <p>${escapeHtml(statusText)}</p>
         </div>
-        <div class="hero-stats">
+        <div class="hero-stats battle-hero-stats">
           <div class="pill"><strong>回合数</strong><br />${state.turn}</div>
           <div class="pill"><strong>当前行动方</strong><br />${state.currentPlayer === "P1" ? "玩家" : "AI"}</div>
           <div class="pill"><strong>阶段</strong><br />${escapeHtml(state.phase)}</div>
           <div class="pill"><strong>攻击选择</strong><br />${attackStatus}</div>
+        </div>
+        <div class="log-card hero-log-card">
+          <div class="log-list">
+            ${state.actionLog.map((item) => `<div class="log-item">${escapeHtml(item.message)}</div>`).join("")}
+          </div>
         </div>
       </section>
 
@@ -109,7 +114,8 @@ export function renderBoard(store, state) {
         ${renderEffectLayer(cardFx)}
         <div class="battle-layout">
           <div class="battle-main">
-            ${renderPlayerHUD({
+            <section class="battlefield-half enemy-half">
+              ${renderPlayerHUD({
         player: enemy,
         character: store.getCharacter(enemy.character),
         ownership: "enemy",
@@ -117,37 +123,45 @@ export function renderBoard(store, state) {
         impactTarget: attackFx?.targetType === "hero" && attackFx.targetId === "P2_hero"
     })}
 
-            <section class="zone ${enemyBoardZoneClass} ${enemyZoneMetaClass}">
-              <div class="zone-header">
-                <h2 class="section-title">敌方战场</h2>
-                <span class="small-note">持续物 ${enemy.persistents.length} / 陷阱 ${enemy.traps.length}</span>
-              </div>
-              <div class="persistent-row ${enemyPersistentRowClass}">${enemyPersistents}</div>
-              <div class="minion-row" style="margin-top:12px;">${enemyBoard}</div>
+              <section class="zone field-zone ${enemyBoardZoneClass} ${enemyZoneMetaClass}">
+                <div class="zone-header">
+                  <h2 class="section-title">敌方战场</h2>
+                  <span class="small-note">持续物 ${enemy.persistents.length} / 陷阱 ${enemy.traps.length}</span>
+                </div>
+                <div class="zone-stack">
+                  <div class="persistent-row zone-lane ${enemyPersistentRowClass}">${enemyPersistents}</div>
+                  <div class="minion-row zone-lane">${enemyBoard}</div>
+                </div>
+              </section>
             </section>
 
-            <section class="zone ${playerBoardZoneClass}">
-              <div class="zone-header">
-                <h2 class="section-title">你的战场</h2>
-                <span class="small-note">选择可攻击使魔后，可以指定敌方英雄或守护目标进行攻击。</span>
-              </div>
-              <div class="persistent-row ${playerPersistentRowClass}">${playerPersistents}</div>
-              <div class="persistent-row ${playerTrapRowClass}" style="margin-top:12px;">${playerTraps}</div>
-              <div class="minion-row" style="margin-top:12px;">${playerBoard}</div>
-            </section>
+            <section class="battlefield-half player-half">
+              <section class="zone field-zone ${playerBoardZoneClass}">
+                <div class="zone-header">
+                  <h2 class="section-title">你的战场</h2>
+                  <span class="small-note">先选择可攻击使魔，再指定敌方英雄或守护目标进行攻击。</span>
+                </div>
+                <div class="zone-stack zone-stack-player">
+                  <div class="persistent-row zone-lane ${playerPersistentRowClass}">${playerPersistents}</div>
+                  <div class="persistent-row zone-lane ${playerTrapRowClass}">${playerTraps}</div>
+                  <div class="minion-row zone-lane">${playerBoard}</div>
+                </div>
+              </section>
 
-            ${renderPlayerHUD({
+              ${renderPlayerHUD({
         player,
         character: store.getCharacter(player.character),
         ownership: "player",
         targetableHero: false,
         impactTarget: attackFx?.targetType === "hero" && attackFx.targetId === "P1_hero"
     })}
+            </section>
 
-            <section class="zone">
+            <section class="zone hand-zone">
               <div class="zone-header">
                 <h2 class="section-title">你的手牌</h2>
                 <div class="game-toolbar">
+                  <button class="ghost-btn" data-action="restart">重新开始</button>
                   <button class="ghost-btn" data-action="cancel-attacker" ${store.uiState.selectedAttackerId && !isAttackAnimating ? "" : "disabled"}>取消攻击选择</button>
                   <button class="primary-btn" data-action="end-turn" ${canEndTurn ? "" : "disabled"}>结束回合</button>
                 </div>
@@ -157,25 +171,11 @@ export function renderBoard(store, state) {
           </div>
 
           <aside class="sidebar">
-            <div class="sidebar-card">
-              <h2 class="section-title">槽位提示</h2>
-              <p class="small-note">10 点槽位可发动普通大招，13 点可发动强化大招或 Overkill 版本。</p>
-              <p class="small-note">敌方当前有 ${enemy.traps.length} 个陷阱，进攻前请留意反制风险。</p>
-            </div>
             ${renderMomentumPanel({
         playerBreakdown: playerMomentum,
         enemyBreakdown: enemyMomentum,
         lastAdvantage: state.lastAdvantage
     })}
-            <div class="log-card">
-              <div class="flex-between">
-                <h2 class="section-title">战斗日志</h2>
-                <button class="ghost-btn" data-action="restart">重新开始</button>
-              </div>
-              <div class="log-list">
-                ${state.actionLog.map((item) => `<div class="log-item">${escapeHtml(item.message)}</div>`).join("")}
-              </div>
-            </div>
           </aside>
         </div>
       </section>

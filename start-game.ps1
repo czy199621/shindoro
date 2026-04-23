@@ -1,5 +1,6 @@
 param(
-  [int]$Port = 4173
+  [int]$Port = 4173,
+  [switch]$AutoUpdate
 )
 
 $ErrorActionPreference = "Stop"
@@ -10,6 +11,56 @@ $browserProcess = $null
 $browserProfileDir = $null
 $serverStdOutLog = $null
 $serverStdErrLog = $null
+
+function Invoke-GitAutoUpdate {
+  if (-not $AutoUpdate) {
+    return
+  }
+
+  if (-not (Get-Command git -ErrorAction SilentlyContinue)) {
+    Write-Host "[WARN] git was not found. Skipping auto-update." -ForegroundColor Yellow
+    return
+  }
+
+  $insideRepo = (& git rev-parse --is-inside-work-tree 2>$null).Trim()
+  if ($LASTEXITCODE -ne 0 -or $insideRepo -ne "true") {
+    Write-Host "[WARN] The current folder is not a git worktree. Skipping auto-update." -ForegroundColor Yellow
+    return
+  }
+
+  $originUrl = (& git remote get-url origin 2>$null).Trim()
+  if ($LASTEXITCODE -ne 0 -or -not $originUrl) {
+    Write-Host "[WARN] No origin remote was found. Skipping auto-update." -ForegroundColor Yellow
+    return
+  }
+
+  $currentBranch = (& git branch --show-current 2>$null).Trim()
+  if ($LASTEXITCODE -ne 0 -or -not $currentBranch) {
+    Write-Host "[WARN] Could not determine the current branch. Skipping auto-update." -ForegroundColor Yellow
+    return
+  }
+
+  $statusOutput = @(& git status --porcelain 2>$null)
+  if ($LASTEXITCODE -ne 0) {
+    Write-Host "[WARN] Could not inspect git status. Skipping auto-update." -ForegroundColor Yellow
+    return
+  }
+
+  if ($statusOutput.Count -gt 0) {
+    Write-Host "[WARN] Local changes were detected. Skipping auto-update to protect your worktree." -ForegroundColor Yellow
+    return
+  }
+
+  Write-Host "[INFO] Pulling latest changes from origin/$currentBranch ..."
+  & git pull --ff-only origin $currentBranch
+
+  if ($LASTEXITCODE -ne 0) {
+    Write-Host "[WARN] Auto-update failed. Continuing with local files." -ForegroundColor Yellow
+    return
+  }
+
+  Write-Host "[INFO] Auto-update complete."
+}
 
 function Get-SupportedBrowser {
   $programFilesX86 = ${env:ProgramFiles(x86)}
@@ -101,6 +152,8 @@ try {
   if (-not (Get-Command npm -ErrorAction SilentlyContinue)) {
     throw "npm was not found. Please install Node.js first."
   }
+
+  Invoke-GitAutoUpdate
 
   $hasNodeModules = Test-Path -LiteralPath "node_modules"
   $hasLocalTsc = (Test-Path -LiteralPath "node_modules\.bin\tsc.cmd") -or (Test-Path -LiteralPath "node_modules\.bin\tsc")

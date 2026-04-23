@@ -226,3 +226,36 @@
   - 本地 `npm start / npm test` 仍可运行
 - 关联修正检查：
   - 只影响启动与开发环境，不修改游戏规则或 UI 行为
+
+### 自动更新启动器
+
+- 涉及文件：
+  - `update-and-start.bat`
+  - `start-game.ps1`
+  - `README.md`
+  - `memory-bank/architecture.md`
+  - `memory-bank/progress.md`
+- 本次改动：
+  - 新增 `update-and-start.bat`，用于先更新再启动游戏
+  - 为 `start-game.ps1` 加入 `-AutoUpdate` 参数，支持从 `origin` 拉取当前分支最新代码
+  - 自动更新只在工作区干净时执行，并固定使用 `git pull --ff-only`，避免隐式合并或覆盖本地改动
+  - README 与 memory-bank 同步补充自动更新启动方式和安全边界说明
+- 验证：
+  - 启动器脚本语法检查
+- 关联修正检查：
+  - 这次只影响启动脚本与文档，不涉及游戏规则、UI 与测试逻辑
+
+### 补充 Git 忽略规则
+
+- 涉及文件：
+  - `.gitignore`
+  - `memory-bank/architecture.md`
+  - `memory-bank/progress.md`
+- 本次改动：
+  - 在仓库根目录新增 `.gitignore`
+  - 明确忽略 `node_modules/`，避免将本地依赖目录误作为提交或 push 对象
+- 验证：
+  - `git check-ignore -v node_modules`
+  - `git status --short --untracked-files=all`
+- 关联修正检查：
+  - 只影响版本控制范围，不修改游戏逻辑、UI、构建或测试代码

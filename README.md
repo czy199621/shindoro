@@ -32,6 +32,22 @@
 - 这个自动关服方案优先支持 Edge / Chrome / Brave
 - 默认地址为 `http://localhost:4173`
 
+### 自动更新并启动
+
+直接运行根目录的 [update-and-start.bat](./update-and-start.bat)。
+
+它会：
+
+- 先检查当前目录是否是 Git 仓库
+- 在工作区干净时执行 `git pull --ff-only origin 当前分支`
+- 更新完成后继续调用 `start-game.ps1` 启动游戏
+
+说明：
+
+- 如果检测到未提交改动，会跳过自动更新，避免覆盖本地工作区
+- 如果没有安装 `git`、没有配置 `origin`、无法识别当前分支，或 `git pull` 失败，也会跳过更新并继续启动本地版本
+- 首次使用前，需要本机已经配置好 Git 与对应仓库的拉取权限
+
 ### 通用手动启动
 
 ```powershell
@@ -84,7 +100,8 @@ npm test
 ├─ package.json
 ├─ server.js             # 本地静态服务器
 ├─ start-game.bat        # Windows 一键启动
-└─ start-game.ps1        # 生命周期启动器
+├─ start-game.ps1        # 生命周期启动器
+└─ update-and-start.bat  # 自动更新后启动
 ```
 
 ## 数据结构说明

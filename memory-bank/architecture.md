@@ -23,6 +23,9 @@
   - 面向项目使用者的启动说明与概览
 - `SKILL.md`
   - 内容更新任务的执行准则
+- `.gitignore`
+  - 仓库级忽略规则
+  - 当前至少排除 `node_modules/`，避免把本地依赖目录纳入版本控制
 - `design/`
   - 规则文档与设计文档
 - `memory-bank/`
@@ -41,12 +44,17 @@
 - `start-game.bat`
   - Windows 下一键启动入口
   - 调用 `start-game.ps1`
+- `update-and-start.bat`
+  - Windows 下的自动更新启动入口
+  - 调用 `start-game.ps1 -AutoUpdate`
 - `start-game.ps1`
   - Windows 生命周期启动器
   - 启动 `npm start` 后使用独立浏览器窗口打开游戏
   - 游戏窗口关闭后自动关闭服务器进程树
   - 若服务启动失败，会打印 `npm start` 的输出帮助定位问题
   - 会额外检查本地 `tsc` 是否存在，避免旧的空 `node_modules` 误判为可启动
+  - 支持 `-AutoUpdate` 参数，会在工作区干净时执行 `git pull --ff-only origin 当前分支`
+  - 若存在本地改动、缺少 `git`、缺少 `origin` 或拉取失败，会跳过更新并继续启动本地版本
 
 ## 源码结构
 

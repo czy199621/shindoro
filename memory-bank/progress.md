@@ -259,3 +259,43 @@
   - `git status --short --untracked-files=all`
 - 关联修正检查：
   - 只影响版本控制范围，不修改游戏逻辑、UI、构建或测试代码
+
+### 使魔威胁值与势能面板改修计划
+
+- 涉及文件：
+  - `SKILL.md`
+  - `design/threat_and_momentum_update_plan.md`
+  - `memory-bank/progress.md`
+- 本次改动：
+  - 按 `SKILL.md` 的固定顺序整理“使魔威胁值可视化 + 双方势能面板”的改修计划
+  - 明确当前问题主要是 UI 缺少展示，而不是规则层缺少威胁值或势能计算
+  - 将后续实装范围拆到组件、类型、规则记录、样式和测试层
+- 验证：
+  - 文档内容检查
+  - 相关代码位置核对
+- 关联修正检查：
+  - 本次仅新增计划文档，尚未修改业务代码与构建产物
+
+### 使魔威胁值可视化与双方势能面板实装
+
+- 涉及文件：
+  - `src/components/Card.tsx`
+  - `src/components/Board.tsx`
+  - `src/components/MomentumPanel.tsx`
+  - `src/style.css`
+  - `tests/engine.test.js`
+  - `memory-bank/architecture.md`
+  - `memory-bank/progress.md`
+- 本次改动：
+  - 让手牌、换牌区、战场上的使魔统一显示 `攻击力 / 血量 / 威胁值`
+  - 新增独立的 `MomentumPanel.tsx`，实时展示玩家与 AI 的手牌分、血量分、威胁值分、特殊扣分和总势能分
+  - 势能面板同时保留“上次结算”的 `V` 值与槽位收益，方便把实时局面和正式结算结果对照起来
+  - 补充样式，使三属性徽章和双方势能面板在桌面端与窄屏布局下都能正常显示
+  - 新增一条针对 `getAdvantageBreakdown()` 分项结果的测试，锁住势能分项结构
+- 验证：
+  - `cmd /c npm run build`
+  - `cmd /c npm test`
+- 关联修正检查：
+  - `Board.tsx` 已从旧的简化“优势值”卡切换到新的势能面板
+  - `Card.tsx` 的三属性渲染已覆盖手牌、换牌与战场三个使魔入口
+  - `dist/` 已通过构建同步更新

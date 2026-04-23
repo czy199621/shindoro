@@ -1,7 +1,9 @@
 import type { GameState } from "../types.js";
 import type { GameStore } from "../store/useGameStore.js";
+import { getAdvantageBreakdown } from "../engine/rules.js";
 import { renderHandCard, renderMinionCard, renderPersistentCard } from "./Card.js";
 import { escapeHtml } from "./html.js";
+import { renderMomentumPanel } from "./MomentumPanel.js";
 import { renderPlayerHUD } from "./PlayerHUD.js";
 import { renderGameOver, renderPendingChoice } from "./ResolutionPanel.js";
 
@@ -16,6 +18,8 @@ export function renderBoard(store: GameStore, state: GameState): string {
     state.currentPlayer === "P1" && (state.phase === "mainTurn" || state.phase === "combat") && !isAttackAnimating;
   const canEndTurn = canControlBattle && !state.winner;
   const legalHeroTarget = targetSet.has("P2_hero");
+  const playerMomentum = getAdvantageBreakdown(player, enemy);
+  const enemyMomentum = getAdvantageBreakdown(enemy, player);
 
   const handCards = player.hand.length
     ? player.hand.map((card) => renderHandCard(card, !canPlayCards || card.currentCost > player.mana)).join("")
@@ -59,32 +63,6 @@ export function renderBoard(store: GameStore, state: GameState): string {
   const enemyPersistents = enemy.persistents.length
     ? enemy.persistents.map(renderPersistentCard).join("")
     : `<p class="empty-text">敌方没有持续物。</p>`;
-
-  const advantagePanel = state.lastAdvantage
-    ? `
-      <div class="sidebar-card">
-        <div class="flex-between">
-          <h2 class="section-title">优势值</h2>
-          <span class="pill">V = ${state.lastAdvantage.value >= 0 ? "+" : ""}${state.lastAdvantage.value}</span>
-        </div>
-        <p class="small-note">${state.lastAdvantage.summary.map(escapeHtml).join(" / ")}</p>
-        <p class="small-note">
-          ${
-            state.lastAdvantage.value > 0
-              ? "本回合你的局面更优，系统会更偏向给你跳脸槽收益。"
-              : state.lastAdvantage.value < 0
-                ? "本回合 AI 的局面更优，系统会更偏向给你神抽槽补偿。"
-                : "双方局面接近，这回合不会出现明显的槽位偏向。"
-          }
-        </p>
-      </div>
-    `
-    : `
-      <div class="sidebar-card">
-        <h2 class="section-title">优势值</h2>
-        <p class="small-note">回合结束时会根据手牌、血量、场面与特殊状态计算双方优势值，并据此分配跳脸槽或神抽槽。</p>
-      </div>
-    `;
 
   const attackStatus = isAttackAnimating
     ? "攻击演出中"
@@ -177,7 +155,11 @@ export function renderBoard(store: GameStore, state: GameState): string {
               <p class="small-note">10 点槽位可发动普通大招，13 点可发动强化大招或 Overkill 版本。</p>
               <p class="small-note">敌方当前有 ${enemy.traps.length} 个陷阱，进攻前请留意反制风险。</p>
             </div>
-            ${advantagePanel}
+            ${renderMomentumPanel({
+              playerBreakdown: playerMomentum,
+              enemyBreakdown: enemyMomentum,
+              lastAdvantage: state.lastAdvantage
+            })}
             <div class="log-card">
               <div class="flex-between">
                 <h2 class="section-title">战斗日志</h2>

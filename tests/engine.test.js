@@ -4,7 +4,7 @@ import assert from "node:assert/strict";
 import { getCardDefinition } from "../dist/data/cards.js";
 import { STARTING_DECKS } from "../dist/data/decks.js";
 import { TALENT_LOOKUP, getTalentCost } from "../dist/data/talents.js";
-import { calculateAdvantage, getSlotGain } from "../dist/engine/rules.js";
+import { calculateAdvantage, getAdvantageBreakdown, getSlotGain } from "../dist/engine/rules.js";
 import { ShinDoroGame } from "../dist/engine/gameState.js";
 
 test("advantage formula returns positive score for better board and hand", () => {
@@ -24,6 +24,43 @@ test("advantage formula returns positive score for better board and hand", () =>
   };
 
   assert.equal(calculateAdvantage(me, opp), 7);
+});
+
+test("advantage breakdown exposes hand hp threat and special score components", () => {
+  const me = {
+    hp: 8,
+    hand: [{}, {}, {}],
+    deck: [{}, {}, {}, {}],
+    board: [{ attack: 3, health: 3, threat: 4 }],
+    persistents: [{ threat: 1 }]
+  };
+  const opp = {
+    hp: 15,
+    hand: [{}],
+    deck: [{}, {}, {}, {}, {}, {}],
+    board: [{ attack: 6, health: 2, threat: 3 }],
+    persistents: []
+  };
+
+  const breakdown = getAdvantageBreakdown(me, opp);
+
+  assert.deepEqual(
+    {
+      handScore: breakdown.handScore,
+      hpScore: breakdown.hpScore,
+      threatScore: breakdown.threatScore,
+      specialScore: breakdown.specialScore,
+      total: breakdown.total
+    },
+    {
+      handScore: 2,
+      hpScore: -1,
+      threatScore: 2,
+      specialScore: -2,
+      total: 1
+    }
+  );
+  assert.deepEqual(breakdown.details, ["牌库见底 -2"]);
 });
 
 test("slot gain uses 1/2/3 breakpoints", () => {

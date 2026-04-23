@@ -1,12 +1,21 @@
 import { escapeHtml } from "./html.js";
-function renderMinionStats(attack, health, maxHealth) {
+function resolveThreat(attack, health, threat) {
+    if (threat !== undefined)
+        return threat;
+    if (attack === undefined || health === undefined)
+        return null;
+    return Math.floor(attack + health / 2);
+}
+function renderMinionStats(attack, health, threat, maxHealth) {
     if (attack === undefined || health === undefined)
         return "";
     const hpText = maxHealth === undefined ? `${health}` : `${health}/${maxHealth}`;
+    const threatText = resolveThreat(attack, health, threat);
     return `
     <div class="stats-line">
-      <span class="stat-badge">攻 ${attack}</span>
-      <span class="stat-badge">血 ${hpText}</span>
+      <span class="stat-badge attack">攻 ${attack}</span>
+      <span class="stat-badge health">血 ${hpText}</span>
+      <span class="stat-badge threat">威 ${threatText ?? "-"}</span>
     </div>
   `;
 }
@@ -17,7 +26,7 @@ export function renderHandCard(card, disabled = false, extraClass = "") {
       <h4>${escapeHtml(card.name)}</h4>
       <p class="card-meta">${escapeHtml(card.type)}${card.tags?.length ? ` · ${escapeHtml(card.tags.join(" / "))}` : ""}</p>
       <p>${escapeHtml(card.description)}</p>
-      ${card.type === "minion" ? renderMinionStats(card.attack, card.health) : ""}
+      ${card.type === "minion" ? renderMinionStats(card.attack, card.health, card.threat) : ""}
     </button>
   `;
 }
@@ -28,7 +37,7 @@ export function renderMulliganCard(card, selected) {
       <h4>${escapeHtml(card.name)}</h4>
       <p class="card-meta">${escapeHtml(card.type)}</p>
       <p>${escapeHtml(card.description)}</p>
-      ${card.type === "minion" ? renderMinionStats(card.attack, card.health) : ""}
+      ${card.type === "minion" ? renderMinionStats(card.attack, card.health, card.threat) : ""}
       <p class="small-note">${selected ? "已标记为换牌" : "点击以选择换牌"}</p>
     </button>
   `;
@@ -52,7 +61,7 @@ export function renderMinionCard(minion, { ownership, selectedAttackerId, target
     <button class="${classes.join(" ")}" data-action="${action}" data-minion-id="${escapeHtml(minion.instanceId)}">
       <h4>${escapeHtml(minion.name)}</h4>
       <p class="minion-meta">${escapeHtml(minion.description)}</p>
-      ${renderMinionStats(minion.attack, minion.health, minion.maxHealth)}
+      ${renderMinionStats(minion.attack, minion.health, minion.threat, minion.maxHealth)}
       <p class="small-note">${minion.canAttack && isPlayer ? "可以攻击" : "暂时不能攻击"}</p>
     </button>
   `;

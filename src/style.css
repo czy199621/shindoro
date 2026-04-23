@@ -599,18 +599,32 @@ button:disabled {
 }
 
 .stats-line {
-  display: flex;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 8px;
   margin-top: 12px;
 }
 
 .stat-badge {
-  padding: 6px 10px;
+  padding: 6px 8px;
   border-radius: 999px;
+  text-align: center;
   font-size: 13px;
   font-weight: 700;
   background: rgba(255, 255, 255, 0.78);
   border: 1px solid var(--line);
+}
+
+.stat-badge.attack {
+  background: rgba(178, 58, 43, 0.12);
+}
+
+.stat-badge.health {
+  background: rgba(45, 122, 84, 0.12);
+}
+
+.stat-badge.threat {
+  background: rgba(198, 146, 41, 0.18);
 }
 
 .sidebar {
@@ -621,6 +635,106 @@ button:disabled {
 .sidebar-card,
 .log-card {
   padding: 16px;
+}
+
+.momentum-panel {
+  display: grid;
+  gap: 14px;
+}
+
+.momentum-header {
+  align-items: flex-start;
+}
+
+.momentum-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.momentum-side {
+  padding: 14px;
+  border-radius: 18px;
+  border: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.6);
+}
+
+.momentum-side.player {
+  background: linear-gradient(150deg, rgba(255, 247, 244, 0.88), rgba(247, 236, 224, 0.82));
+}
+
+.momentum-side.enemy {
+  background: linear-gradient(150deg, rgba(244, 248, 251, 0.9), rgba(232, 239, 246, 0.82));
+}
+
+.momentum-side-title {
+  margin: 0;
+  font-size: 18px;
+  line-height: 1.2;
+}
+
+.momentum-total,
+.momentum-pill,
+.momentum-settlement-pill {
+  min-width: 82px;
+  font-weight: 700;
+}
+
+.momentum-total.player,
+.momentum-pill.player {
+  background: rgba(178, 58, 43, 0.14);
+}
+
+.momentum-total.enemy,
+.momentum-pill.enemy {
+  background: rgba(56, 110, 143, 0.14);
+}
+
+.momentum-pill.neutral {
+  background: rgba(255, 255, 255, 0.72);
+}
+
+.momentum-rows {
+  display: grid;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.momentum-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 10px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.72);
+}
+
+.momentum-row.total {
+  border: 1px solid var(--line);
+}
+
+.momentum-label {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.momentum-value {
+  font-size: 15px;
+}
+
+.momentum-detail,
+.momentum-outlook {
+  margin: 0;
+}
+
+.momentum-settlement {
+  display: grid;
+  gap: 8px;
+  padding: 12px;
+  border-radius: 18px;
+  border: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.72);
 }
 
 .log-list {
@@ -739,6 +853,10 @@ button:disabled {
 
   .sidebar {
     grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  }
+
+  .momentum-grid {
+    grid-template-columns: 1fr;
   }
 }
 

@@ -14,7 +14,7 @@ export type GamePhase =
 
 export type CardType = "minion" | "spell" | "persistent" | "trap";
 export type SlotType = "jump" | "godDraw";
-export type EffectTrigger = "onPlay" | "onDeath" | "onTurnStart" | "onTriggerMet";
+export type EffectTrigger = "onPlay" | "onDeath" | "onTurnStart" | "onTriggerMet" | "onAttacked";
 export type TriggerConditionType = "enemyCastsSpell" | "enemySummonsMinion";
 export type SlotTier = "jump10" | "jump13";
 export type TalentCategory =
@@ -107,6 +107,12 @@ export interface DiscountNextDrawAction {
   amount: number;
 }
 
+export interface AddCardToHandAction {
+  type: "addCardToHand";
+  cardId: string;
+  count?: number;
+}
+
 export interface GainManaAction {
   type: "gainMana";
   amount: number;
@@ -138,6 +144,17 @@ export interface ExilePriorityEnemyMinionAndDamageHeroAction {
   damageHeroBy: "health" | "attackAndHealth";
 }
 
+export interface GrantAdjacentGuardAction {
+  type: "grantAdjacentGuard";
+}
+
+export interface BuffSelfIfHeroHpBelowAction {
+  type: "buffSelfIfHeroHpBelow";
+  threshold: number;
+  atk?: number;
+  hp?: number;
+}
+
 export type EffectAction =
   | DamageAction
   | HealAction
@@ -149,12 +166,15 @@ export type EffectAction =
   | DiscardAction
   | SetTopDeckAction
   | DiscountNextDrawAction
+  | AddCardToHandAction
   | GainManaAction
   | SetIgnoreGuardAction
   | ApplyOpponentNextTurnManaPenaltyAction
   | MillDeckAction
   | SetMillOnDamageTakenAction
-  | ExilePriorityEnemyMinionAndDamageHeroAction;
+  | ExilePriorityEnemyMinionAndDamageHeroAction
+  | GrantAdjacentGuardAction
+  | BuffSelfIfHeroHpBelowAction;
 
 export interface Effect {
   trigger: EffectTrigger;

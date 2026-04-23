@@ -1,5 +1,36 @@
 # Architecture
 
+## 2026-04-24 Agent Skill Gate
+
+- `AGENT.md`
+  - Now explicitly requires agents to read `SKILL.md` before starting content-update, design-sync, rule-document, or catalog-maintenance tasks.
+  - Also requires minion changes to keep the minion catalog document in sync.
+
+## 2026-04-24 Minion Modules
+
+- `src/data/cards/minions.ts`
+  - Now acts as a stable aggregation entry for minion data.
+- `src/data/cards/minions/lowCost.ts`
+  - Contains low-cost baseline minions.
+- `src/data/cards/minions/midCost.ts`
+  - Contains mid-cost tempo and value minions.
+- `src/data/cards/minions/highCost.ts`
+  - Contains higher-cost finisher minions.
+- `src/data/cards/minions/guardPackage.ts`
+  - Contains the newer guard-focused minion package and generated token.
+
+## 2026-04-24 Update
+
+- `src/data/cards/minions.ts`
+  - Added the new guard package minions: `landmine_girl`, `day_off`, `weekend_overtime`, `dorm_matron`, `iron_rice_bowl`, `three_phase_plug`, `top_donor`.
+- `src/engine/effects.ts`
+  - Added support for `onAttacked`, `addCardToHand`, `grantAdjacentGuard`, and `buffSelfIfHeroHpBelow`.
+  - Enemy magic targeting now respects `magicRes`.
+- `src/engine/rules.ts`
+  - Board threat now respects enemy `menace` units during momentum calculation.
+- `design/minion_codex.md`
+  - Added a minion catalog document for all current minions and the new guard package.
+
 ## 目的
 
 `memory-bank/architecture.md` 是这个项目给代理和协作者使用的结构入口文档。

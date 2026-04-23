@@ -1,5 +1,70 @@
 # Progress
 
+## 2026-04-24
+
+### Added AGENT rule to force SKILL usage on content tasks
+
+- Files
+  - `AGENT.md`
+  - `memory-bank/architecture.md`
+  - `memory-bank/progress.md`
+- Summary
+  - Added an explicit agent rule requiring `SKILL.md` to be read before content-update, design-sync, rule-document, and catalog-maintenance tasks.
+  - Added a matching rule that minion changes must keep the minion catalog document synchronized.
+- Verification
+  - Document update only; no build or tests run.
+- Related updates checked
+  - Confirmed `SKILL.md` remains the repo's content-update workflow document and `design/minion_codex.md` remains the current minion catalog file.
+
+### Updated SKILL minion-doc sync rule
+
+- Files
+  - `SKILL.md`
+  - `memory-bank/progress.md`
+- Summary
+  - Added a rule that whenever minions are modified or new minions are added, the minion catalog document must also be updated.
+  - The rule explicitly treats `design/minion.md` as the default target and falls back to `design/minion_codex.md` when that is the file currently maintained in the repo.
+- Verification
+  - Document update only; no build or tests run.
+- Related updates checked
+  - Confirmed the current repo still uses `design/minion_codex.md` as the existing minion catalog file.
+
+### Modularized minion data files
+
+- Files
+  - `src/data/cards/minions.ts`
+  - `src/data/cards/minions/lowCost.ts`
+  - `src/data/cards/minions/midCost.ts`
+  - `src/data/cards/minions/highCost.ts`
+  - `src/data/cards/minions/guardPackage.ts`
+  - `memory-bank/architecture.md`
+- Summary
+  - Split minion definitions out of the single `minions.ts` file into grouped submodules.
+  - Kept `src/data/cards/minions.ts` as the stable aggregation export so upstream imports do not need to change.
+- Verification
+  - `cmd /c npm test`
+- Related updates checked
+  - Verified that `src/data/cards.ts` can continue importing `MINION_CARDS` from the same path without any changes in engine, UI, or tests.
+
+### Added the guard minion package and catalog
+
+- Files
+  - `src/data/cards/minions.ts`
+  - `src/engine/effects.ts`
+  - `src/engine/rules.ts`
+  - `tests/engine.test.js`
+  - `design/minion_codex.md`
+  - `memory-bank/architecture.md`
+- Summary
+  - Added seven new minions centered on guard mechanics.
+  - Added runtime support for `onAttacked`, token generation to hand, adjacent-guard spreading, low-hp self buffing, menace threat suppression, and magic-resistant targeting.
+  - Added a minion catalog markdown file under `design/`.
+- Verification
+  - `cmd /c npm run build`
+  - `cmd /c npm test`
+- Related updates checked
+  - Added engine tests for the new mechanics and kept the momentum calculation in sync with the new `menace` rule.
+
 ## 用途
 
 `memory-bank/progress.md` 用来记录项目已经发生过的重要修改，方便代理在动手前快速确认最近履历，避免重复判断或漏掉联动项。

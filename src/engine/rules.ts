@@ -81,9 +81,23 @@ export function boardAttack(player: Pick<PlayerState, "board">): number {
   return player.board.reduce((sum, minion) => sum + Math.max(0, minion.attack), 0);
 }
 
-export function boardThreat(player: Pick<PlayerState, "board" | "persistents">): number {
+function getSuppressedThreat(baseThreat: number, suppressorCount: number): number {
+  let threat = baseThreat;
+  for (let index = 0; index < suppressorCount; index += 1) {
+    threat = Math.floor(threat / 2);
+  }
+  return threat;
+}
+
+export function boardThreat(
+  player: Pick<PlayerState, "board" | "persistents">,
+  opponent: Pick<PlayerState, "board"> = { board: [] }
+): number {
+  const suppressorCount = opponent.board.filter((minion) => (minion.tags ?? []).includes("menace")).length;
   const minionThreat = player.board.reduce(
-    (sum, minion) => sum + (minion.threat ?? defaultThreatForStats(minion.attack, minion.health)),
+    (sum, minion) =>
+      sum +
+      getSuppressedThreat(minion.threat ?? defaultThreatForStats(minion.attack, minion.health), suppressorCount),
     0
   );
   const persistentThreat = player.persistents.reduce((sum, card) => sum + (card.threat ?? 0), 0);
@@ -103,7 +117,7 @@ export function getAdvantageBreakdown(
   const hpScore =
     Math.abs(hpDiff) > 4 ? Math.sign(hpDiff) * Math.floor((Math.abs(hpDiff) - 4) / 4 + 1) : 0;
 
-  const threatScore = boardThreat(me) - boardThreat(opp);
+  const threatScore = boardThreat(me, opp) - boardThreat(opp, me);
 
   let specialScore = 0;
   const details: string[] = [];

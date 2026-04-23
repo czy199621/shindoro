@@ -48,6 +48,7 @@ npm test
 - `design/game_design.md`
   - 更高层的设计说明。
 - `SKILL.md`
+  - 内容更新、规则文档整理、图鉴维护、设计同步类任务的必读执行规范；遇到这类任务时必须先读取再动手
   - 内容更新类任务的执行技能文档。
 - `memory-bank/architecture.md`
   - 面向人的架构摘要文档。
@@ -226,3 +227,8 @@ npm test
 - 渲染 bug：从 `src/App.tsx` 或 `src/components/Board.tsx` 开始
 - 选择或状态 bug：从 `src/store/useGameStore.ts` 开始
 - 卡牌、天赋或数值定义：从 `src/data/` 开始
+## SKILL 使用规则
+
+- 遇到内容更新、规则文档整理、设计文档同步、图鉴维护这类任务时，必须先读取并遵循 `SKILL.md`，再开始分析、计划和修改。
+- 不需要等待用户显式提到 `SKILL.md`；只要任务性质属于内容更新，就应主动读取。
+- 如果任务涉及使魔的修改或追加，除了代码与规则文档外，还必须同步更新使魔图鉴文档；当前仓库默认目标为 `design/minion_codex.md`，若未来改为 `design/minion.md`，则以新文件名为准。

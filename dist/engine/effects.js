@@ -8,6 +8,18 @@ function getBaseCost(card) {
 function getSpellDamageBonus(game, playerId, context) {
     return context.sourceCard?.type === "spell" ? game.getPlayer(playerId).temporaryFlags.spellDamageBonus : 0;
 }
+function isMagicSource(context) {
+    if (context.sourceCard?.type === "spell")
+        return true;
+    return Boolean(context.source && "type" in context.source);
+}
+function canBeTargetedByMagic(minion, actingPlayerId, context) {
+    if (minion.ownerId === actingPlayerId)
+        return true;
+    if (!minion.tags.includes("magicRes"))
+        return true;
+    return !isMagicSource(context);
+}
 function getGuardMinions(game, playerId) {
     const player = game.getPlayer(playerId);
     const taggedGuards = player.board.filter((minion) => minion.tags.includes("guard"));
@@ -51,6 +63,17 @@ function dealHeroDamage(game, targetPlayerId, amount) {
     if (player.temporaryFlags.millOnDamageTaken > 0) {
         millCards(game, targetPlayerId, "opponent", amount * player.temporaryFlags.millOnDamageTaken);
     }
+}
+function addCardToHand(game, playerId, cardId) {
+    const player = game.getPlayer(playerId);
+    const card = createRuntimeCard(getCardDefinition(cardId));
+    if (player.hand.length >= player.handLimit) {
+        player.graveyard.push({ id: card.id, name: card.name, runtimeId: card.runtimeId });
+        game.log(`${game.getCharacter(player.character).name} burns ${card.name} because the hand is full.`);
+        return;
+    }
+    player.hand.push(card);
+    game.log(`${game.getCharacter(player.character).name} adds ${card.name} to hand.`);
 }
 function resolvePriorityExile(game, playerId, mode) {
     const opponent = game.getOpponent(playerId);
@@ -186,7 +209,7 @@ export function triggerTraps(game, ownerId, conditionType, context) {
         for (const effect of trap.effects) {
             if (effect.trigger === "onTriggerMet" && effect.condition?.type === conditionType) {
                 game.log(`${game.getCharacter(owner.character).name} 触发了陷阱 ${trap.name}。`, "alert");
-                game.resolveAction(ownerId, effect.action, context);
+                game.resolveAction(ownerId, effect.action, { ...context, source: trap });
             }
         }
         owner.graveyard.push({ id: trap.sourceCardId, name: trap.name, runtimeId: trap.instanceId });
@@ -210,6 +233,11 @@ export function resolveAction(game, playerId, action, context = {}) {
         case "draw":
             game.drawCards(playerId, action.count, "效果");
             break;
+        case "addCardToHand":
+            for (let index = 0; index < (action.count ?? 1); index += 1) {
+                addCardToHand(game, playerId, action.cardId);
+            }
+            break;
         case "summon":
             for (let index = 0; index < (action.count ?? 1); index += 1) {
                 game.summonMinion(playerId, createRuntimeCard(getCardDefinition(action.cardId)), {
@@ -222,7 +250,7 @@ export function resolveAction(game, playerId, action, context = {}) {
             resolveBuffAction(game, playerId, action, context);
             break;
         case "destroy":
-            resolveDestroyAction(game, playerId, action.target);
+            resolveDestroyAction(game, playerId, action.target, context);
             break;
         case "addSlot":
             game.adjustSlot(playerId, action.slot, action.amount, "效果");
@@ -254,6 +282,21 @@ export function resolveAction(game, playerId, action, context = {}) {
         case "exilePriorityEnemyMinionAndDamageHero":
             resolvePriorityExile(game, playerId, action.damageHeroBy);
             break;
+        case "grantAdjacentGuard":
+            if (context.source && !("type" in context.source)) {
+                resolveGrantAdjacentGuard(game, playerId, context.source.instanceId);
+            }
+            break;
+        case "buffSelfIfHeroHpBelow":
+            if (player.hp < action.threshold && context.source && !("type" in context.source)) {
+                if (action.atk)
+                    context.source.attack += action.atk;
+                if (action.hp) {
+                    context.source.health += action.hp;
+                    context.source.maxHealth += action.hp;
+                }
+            }
+            break;
         default:
             break;
     }
@@ -264,6 +307,7 @@ function resolveDamageAction(game, playerId, action, context) {
     const player = game.getPlayer(playerId);
     const bonus = getSpellDamageBonus(game, playerId, context);
     const amount = action.amount + bonus;
+    const availableEnemyMinions = opponent.board.filter((minion) => canBeTargetedByMagic(minion, playerId, context));
     if (action.target === "enemyHero") {
         dealHeroDamage(game, opponent.id, amount);
         return;
@@ -274,23 +318,26 @@ function resolveDamageAction(game, playerId, action, context) {
     }
     const affected = [];
     if (action.target === "allEnemyMinions") {
-        affected.push(...opponent.board);
+        affected.push(...availableEnemyMinions);
     }
     else if (action.target === "allFriendlyMinions") {
         affected.push(...player.board);
     }
     else if (action.target === "strongestEnemyMinion") {
-        const strongest = [...opponent.board].sort((left, right) => right.attack - left.attack)[0];
+        const strongest = [...availableEnemyMinions].sort((left, right) => right.attack - left.attack)[0];
         if (strongest)
             affected.push(strongest);
     }
     else if (action.target === "weakestEnemyMinion") {
-        const weakest = [...opponent.board].sort((left, right) => left.attack - right.attack)[0];
+        const weakest = [...availableEnemyMinions].sort((left, right) => left.attack - right.attack)[0];
         if (weakest)
             affected.push(weakest);
     }
     else if (action.target === "triggeredMinion" && context.triggeredMinion) {
-        affected.push(context.triggeredMinion);
+        if (context.triggeredMinion.ownerId === playerId ||
+            canBeTargetedByMagic(context.triggeredMinion, playerId, context)) {
+            affected.push(context.triggeredMinion);
+        }
     }
     for (const unit of affected) {
         unit.health -= amount;
@@ -318,17 +365,30 @@ function resolveBuffAction(game, playerId, action, context) {
         }
     }
 }
-function resolveDestroyAction(game, playerId, targetType) {
+function resolveDestroyAction(game, playerId, targetType, context) {
     const opponent = game.getOpponent(playerId);
+    const availableEnemyMinions = opponent.board.filter((minion) => canBeTargetedByMagic(minion, playerId, context));
     let target = null;
     if (targetType === "strongestEnemyMinion") {
-        target = [...opponent.board].sort((left, right) => right.attack - left.attack)[0] ?? null;
+        target = [...availableEnemyMinions].sort((left, right) => right.attack - left.attack)[0] ?? null;
     }
     else if (targetType === "weakestEnemyMinion") {
-        target = [...opponent.board].sort((left, right) => left.attack - right.attack)[0] ?? null;
+        target = [...availableEnemyMinions].sort((left, right) => left.attack - right.attack)[0] ?? null;
     }
     if (target) {
         target.health = 0;
+    }
+}
+function resolveGrantAdjacentGuard(game, playerId, sourceId) {
+    const player = game.getPlayer(playerId);
+    const sourceIndex = player.board.findIndex((minion) => minion.instanceId === sourceId);
+    if (sourceIndex < 0)
+        return;
+    for (const index of [sourceIndex - 1, sourceIndex + 1]) {
+        const target = player.board[index];
+        if (!target || target.tags.includes("guard"))
+            continue;
+        target.tags.push("guard");
     }
 }
 function resolveDiscardAction(game, playerId, discardTarget, count) {
@@ -381,6 +441,10 @@ export function attackWith(game, playerId, attackerId, targetId, targetType) {
             return false;
         defender.health -= attacker.attack;
         attacker.health -= defender.attack;
+        const attackedEffects = defender.effects.filter((effect) => effect.trigger === "onAttacked");
+        for (const effect of attackedEffects) {
+            game.resolveAction(opponentId, effect.action, { source: defender });
+        }
         game.log(`${attacker.name} 与 ${defender.name} 发生了战斗。`);
     }
     game.checkForDeaths();

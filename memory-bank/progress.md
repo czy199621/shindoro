@@ -299,3 +299,30 @@
   - `Board.tsx` 已从旧的简化“优势值”卡切换到新的势能面板
   - `Card.tsx` 的三属性渲染已覆盖手牌、换牌与战场三个使魔入口
   - `dist/` 已通过构建同步更新
+
+## 2026-04-24
+
+### 卡牌演出特效实装
+
+- 涉及文件：
+  - `src/store/useGameStore.ts`
+  - `src/engine/phases.ts`
+  - `src/engine/gameState.ts`
+  - `src/components/Board.tsx`
+  - `src/components/Card.tsx`
+  - `src/components/EffectLayer.tsx`
+  - `src/style.css`
+  - `memory-bank/architecture.md`
+  - `memory-bank/progress.md`
+- 本次改动：
+  - 为召唤使魔、放置持续物、盖伏陷阱加入入场和落位特效
+  - 为法术发动与陷阱触发加入统一的中央效果横幅
+  - 在 `useGameStore.ts` 中新增基于前后状态差分的 `cardFx` / `cardFxQueue`，统一驱动玩家与 AI 的卡牌演出
+  - AI 回合从整段同步执行改为逐动作推进，让出牌和效果可以逐步显示
+- 验证：
+  - `cmd /c npm run build`
+  - `cmd /c npm test`
+- 关联修正检查：
+  - `Board.tsx` 已接入新的 `EffectLayer` 和区域高亮
+  - `Card.tsx` 已为使魔和持续物 / 陷阱卡补入场类名与卡面演出
+  - `dist/` 已通过构建同步更新

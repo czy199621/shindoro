@@ -47,6 +47,7 @@ import {
   handlePendingChoice,
   performMulligan,
   processTurnStartQueue,
+  runAiStep,
   runAiTurn
 } from "./phases.js";
 import { adjustSlot, applyAdvantageSlots, resolveCharacterSlot, resolveOptionalGodDraw, resolveUltimateGodDraw } from "./slotResolver.js";
@@ -382,6 +383,10 @@ export class ShinDoroGame implements GameAiAdapter {
 
   runAiTurn(): boolean {
     return runAiTurn(this);
+  }
+
+  runAiStep(): boolean {
+    return runAiStep(this);
   }
 
   log(message: string, tone: LogEntry["tone"] = "neutral"): void {

@@ -1,16 +1,39 @@
+import { getCardDefinition } from "../data/cards.js";
 import { CHARACTERS } from "../data/characters.js";
 import { TALENTS, getTalentCost, isTalentAvailableForSeat } from "../data/talents.js";
 import { ShinDoroGame } from "../engine/gameState.js";
-import type { CharacterDefinition, GameState, PendingChoicePayload, TalentDefinition } from "../types.js";
+import type { CharacterDefinition, GameState, PendingChoicePayload, PlayerId, TalentDefinition } from "../types.js";
 
 const PLAYER_TALENT_SEAT = "first" as const;
+const AI_ACTION_DELAY_MS = 520;
 const ATTACK_RESOLVE_DELAY_MS = 140;
 const ATTACK_FX_TAIL_MS = 220;
+const CARD_FX_DURATION_MS = 620;
 
 export interface AttackFxState {
   attackerId: string;
   targetId: string;
   targetType: "minion" | "hero";
+}
+
+export interface CardFxState {
+  id: string;
+  kind: "summonMinion" | "placePersistent" | "placeTrap" | "spellCast" | "trapTrigger";
+  ownerId: PlayerId;
+  cardName: string;
+  targetId: string | null;
+}
+
+interface VisualSnapshot {
+  players: Record<
+    PlayerId,
+    {
+      boardIds: Set<string>;
+      persistentIds: Set<string>;
+      trapIds: Set<string>;
+      graveyardIds: Set<string>;
+    }
+  >;
 }
 
 export interface UiState {
@@ -22,6 +45,8 @@ export interface UiState {
   mulliganSelection: Set<string>;
   selectedAttackerId: string | null;
   attackFx: AttackFxState | null;
+  cardFx: CardFxState | null;
+  cardFxQueue: CardFxState[];
   aiTimer: number | null;
 }
 
@@ -69,10 +94,19 @@ export function createGameStore({ game = new ShinDoroGame() }: { game?: ShinDoro
     mulliganSelection: new Set<string>(),
     selectedAttackerId: null,
     attackFx: null,
+    cardFx: null,
+    cardFxQueue: [],
     aiTimer: null
   };
   let attackResolveTimer: number | null = null;
   let attackFxTimer: number | null = null;
+  let cardFxTimer: number | null = null;
+  let fxSerial = 0;
+  let onChangeListener: (() => void) | null = null;
+
+  function notifyChange(): void {
+    onChangeListener?.();
+  }
 
   function getCharacter(characterId: string): CharacterDefinition {
     return CHARACTERS.find((character) => character.id === characterId) ?? CHARACTERS[0];
@@ -149,6 +183,126 @@ export function createGameStore({ game = new ShinDoroGame() }: { game?: ShinDoro
     uiState.attackFx = null;
   }
 
+  function clearCardFxTimer(): void {
+    if (cardFxTimer !== null) {
+      window.clearTimeout(cardFxTimer);
+      cardFxTimer = null;
+    }
+  }
+
+  function clearCardFx(): void {
+    clearCardFxTimer();
+    uiState.cardFx = null;
+    uiState.cardFxQueue = [];
+  }
+
+  function buildVisualSnapshot(state: GameState = game.getState()): VisualSnapshot {
+    const buildPlayerSnapshot = (playerId: PlayerId) => {
+      const player = state.players[playerId];
+      return {
+        boardIds: new Set(player.board.map((minion) => minion.instanceId)),
+        persistentIds: new Set(player.persistents.map((card) => card.instanceId)),
+        trapIds: new Set(player.traps.map((card) => card.instanceId)),
+        graveyardIds: new Set(player.graveyard.map((entry) => entry.runtimeId))
+      };
+    };
+
+    return {
+      players: {
+        P1: buildPlayerSnapshot("P1"),
+        P2: buildPlayerSnapshot("P2")
+      }
+    };
+  }
+
+  function createCardFx(kind: CardFxState["kind"], ownerId: PlayerId, cardName: string, targetId: string | null = null): CardFxState {
+    fxSerial += 1;
+    return {
+      id: `card_fx_${fxSerial}`,
+      kind,
+      ownerId,
+      cardName,
+      targetId
+    };
+  }
+
+  function collectCardFx(before: VisualSnapshot, state: GameState = game.getState()): CardFxState[] {
+    const events: CardFxState[] = [];
+
+    (["P1", "P2"] as const).forEach((playerId) => {
+      const player = state.players[playerId];
+      const previous = before.players[playerId];
+
+      for (const entry of player.graveyard) {
+        if (previous.graveyardIds.has(entry.runtimeId)) continue;
+        try {
+          const definition = getCardDefinition(entry.id);
+          if (definition.type === "spell") {
+            events.push(createCardFx("spellCast", playerId, entry.name));
+          } else if (definition.type === "trap") {
+            events.push(createCardFx("trapTrigger", playerId, entry.name));
+          }
+        } catch {
+        }
+      }
+
+      for (const minion of player.board) {
+        if (!previous.boardIds.has(minion.instanceId)) {
+          events.push(createCardFx("summonMinion", playerId, minion.name, minion.instanceId));
+        }
+      }
+
+      for (const card of player.persistents) {
+        if (!previous.persistentIds.has(card.instanceId)) {
+          events.push(createCardFx("placePersistent", playerId, card.name, card.instanceId));
+        }
+      }
+
+      for (const card of player.traps) {
+        if (!previous.trapIds.has(card.instanceId)) {
+          events.push(createCardFx("placeTrap", playerId, card.name, card.instanceId));
+        }
+      }
+    });
+
+    return events;
+  }
+
+  function activateNextCardFx(): void {
+    clearCardFxTimer();
+    const next = uiState.cardFxQueue.shift() ?? null;
+    uiState.cardFx = next;
+    notifyChange();
+
+    if (!next) return;
+
+    cardFxTimer = window.setTimeout(() => {
+      cardFxTimer = null;
+      uiState.cardFx = null;
+      notifyChange();
+      if (uiState.cardFxQueue.length) {
+        activateNextCardFx();
+      }
+    }, CARD_FX_DURATION_MS);
+  }
+
+  function enqueueCardFx(events: CardFxState[]): void {
+    if (!events.length) return;
+    uiState.cardFxQueue.push(...events);
+    if (!uiState.cardFx) {
+      activateNextCardFx();
+    }
+  }
+
+  function runWithCardFx<T>(execute: () => T, shouldCollect: (result: T) => boolean = (result) => Boolean(result)): T {
+    const before = buildVisualSnapshot();
+    const result = execute();
+    if (shouldCollect(result)) {
+      enqueueCardFx(collectCardFx(before));
+    }
+    return result;
+  }
+
   function beginAttackFx(
     targetId: string,
     targetType: AttackFxState["targetType"],
@@ -194,20 +348,24 @@ export function createGameStore({ game = new ShinDoroGame() }: { game?: ShinDoro
     resetUiSelections,
     buildTargetSet,
     scheduleAiTurn(onChange: () => void): void {
+      onChangeListener = onChange;
       clearAiTimer();
       const state = game.getState();
       if (state.currentPlayer === "P2" && (state.phase === "mainTurn" || state.phase === "combat") && !state.winner) {
+        const pendingFxCount = (uiState.cardFx ? 1 : 0) + uiState.cardFxQueue.length;
+        const delay = pendingFxCount > 0 ? pendingFxCount * CARD_FX_DURATION_MS + 140 : AI_ACTION_DELAY_MS;
         uiState.aiTimer = window.setTimeout(() => {
           clearAttackFx();
-          game.runAiTurn();
+          runWithCardFx(() => game.runAiStep());
           uiState.selectedAttackerId = null;
           onChange();
-        }, 500);
+        }, delay);
       }
     },
     dispose(): void {
       clearAiTimer();
       clearAttackFx();
+      clearCardFx();
     },
     selectPlayerCharacter(characterId: string): void {
       uiState.setup.playerCharacterId = characterId;
@@ -235,6 +393,7 @@ export function createGameStore({ game = new ShinDoroGame() }: { game?: ShinDoro
         playerTalentIds: uiState.setup.selectedTalentIds
       });
       resetUiSelections();
+      clearCardFx();
     },
     toggleMulliganCard(runtimeId: string): void {
       if (uiState.mulliganSelection.has(runtimeId)) {
@@ -258,6 +417,7 @@ export function createGameStore({ game = new ShinDoroGame() }: { game?: ShinDoro
     restart(): void {
       clearAiTimer();
       clearAttackFx();
+      clearCardFx();
       game.reset();
       resetUiSelections();
       uiState.setup.selectedTalentIds = [];
@@ -275,7 +435,7 @@ export function createGameStore({ game = new ShinDoroGame() }: { game?: ShinDoro
     },
     playCard(runtimeId: string): boolean {
       clearAttackFx();
-      const didPlay = game.playCard(runtimeId);
+      const didPlay = runWithCardFx(() => game.playCard(runtimeId));
       if (didPlay) {
         uiState.selectedAttackerId = null;
       }

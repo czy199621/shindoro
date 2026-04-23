@@ -5,7 +5,7 @@ import { TALENT_LOOKUP } from "../data/talents.js";
 import { createEmptyPlayerState, createRuntimeCard, shuffle } from "./rules.js";
 import { chooseAiTalentIds } from "./ai.js";
 import { attack, attackWith, checkForDeaths, checkGameOver, drawCards, getAttackTargets, getAIAttackTargets, getPlayableCards, getReadyAttackers, playCard, playCardAtIndex, resolveAction, resolveEffects, resolveOnTurnStart, summonMinion, triggerTraps } from "./effects.js";
-import { beginTurn, buildTurnStartQueue, completePlayerMulligan, endTurn, finishStartTurn, handlePendingChoice, performMulligan, processTurnStartQueue, runAiTurn } from "./phases.js";
+import { beginTurn, buildTurnStartQueue, completePlayerMulligan, endTurn, finishStartTurn, handlePendingChoice, performMulligan, processTurnStartQueue, runAiStep, runAiTurn } from "./phases.js";
 import { adjustSlot, applyAdvantageSlots, resolveCharacterSlot, resolveOptionalGodDraw, resolveUltimateGodDraw } from "./slotResolver.js";
 const PLAYER_ID = "P1";
 const AI_ID = "P2";
@@ -272,6 +272,9 @@ export class ShinDoroGame {
     }
     runAiTurn() {
         return runAiTurn(this);
+    }
+    runAiStep() {
+        return runAiStep(this);
     }
     log(message, tone = "neutral") {
         this.state.actionLog.unshift(createLogEntry(this.state.turn, message, tone));

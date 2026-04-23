@@ -57,13 +57,15 @@ export function renderMinionCard(
     selectedAttackerId,
     targetable = false,
     attacking = false,
-    impactTarget = false
+    impactTarget = false,
+    summoning = false
   }: {
     ownership: "player" | "enemy";
     selectedAttackerId: string | null;
     targetable?: boolean;
     attacking?: boolean;
     impactTarget?: boolean;
+    summoning?: boolean;
   }
 ): string {
   const isPlayer = ownership === "player";
@@ -75,6 +77,7 @@ export function renderMinionCard(
   if (targetable) classes.push("targetable");
   if (attacking) classes.push("attacking");
   if (impactTarget) classes.push("impact-target");
+  if (summoning) classes.push("summoning");
 
   return `
     <button class="${classes.join(" ")}" data-action="${action}" data-minion-id="${escapeHtml(minion.instanceId)}">
@@ -86,9 +89,15 @@ export function renderMinionCard(
   `;
 }
 
-export function renderPersistentCard(card: PlayerState["persistents"][number]): string {
+export function renderPersistentCard(
+  card: PlayerState["persistents"][number],
+  { placing = false, cardTone = "persistent" }: { placing?: boolean; cardTone?: "persistent" | "trap" } = {}
+): string {
+  const classes = ["persistent-card", cardTone];
+  if (placing) classes.push("placing");
+
   return `
-    <div class="persistent-card">
+    <div class="${classes.join(" ")}">
       <h4>${escapeHtml(card.name)}</h4>
       <p class="persistent-meta">威胁 ${card.threat ?? 0}</p>
       <p>${escapeHtml(card.description)}</p>

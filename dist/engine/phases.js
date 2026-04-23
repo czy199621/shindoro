@@ -316,17 +316,25 @@ export function runAiTurn(game) {
         (game.state.phase === "mainTurn" || game.state.phase === "combat") &&
         safety < 20) {
         safety += 1;
-        const action = chooseAiAction(game, AI_ID);
-        if (!action || action.type === "endTurn") {
-            game.endTurn();
+        if (!runAiStep(game)) {
             break;
-        }
-        if (action.type === "playCard") {
-            game.playCardAtIndex(AI_ID, action.index);
-        }
-        else if (action.type === "attack") {
-            game.attackWith(AI_ID, action.attackerId, action.targetId, action.targetType);
         }
     }
     return true;
+}
+export function runAiStep(game) {
+    if (game.state.winner ||
+        game.state.currentPlayer !== AI_ID ||
+        (game.state.phase !== "mainTurn" && game.state.phase !== "combat")) {
+        return false;
+    }
+    const action = chooseAiAction(game, AI_ID);
+    if (!action || action.type === "endTurn") {
+        game.endTurn();
+        return true;
+    }
+    if (action.type === "playCard") {
+        return game.playCardAtIndex(AI_ID, action.index);
+    }
+    return game.attackWith(AI_ID, action.attackerId, action.targetId, action.targetType);
 }

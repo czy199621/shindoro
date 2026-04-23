@@ -2,6 +2,20 @@
 
 ## 2026-04-24
 
+### Added SKILL sync rules for game design and game rule
+
+- Files
+  - `SKILL.md`
+  - `memory-bank/architecture.md`
+  - `memory-bank/progress.md`
+- Summary
+  - Added a rule that content updates must also review and update `design/game_design.md`.
+  - Added a rule that rule updates must also review and update `design/game_rule.md`.
+- Verification
+  - Document update only; no build or tests run.
+- Related updates checked
+  - Confirmed the repo currently maintains `design/game_design.md` and `design/game_rule.md` as the active design and rule documents.
+
 ### Added AGENT rule to force SKILL usage on content tasks
 
 - Files

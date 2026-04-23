@@ -1,5 +1,11 @@
 # Architecture
 
+## 2026-04-24 Design And Rule Sync
+
+- `SKILL.md`
+  - Now requires content updates to synchronize `design/game_design.md`.
+  - Now requires rule updates to synchronize `design/game_rule.md`.
+
 ## 2026-04-24 Agent Skill Gate
 
 - `AGENT.md`

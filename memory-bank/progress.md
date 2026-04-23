@@ -194,3 +194,35 @@
   - 脚本内容检查
 - 关联修正检查：
   - 不影响游戏源码与规则逻辑
+
+### README 重写
+
+- 涉及文件：
+  - `README.md`
+  - `memory-bank/architecture.md`
+  - `memory-bank/progress.md`
+- 本次改动：
+  - 将 README 重写为干净的中文版
+  - 同步当前项目状态、目录结构、模块化数据布局与启动方式
+  - 补充 `start-game.bat / start-game.ps1` 的使用说明
+- 验证：
+  - 文档内容检查
+- 关联修正检查：
+  - 属于说明文档更新，不影响源码与规则逻辑
+
+### 启动器报错定位与 TypeScript 依赖补全
+
+- 涉及文件：
+  - `package.json`
+  - `start-game.ps1`
+  - `memory-bank/architecture.md`
+  - `memory-bank/progress.md`
+- 本次改动：
+  - 为项目补上 `typescript` 开发依赖，避免干净环境执行 `npm start` 时缺少 `tsc`
+  - 增强 `start-game.ps1` 的错误输出，在服务提前退出时打印 `npm start` 的 stdout/stderr
+  - 启动器改为同时检查 `node_modules` 与本地 `tsc`，缺任一项都会自动重新安装依赖
+- 验证：
+  - 启动器脚本语法检查
+  - 本地 `npm start / npm test` 仍可运行
+- 关联修正检查：
+  - 只影响启动与开发环境，不修改游戏规则或 UI 行为

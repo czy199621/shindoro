@@ -9,5 +9,8 @@
     "serve": "node server.js",
     "start": "npm run build && node server.js",
     "test": "npm run build && node --test --test-isolation=none tests/engine.test.js"
+  },
+  "devDependencies": {
+    "typescript": "^5.9.3"
   }
 }

@@ -31,6 +31,8 @@ npm test
 ├─ memory-bank/            # 面向代理和协作者的项目知识库
 ├─ tests/                  # 测试
 ├─ public/                 # 静态资源说明与预留目录
+├─ AGENT.md                # 代理协作规则
+├─ SKILL.md                # 内容更新类任务的执行技能
 ├─ game_rule.md            # 游戏规则文档
 ├─ game_design.md          # 设计说明文档
 ├─ index.html              # 页面入口，加载 src/style.css 和 dist/main.js
@@ -209,3 +211,4 @@ memory-bank/
   - UI 层是“字符串渲染 + DOM 事件委托”
   - 游戏逻辑层是“集中式状态机 + 规则模块”
   - 测试和运行都依赖 `dist/` 编译产物
+  - 协作层同时依赖根目录的 `AGENT.md` 与 `SKILL.md` 约束代理行为

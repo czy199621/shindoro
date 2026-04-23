@@ -42,11 +42,15 @@ export function renderMinionCard(
   {
     ownership,
     selectedAttackerId,
-    targetable = false
+    targetable = false,
+    attacking = false,
+    impactTarget = false
   }: {
     ownership: "player" | "enemy";
     selectedAttackerId: string | null;
     targetable?: boolean;
+    attacking?: boolean;
+    impactTarget?: boolean;
   }
 ): string {
   const isPlayer = ownership === "player";
@@ -56,6 +60,8 @@ export function renderMinionCard(
   if (minion.canAttack && isPlayer) classes.push("ready");
   if (isSelected) classes.push("selected");
   if (targetable) classes.push("targetable");
+  if (attacking) classes.push("attacking");
+  if (impactTarget) classes.push("impact-target");
 
   return `
     <button class="${classes.join(" ")}" data-action="${action}" data-minion-id="${escapeHtml(minion.instanceId)}">

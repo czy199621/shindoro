@@ -21,11 +21,13 @@ function renderStat(label, value) {
     </div>
   `;
 }
-export function renderPlayerHUD({ player, character, ownership, targetableHero }) {
+export function renderPlayerHUD({ player, character, ownership, targetableHero, impactTarget = false }) {
     const isEnemy = ownership === "enemy";
     const classes = ["hud", ownership];
     if (targetableHero)
         classes.push("targetable");
+    if (impactTarget)
+        classes.push("impact-target");
     return `
     <button class="${classes.join(" ")}" ${targetableHero ? `data-action="attack-hero" data-hero-id="${isEnemy ? "P2_hero" : "P1_hero"}"` : "disabled"}>
       <div class="hud-header">

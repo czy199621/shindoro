@@ -2,6 +2,8 @@ import { CHARACTERS } from "../data/characters.js";
 import { TALENTS, getTalentCost, isTalentAvailableForSeat } from "../data/talents.js";
 import { ShinDoroGame } from "../engine/gameState.js";
 const PLAYER_TALENT_SEAT = "first";
+const ATTACK_RESOLVE_DELAY_MS = 140;
+const ATTACK_FX_TAIL_MS = 220;
 export function createGameStore({ game = new ShinDoroGame() } = {}) {
     const uiState = {
         setup: {
@@ -11,8 +13,11 @@ export function createGameStore({ game = new ShinDoroGame() } = {}) {
         },
         mulliganSelection: new Set(),
         selectedAttackerId: null,
+        attackFx: null,
         aiTimer: null
     };
+    let attackResolveTimer = null;
+    let attackFxTimer = null;
     function getCharacter(characterId) {
         return CHARACTERS.find((character) => character.id === characterId) ?? CHARACTERS[0];
     }
@@ -45,6 +50,7 @@ export function createGameStore({ game = new ShinDoroGame() } = {}) {
             getTalentCount(talent.id) < talent.repeatLimit);
     }
     function resetUiSelections() {
+        clearAttackFx();
         uiState.mulliganSelection = new Set();
         uiState.selectedAttackerId = null;
     }
@@ -58,6 +64,41 @@ export function createGameStore({ game = new ShinDoroGame() } = {}) {
             window.clearTimeout(uiState.aiTimer);
             uiState.aiTimer = null;
         }
+    }
+    function clearAttackTimers() {
+        if (attackResolveTimer !== null) {
+            window.clearTimeout(attackResolveTimer);
+            attackResolveTimer = null;
+        }
+        if (attackFxTimer !== null) {
+            window.clearTimeout(attackFxTimer);
+            attackFxTimer = null;
+        }
+    }
+    function clearAttackFx() {
+        clearAttackTimers();
+        uiState.attackFx = null;
+    }
+    function beginAttackFx(targetId, targetType, executeAttack, onChange) {
+        const attackerId = uiState.selectedAttackerId;
+        if (!attackerId || uiState.attackFx)
+            return false;
+        clearAttackTimers();
+        uiState.attackFx = { attackerId, targetId, targetType };
+        attackResolveTimer = window.setTimeout(() => {
+            attackResolveTimer = null;
+            const didAttack = executeAttack(attackerId);
+            if (didAttack) {
+                uiState.selectedAttackerId = null;
+            }
+            onChange?.();
+            attackFxTimer = window.setTimeout(() => {
+                attackFxTimer = null;
+                uiState.attackFx = null;
+                onChange?.();
+            }, ATTACK_FX_TAIL_MS);
+        }, ATTACK_RESOLVE_DELAY_MS);
+        return true;
     }
     return {
         game,
@@ -78,6 +119,7 @@ export function createGameStore({ game = new ShinDoroGame() } = {}) {
             const state = game.getState();
             if (state.currentPlayer === "P2" && (state.phase === "mainTurn" || state.phase === "combat") && !state.winner) {
                 uiState.aiTimer = window.setTimeout(() => {
+                    clearAttackFx();
                     game.runAiTurn();
                     uiState.selectedAttackerId = null;
                     onChange();
@@ -86,6 +128,7 @@ export function createGameStore({ game = new ShinDoroGame() } = {}) {
         },
         dispose() {
             clearAiTimer();
+            clearAttackFx();
         },
         selectPlayerCharacter(characterId) {
             uiState.setup.playerCharacterId = characterId;
@@ -136,6 +179,7 @@ export function createGameStore({ game = new ShinDoroGame() } = {}) {
         },
         restart() {
             clearAiTimer();
+            clearAttackFx();
             game.reset();
             resetUiSelections();
             uiState.setup.selectedTalentIds = [];
@@ -144,37 +188,30 @@ export function createGameStore({ game = new ShinDoroGame() } = {}) {
             game.handlePendingChoice(payload);
         },
         cancelAttacker() {
+            clearAttackFx();
             uiState.selectedAttackerId = null;
         },
         toggleAttacker(minionId) {
+            if (uiState.attackFx)
+                return;
             uiState.selectedAttackerId = uiState.selectedAttackerId === minionId ? null : minionId;
         },
         playCard(runtimeId) {
+            clearAttackFx();
             const didPlay = game.playCard(runtimeId);
             if (didPlay) {
                 uiState.selectedAttackerId = null;
             }
             return didPlay;
         },
-        attackMinion(minionId) {
-            if (!uiState.selectedAttackerId)
-                return false;
-            const didAttack = game.attack(uiState.selectedAttackerId, minionId, "minion");
-            if (didAttack) {
-                uiState.selectedAttackerId = null;
-            }
-            return didAttack;
+        attackMinion(minionId, onChange) {
+            return beginAttackFx(minionId, "minion", (attackerId) => game.attack(attackerId, minionId, "minion"), onChange);
         },
-        attackHero(heroId) {
-            if (!uiState.selectedAttackerId)
-                return false;
-            const didAttack = game.attack(uiState.selectedAttackerId, heroId, "hero");
-            if (didAttack) {
-                uiState.selectedAttackerId = null;
-            }
-            return didAttack;
+        attackHero(heroId, onChange) {
+            return beginAttackFx(heroId, "hero", (attackerId) => game.attack(attackerId, heroId, "hero"), onChange);
         },
         endTurn() {
+            clearAttackFx();
             uiState.selectedAttackerId = null;
             return game.endTurn();
         }

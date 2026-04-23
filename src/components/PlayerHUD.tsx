@@ -29,16 +29,19 @@ export function renderPlayerHUD({
   player,
   character,
   ownership,
-  targetableHero
+  targetableHero,
+  impactTarget = false
 }: {
   player: PlayerState;
   character: CharacterDefinition;
   ownership: "player" | "enemy";
   targetableHero: boolean;
+  impactTarget?: boolean;
 }): string {
   const isEnemy = ownership === "enemy";
   const classes = ["hud", ownership];
   if (targetableHero) classes.push("targetable");
+  if (impactTarget) classes.push("impact-target");
 
   return `
     <button class="${classes.join(" ")}" ${targetableHero ? `data-action="attack-hero" data-hero-id="${isEnemy ? "P2_hero" : "P1_hero"}"` : "disabled"}>

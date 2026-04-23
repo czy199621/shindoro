@@ -33,7 +33,7 @@ export function renderMulliganCard(card, selected) {
     </button>
   `;
 }
-export function renderMinionCard(minion, { ownership, selectedAttackerId, targetable = false }) {
+export function renderMinionCard(minion, { ownership, selectedAttackerId, targetable = false, attacking = false, impactTarget = false }) {
     const isPlayer = ownership === "player";
     const isSelected = selectedAttackerId === minion.instanceId;
     const action = isPlayer ? "select-attacker" : "attack-target";
@@ -44,6 +44,10 @@ export function renderMinionCard(minion, { ownership, selectedAttackerId, target
         classes.push("selected");
     if (targetable)
         classes.push("targetable");
+    if (attacking)
+        classes.push("attacking");
+    if (impactTarget)
+        classes.push("impact-target");
     return `
     <button class="${classes.join(" ")}" data-action="${action}" data-minion-id="${escapeHtml(minion.instanceId)}">
       <h4>${escapeHtml(minion.name)}</h4>

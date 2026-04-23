@@ -5,9 +5,11 @@ import { renderGameOver, renderPendingChoice } from "./ResolutionPanel.js";
 export function renderBoard(store, state) {
     const player = state.players.P1;
     const enemy = state.players.P2;
-    const targetSet = store.buildTargetSet();
-    const canPlayCards = state.currentPlayer === "P1" && state.phase === "mainTurn" && !state.winner;
-    const canControlBattle = state.currentPlayer === "P1" && (state.phase === "mainTurn" || state.phase === "combat");
+    const attackFx = store.uiState.attackFx;
+    const isAttackAnimating = Boolean(attackFx);
+    const targetSet = isAttackAnimating ? new Set() : store.buildTargetSet();
+    const canPlayCards = state.currentPlayer === "P1" && state.phase === "mainTurn" && !state.winner && !isAttackAnimating;
+    const canControlBattle = state.currentPlayer === "P1" && (state.phase === "mainTurn" || state.phase === "combat") && !isAttackAnimating;
     const canEndTurn = canControlBattle && !state.winner;
     const legalHeroTarget = targetSet.has("P2_hero");
     const handCards = player.hand.length
@@ -18,71 +20,82 @@ export function renderBoard(store, state) {
             .map((minion) => renderMinionCard(minion, {
             ownership: "enemy",
             selectedAttackerId: store.uiState.selectedAttackerId,
-            targetable: targetSet.has(minion.instanceId)
+            targetable: targetSet.has(minion.instanceId),
+            attacking: attackFx?.attackerId === minion.instanceId,
+            impactTarget: attackFx?.targetType === "minion" && attackFx.targetId === minion.instanceId
         }))
             .join("")
-        : `<p class="empty-text">敌方场上没有使魔。</p>`;
+        : `<p class="empty-text">敌方场上暂无使魔。</p>`;
     const playerBoard = player.board.length
         ? player.board
             .map((minion) => renderMinionCard(minion, {
             ownership: "player",
-            selectedAttackerId: store.uiState.selectedAttackerId
+            selectedAttackerId: store.uiState.selectedAttackerId,
+            attacking: attackFx?.attackerId === minion.instanceId,
+            impactTarget: attackFx?.targetType === "minion" && attackFx.targetId === minion.instanceId
         }))
             .join("")
-        : `<p class="empty-text">你的场上没有使魔。</p>`;
+        : `<p class="empty-text">你的场上暂无使魔。</p>`;
     const playerPersistents = player.persistents.length
         ? player.persistents.map(renderPersistentCard).join("")
-        : `<p class="empty-text">没有持续牌。</p>`;
+        : `<p class="empty-text">你没有持续物。</p>`;
     const playerTraps = player.traps.length
         ? player.traps.map(renderPersistentCard).join("")
-        : `<p class="empty-text">没有陷阱牌。</p>`;
+        : `<p class="empty-text">你没有陷阱。</p>`;
     const enemyPersistents = enemy.persistents.length
         ? enemy.persistents.map(renderPersistentCard).join("")
-        : `<p class="empty-text">敌方没有持续牌。</p>`;
-    const advantage = state.lastAdvantage
+        : `<p class="empty-text">敌方没有持续物。</p>`;
+    const advantagePanel = state.lastAdvantage
         ? `
       <div class="sidebar-card">
         <div class="flex-between">
-          <h2 class="section-title">上回合势能结算</h2>
+          <h2 class="section-title">优势值</h2>
           <span class="pill">V = ${state.lastAdvantage.value >= 0 ? "+" : ""}${state.lastAdvantage.value}</span>
         </div>
-        <p class="small-note">${state.lastAdvantage.summary.join(" / ")}</p>
+        <p class="small-note">${state.lastAdvantage.summary.map(escapeHtml).join(" / ")}</p>
         <p class="small-note">
           ${state.lastAdvantage.value > 0
-            ? "上一回合结算后，玩家一侧获得了跳脸槽收益。"
+            ? "本回合你的局面更优，系统会更偏向给你跳脸槽收益。"
             : state.lastAdvantage.value < 0
-                ? "上一回合结算后，玩家一侧落入劣势并让对手获得神抽槽收益。"
-                : "上一回合双方势能相等，没有额外槽位收益。"}
+                ? "本回合 AI 的局面更优，系统会更偏向给你神抽槽补偿。"
+                : "双方局面接近，这回合不会出现明显的槽位偏向。"}
         </p>
       </div>
     `
         : `
       <div class="sidebar-card">
-        <h2 class="section-title">势能说明</h2>
-        <p class="small-note">回合结束时会根据手牌、血量、场面与特殊条件结算势能差，并据此增加跳脸槽或神抽槽。</p>
+        <h2 class="section-title">优势值</h2>
+        <p class="small-note">回合结束时会根据手牌、血量、场面与特殊状态计算双方优势值，并据此分配跳脸槽或神抽槽。</p>
       </div>
     `;
+    const attackStatus = isAttackAnimating
+        ? "攻击演出中"
+        : store.uiState.selectedAttackerId
+            ? "已选择使魔"
+            : "未选择";
     const statusText = state.winner
         ? state.winner === "P1"
-            ? "你已经获胜。"
+            ? "你已取得胜利。"
             : "AI 获得了胜利。"
-        : state.currentPlayer === "P1"
-            ? state.phase === "slotResolution"
-                ? "正在等待你决定是否发动槽位效果。"
-                : `当前是你的 ${state.phase}。`
-            : `当前由 AI 行动，阶段为 ${state.phase}。`;
+        : isAttackAnimating
+            ? "攻击特效结算中，命中动画会先于伤害结算播放。"
+            : state.currentPlayer === "P1"
+                ? state.phase === "slotResolution"
+                    ? "请选择本回合要发动的槽位能力。"
+                    : `当前由你行动，阶段：${state.phase}。`
+                : `当前由 AI 行动，阶段：${state.phase}。`;
     return `
     <div class="app-shell">
       <section class="hero">
         <div>
-          <h1>神どろ 对局中</h1>
+          <h1>Shin Doro 对局中</h1>
           <p>${escapeHtml(statusText)}</p>
         </div>
         <div class="hero-stats">
           <div class="pill"><strong>回合数</strong><br />${state.turn}</div>
           <div class="pill"><strong>当前行动方</strong><br />${state.currentPlayer === "P1" ? "玩家" : "AI"}</div>
           <div class="pill"><strong>阶段</strong><br />${escapeHtml(state.phase)}</div>
-          <div class="pill"><strong>攻击选择</strong><br />${store.uiState.selectedAttackerId ? "已选择使魔" : "未选择"}</div>
+          <div class="pill"><strong>攻击选择</strong><br />${attackStatus}</div>
         </div>
       </section>
 
@@ -93,13 +106,14 @@ export function renderBoard(store, state) {
         player: enemy,
         character: store.getCharacter(enemy.character),
         ownership: "enemy",
-        targetableHero: legalHeroTarget
+        targetableHero: legalHeroTarget,
+        impactTarget: attackFx?.targetType === "hero" && attackFx.targetId === "P2_hero"
     })}
 
             <section class="zone">
               <div class="zone-header">
                 <h2 class="section-title">敌方战场</h2>
-                <span class="small-note">持续牌 ${enemy.persistents.length} / 陷阱 ${enemy.traps.length}</span>
+                <span class="small-note">持续物 ${enemy.persistents.length} / 陷阱 ${enemy.traps.length}</span>
               </div>
               <div class="persistent-row">${enemyPersistents}</div>
               <div class="minion-row" style="margin-top:12px;">${enemyBoard}</div>
@@ -108,7 +122,7 @@ export function renderBoard(store, state) {
             <section class="zone">
               <div class="zone-header">
                 <h2 class="section-title">你的战场</h2>
-                <span class="small-note">选择可攻击使魔后，再点敌方目标进行攻击。</span>
+                <span class="small-note">选择可攻击使魔后，可以指定敌方英雄或守护目标进行攻击。</span>
               </div>
               <div class="persistent-row">${playerPersistents}</div>
               <div class="persistent-row" style="margin-top:12px;">${playerTraps}</div>
@@ -119,14 +133,15 @@ export function renderBoard(store, state) {
         player,
         character: store.getCharacter(player.character),
         ownership: "player",
-        targetableHero: false
+        targetableHero: false,
+        impactTarget: attackFx?.targetType === "hero" && attackFx.targetId === "P1_hero"
     })}
 
             <section class="zone">
               <div class="zone-header">
                 <h2 class="section-title">你的手牌</h2>
                 <div class="game-toolbar">
-                  <button class="ghost-btn" data-action="cancel-attacker" ${store.uiState.selectedAttackerId ? "" : "disabled"}>取消攻击选择</button>
+                  <button class="ghost-btn" data-action="cancel-attacker" ${store.uiState.selectedAttackerId && !isAttackAnimating ? "" : "disabled"}>取消攻击选择</button>
                   <button class="primary-btn" data-action="end-turn" ${canEndTurn ? "" : "disabled"}>结束回合</button>
                 </div>
               </div>
@@ -136,11 +151,11 @@ export function renderBoard(store, state) {
 
           <aside class="sidebar">
             <div class="sidebar-card">
-              <h2 class="section-title">槽位说明</h2>
-              <p class="small-note">10 点槽位可以主动发动角色技能，13 点会强制触发 Overkill。神抽槽的 13 点效果会改为从备牌库选牌。</p>
-              <p class="small-note">敌方当前陷阱数量为 ${enemy.traps.length}，攻击前请留意可能的触发反制。</p>
+              <h2 class="section-title">槽位提示</h2>
+              <p class="small-note">10 点槽位可发动普通大招，13 点可发动强化大招或 Overkill 版本。</p>
+              <p class="small-note">敌方当前有 ${enemy.traps.length} 个陷阱，进攻前请留意反制风险。</p>
             </div>
-            ${advantage}
+            ${advantagePanel}
             <div class="log-card">
               <div class="flex-between">
                 <h2 class="section-title">战斗日志</h2>

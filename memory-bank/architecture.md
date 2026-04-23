@@ -35,6 +35,13 @@
   - 构建、启动、测试命令
 - `server.js`
   - 本地静态服务入口
+- `start-game.bat`
+  - Windows 下一键启动入口
+  - 调用 `start-game.ps1`
+- `start-game.ps1`
+  - Windows 生命周期启动器
+  - 启动 `npm start` 后使用独立浏览器窗口打开游戏
+  - 游戏窗口关闭后自动关闭服务器进程树
 
 ## 源码结构
 
@@ -42,11 +49,13 @@
 
 - UI 顶层入口
 - 负责 `setup / mulligan / game` 三个主要界面切换
+- 负责点击事件分发与手动攻击动作的 UI 触发
 
 ### `src/store/useGameStore.ts`
 
 - UI 与 `ShinDoroGame` 的桥接层
 - 将游戏状态、玩家操作与 AI 执行整理成前端可直接消费的接口
+- 包含只属于表现层的临时 UI 状态，例如攻击前冲与命中抖动使用的 `attackFx`
 
 ### `src/types.ts`
 
@@ -138,6 +147,13 @@
 - `SlotMeter.tsx`
   - 槽位进度展示
 
+当前攻击撞击特效也在这一层完成：
+
+- 攻击方前冲
+- 受击方抖动与闪光
+- 由 `store.uiState.attackFx` 驱动
+- 不影响引擎层的真实伤害与战斗规则
+
 ## 运行链路
 
 1. `npm run build`
@@ -170,6 +186,7 @@
   - 如结构有变化，再更新 `memory-bank/architecture.md`
 - 写代码尽量模块化，避免把过多职责堆进单个文件或函数
 - 若只是调整数据内容，优先保持 `src/data/*.ts` 根入口接口稳定，减少联动改动
+- 视觉特效优先放在 UI / store 层，不要把纯表现状态塞进 `GameState`
 
 ## 关联修正结论
 

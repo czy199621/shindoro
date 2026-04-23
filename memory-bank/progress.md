@@ -155,3 +155,42 @@
   - `cmd /c npm test`
 - 关联修正检查：
   - `engine`、`store`、`tests` 与 UI 层继续通过根入口取数，因此无需联动修改 import
+
+### 攻击撞击特效
+
+- 涉及文件：
+  - `src/store/useGameStore.ts`
+  - `src/components/Board.tsx`
+  - `src/components/Card.tsx`
+  - `src/components/PlayerHUD.tsx`
+  - `src/App.tsx`
+  - `src/style.css`
+  - `memory-bank/architecture.md`
+- 本次改动：
+  - 在 `uiState` 中加入 `attackFx`，用于描述当前攻击动画的攻击方与受击方
+  - 玩家手动攻击时改为先播放短暂前冲与命中抖动，再执行实际攻击结算
+  - 敌方英雄与使魔都可以作为命中特效目标
+  - 保持规则层无感知，攻击特效不进入 `GameState`
+- 验证：
+  - `cmd /c npm run build`
+  - `cmd /c npm test`
+- 关联修正检查：
+  - 这次只改了 UI / store 表现层与样式，没有修改引擎攻击规则
+  - 当前版本优先覆盖玩家手动攻击，AI 连续攻击演出仍可在后续单独扩展
+
+### 根目录一键启动文件
+
+- 涉及文件：
+  - `start-game.bat`
+  - `start-game.ps1`
+  - `memory-bank/architecture.md`
+- 本次改动：
+  - 在根目录新增 Windows 用的一键启动脚本
+  - 批处理文件改为调用 PowerShell 启动器
+  - 启动器会检查 `npm`、按需执行 `npm install`、再启动 `npm start`
+  - 使用独立的 Edge / Chrome / Brave 应用窗口打开游戏
+  - 关闭该游戏窗口后，自动结束服务器进程树
+- 验证：
+  - 脚本内容检查
+- 关联修正检查：
+  - 不影响游戏源码与规则逻辑

@@ -4,6 +4,14 @@ import { ShinDoroGame } from "../engine/gameState.js";
 import type { CharacterDefinition, GameState, PendingChoicePayload, TalentDefinition } from "../types.js";
 
 const PLAYER_TALENT_SEAT = "first" as const;
+const ATTACK_RESOLVE_DELAY_MS = 140;
+const ATTACK_FX_TAIL_MS = 220;
+
+export interface AttackFxState {
+  attackerId: string;
+  targetId: string;
+  targetType: "minion" | "hero";
+}
 
 export interface UiState {
   setup: {
@@ -13,6 +21,7 @@ export interface UiState {
   };
   mulliganSelection: Set<string>;
   selectedAttackerId: string | null;
+  attackFx: AttackFxState | null;
   aiTimer: number | null;
 }
 
@@ -45,8 +54,8 @@ export interface GameStore {
   cancelAttacker(): void;
   toggleAttacker(minionId: string): void;
   playCard(runtimeId: string): boolean;
-  attackMinion(minionId: string): boolean;
-  attackHero(heroId: string): boolean;
+  attackMinion(minionId: string, onChange?: () => void): boolean;
+  attackHero(heroId: string, onChange?: () => void): boolean;
   endTurn(): boolean;
 }
 
@@ -59,8 +68,11 @@ export function createGameStore({ game = new ShinDoroGame() }: { game?: ShinDoro
     },
     mulliganSelection: new Set<string>(),
     selectedAttackerId: null,
+    attackFx: null,
     aiTimer: null
   };
+  let attackResolveTimer: number | null = null;
+  let attackFxTimer: number | null = null;
 
   function getCharacter(characterId: string): CharacterDefinition {
     return CHARACTERS.find((character) => character.id === characterId) ?? CHARACTERS[0];
@@ -104,6 +116,7 @@ export function createGameStore({ game = new ShinDoroGame() }: { game?: ShinDoro
   }
 
   function resetUiSelections(): void {
+    clearAttackFx();
     uiState.mulliganSelection = new Set<string>();
     uiState.selectedAttackerId = null;
   }
@@ -118,6 +131,52 @@ export function createGameStore({ game = new ShinDoroGame() }: { game?: ShinDoro
       window.clearTimeout(uiState.aiTimer);
       uiState.aiTimer = null;
     }
+  }
+
+  function clearAttackTimers(): void {
+    if (attackResolveTimer !== null) {
+      window.clearTimeout(attackResolveTimer);
+      attackResolveTimer = null;
+    }
+    if (attackFxTimer !== null) {
+      window.clearTimeout(attackFxTimer);
+      attackFxTimer = null;
+    }
+  }
+
+  function clearAttackFx(): void {
+    clearAttackTimers();
+    uiState.attackFx = null;
+  }
+
+  function beginAttackFx(
+    targetId: string,
+    targetType: AttackFxState["targetType"],
+    executeAttack: (attackerId: string) => boolean,
+    onChange?: () => void
+  ): boolean {
+    const attackerId = uiState.selectedAttackerId;
+    if (!attackerId || uiState.attackFx) return false;
+
+    clearAttackTimers();
+    uiState.attackFx = { attackerId, targetId, targetType };
+
+    attackResolveTimer = window.setTimeout(() => {
+      attackResolveTimer = null;
+      const didAttack = executeAttack(attackerId);
+      if (didAttack) {
+        uiState.selectedAttackerId = null;
+      }
+      onChange?.();
+
+      attackFxTimer = window.setTimeout(() => {
+        attackFxTimer = null;
+        uiState.attackFx = null;
+        onChange?.();
+      }, ATTACK_FX_TAIL_MS);
+    }, ATTACK_RESOLVE_DELAY_MS);
+
+    return true;
   }
 
   return {
@@ -139,6 +198,7 @@ export function createGameStore({ game = new ShinDoroGame() }: { game?: ShinDoro
       const state = game.getState();
       if (state.currentPlayer === "P2" && (state.phase === "mainTurn" || state.phase === "combat") && !state.winner) {
         uiState.aiTimer = window.setTimeout(() => {
+          clearAttackFx();
           game.runAiTurn();
           uiState.selectedAttackerId = null;
           onChange();
@@ -147,6 +207,7 @@ export function createGameStore({ game = new ShinDoroGame() }: { game?: ShinDoro
     },
     dispose(): void {
       clearAiTimer();
+      clearAttackFx();
     },
     selectPlayerCharacter(characterId: string): void {
       uiState.setup.playerCharacterId = characterId;
@@ -196,6 +257,7 @@ export function createGameStore({ game = new ShinDoroGame() }: { game?: ShinDoro
     },
     restart(): void {
       clearAiTimer();
+      clearAttackFx();
       game.reset();
       resetUiSelections();
       uiState.setup.selectedTalentIds = [];
@@ -204,35 +266,29 @@ export function createGameStore({ game = new ShinDoroGame() }: { game?: ShinDoro
       game.handlePendingChoice(payload);
     },
     cancelAttacker(): void {
+      clearAttackFx();
       uiState.selectedAttackerId = null;
     },
     toggleAttacker(minionId: string): void {
+      if (uiState.attackFx) return;
       uiState.selectedAttackerId = uiState.selectedAttackerId === minionId ? null : minionId;
     },
     playCard(runtimeId: string): boolean {
+      clearAttackFx();
       const didPlay = game.playCard(runtimeId);
       if (didPlay) {
         uiState.selectedAttackerId = null;
       }
       return didPlay;
     },
-    attackMinion(minionId: string): boolean {
-      if (!uiState.selectedAttackerId) return false;
-      const didAttack = game.attack(uiState.selectedAttackerId, minionId, "minion");
-      if (didAttack) {
-        uiState.selectedAttackerId = null;
-      }
-      return didAttack;
+    attackMinion(minionId: string, onChange?: () => void): boolean {
+      return beginAttackFx(minionId, "minion", (attackerId) => game.attack(attackerId, minionId, "minion"), onChange);
     },
-    attackHero(heroId: string): boolean {
-      if (!uiState.selectedAttackerId) return false;
-      const didAttack = game.attack(uiState.selectedAttackerId, heroId, "hero");
-      if (didAttack) {
-        uiState.selectedAttackerId = null;
-      }
-      return didAttack;
+    attackHero(heroId: string, onChange?: () => void): boolean {
+      return beginAttackFx(heroId, "hero", (attackerId) => game.attack(attackerId, heroId, "hero"), onChange);
     },
     endTurn(): boolean {
+      clearAttackFx();
       uiState.selectedAttackerId = null;
       return game.endTurn();
     }

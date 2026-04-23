@@ -208,13 +208,17 @@ function onMulliganAction(store: GameStore, target: HTMLElement): boolean {
   return false;
 }
 
-function onBattleAction(store: GameStore, target: HTMLElement): boolean {
+function onBattleAction(store: GameStore, target: HTMLElement, onChange: () => void): boolean {
   const state = store.getState();
   const action = target.dataset.action ?? "";
 
   if (action === "restart") {
     store.restart();
     return true;
+  }
+
+  if (store.uiState.attackFx) {
+    return false;
   }
 
   if (state.pendingChoice) {
@@ -254,15 +258,13 @@ function onBattleAction(store: GameStore, target: HTMLElement): boolean {
   if (action === "attack-target") {
     const minionId = target.dataset.minionId;
     if (!minionId) return true;
-    store.attackMinion(minionId);
-    return true;
+    return store.attackMinion(minionId, onChange);
   }
 
   if (action === "attack-hero") {
     const heroId = target.dataset.heroId;
     if (!heroId) return true;
-    store.attackHero(heroId);
-    return true;
+    return store.attackHero(heroId, onChange);
   }
 
   if (action === "end-turn") {
@@ -298,7 +300,7 @@ export function mountApp(app: HTMLDivElement): void {
         ? onSetupAction(store, target)
         : state.screen === "mulligan"
           ? onMulliganAction(store, target)
-          : onBattleAction(store, target);
+          : onBattleAction(store, target, render);
 
     if (handled) {
       render();

@@ -192,12 +192,15 @@ function onMulliganAction(store, target) {
     }
     return false;
 }
-function onBattleAction(store, target) {
+function onBattleAction(store, target, onChange) {
     const state = store.getState();
     const action = target.dataset.action ?? "";
     if (action === "restart") {
         store.restart();
         return true;
+    }
+    if (store.uiState.attackFx) {
+        return false;
     }
     if (state.pendingChoice) {
         if (action === "pending-use-jump") {
@@ -235,15 +238,13 @@ function onBattleAction(store, target) {
         const minionId = target.dataset.minionId;
         if (!minionId)
             return true;
-        store.attackMinion(minionId);
-        return true;
+        return store.attackMinion(minionId, onChange);
     }
     if (action === "attack-hero") {
         const heroId = target.dataset.heroId;
         if (!heroId)
             return true;
-        store.attackHero(heroId);
-        return true;
+        return store.attackHero(heroId, onChange);
     }
     if (action === "end-turn") {
         store.endTurn();
@@ -275,7 +276,7 @@ export function mountApp(app) {
             ? onSetupAction(store, target)
             : state.screen === "mulligan"
                 ? onMulliganAction(store, target)
-                : onBattleAction(store, target);
+                : onBattleAction(store, target, render);
         if (handled) {
             render();
         }

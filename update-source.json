@@ -1,0 +1,12 @@
+{
+  "provider": "github-branch-zip",
+  "owner": "czy199621",
+  "repo": "shindoro",
+  "branch": "main",
+  "preservePaths": [
+    ".git",
+    "node_modules",
+    "dist",
+    ".shindoro-update-state.json"
+  ]
+}

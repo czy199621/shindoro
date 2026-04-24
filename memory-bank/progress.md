@@ -2,6 +2,24 @@
 
 ## 2026-04-24
 
+### Added archive-based auto-update fallback for non-Git installs
+
+- Files
+  - `start-game.ps1`
+  - `update-source.json`
+  - `.gitignore`
+  - `README.md`
+  - `memory-bank/architecture.md`
+  - `memory-bank/progress.md`
+- Summary
+  - Kept Git-based fast-forward update as the first choice for developer worktrees.
+  - Added a no-Git fallback path that downloads the latest GitHub branch zip, applies managed files into the current folder, and records a local update state file with commit and file hashes.
+  - Added local-change protection for archive-updated installs so post-update edits can cause auto-update to skip instead of silently overwriting files.
+- Verification
+  - PowerShell script syntax parse
+- Related updates checked
+  - Updated the user-facing README and architecture notes so the new update flow is documented alongside the existing launch workflow.
+
 ### Removed the empty-state settlement hint box
 
 - Files

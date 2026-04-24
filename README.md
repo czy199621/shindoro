@@ -38,15 +38,16 @@
 
 它会：
 
-- 先检查当前目录是否是 Git 仓库
-- 在工作区干净时执行 `git pull --ff-only origin 当前分支`
+- 优先尝试使用本地 Git 工作区执行快速更新
+- 如果本机没有可用的 Git 更新条件，则自动退回到 GitHub 压缩包更新
 - 更新完成后继续调用 `start-game.ps1` 启动游戏
 
 说明：
 
-- 如果检测到未提交改动，会跳过自动更新，避免覆盖本地工作区
-- 如果没有安装 `git`、没有配置 `origin`、无法识别当前分支，或 `git pull` 失败，也会跳过更新并继续启动本地版本
-- 首次使用前，需要本机已经配置好 Git 与对应仓库的拉取权限
+- 普通使用者现在不需要额外配置 Git，也可以自动更新
+- 如果检测到 Git 工作区未提交改动，会跳过更新，避免覆盖开发中的本地文件
+- 如果是无 Git 的压缩包安装方式，启动器会记录一份本地更新状态；若检测到上次更新后的本地文件改动，也会跳过更新以保护当前目录
+- 默认更新源配置写在 [update-source.json](./update-source.json)
 
 ### 通用手动启动
 
@@ -79,58 +80,6 @@ npm test
 ```
 
 - 先构建，再运行 [tests/engine.test.js](./tests/engine.test.js)
-
-## 目录结构
-
-```text
-.
-├─ src/                  # TypeScript 源码
-│  ├─ components/        # UI 组件
-│  ├─ data/              # 角色、卡牌、天赋、卡组数据
-│  ├─ engine/            # 游戏规则与结算逻辑
-│  ├─ store/             # UI 与游戏引擎的桥接层
-│  ├─ App.tsx            # 顶层界面入口
-│  ├─ main.ts            # 挂载入口
-│  └─ style.css          # 全局样式
-├─ dist/                 # 编译产物
-├─ design/               # 规则与设计文档
-├─ memory-bank/          # 项目记忆与协作文档
-├─ tests/                # 测试
-├─ index.html
-├─ package.json
-├─ server.js             # 本地静态服务器
-├─ start-game.bat        # Windows 一键启动
-├─ start-game.ps1        # 生命周期启动器
-└─ update-and-start.bat  # 自动更新后启动
-```
-
-## 数据结构说明
-
-### 角色
-
-- 根入口：[src/data/characters.ts](./src/data/characters.ts)
-- 具体模块：`src/data/characters/characterA.ts` 到 `characterF.ts`
-
-### 卡牌
-
-- 根入口：[src/data/cards.ts](./src/data/cards.ts)
-- 类型拆分：
-  - `src/data/cards/minions.ts`
-  - `src/data/cards/spells.ts`
-  - `src/data/cards/persistents.ts`
-  - `src/data/cards/traps.ts`
-
-### 天赋
-
-- 根入口：[src/data/talents.ts](./src/data/talents.ts)
-- 分类拆分：
-  - `src/data/talents/survival.ts`
-  - `src/data/talents/resource.ts`
-  - `src/data/talents/deckControl.ts`
-  - `src/data/talents/combat.ts`
-  - `src/data/talents/spell.ts`
-  - `src/data/talents/burst.ts`
-  - `src/data/talents/slotControl.ts`
 
 ## 运行说明
 

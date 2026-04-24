@@ -1,10 +1,17 @@
+import { Suspense, lazy, useCallback, useEffect, useRef, useState, type MouseEvent as ReactMouseEvent } from "react";
 import { CHARACTERS } from "./data/characters.js";
 import { TALENTS } from "./data/talents.js";
 import { renderMulliganCard } from "./components/Card.js";
-import { renderBoard } from "./components/Board.js";
+import { ReactBattleBoard } from "./components/react/ReactBattleBoard.js";
 import { escapeHtml } from "./components/html.js";
 import { createGameStore, type GameStore } from "./store/useGameStore.js";
 import type { GameState } from "./types.js";
+
+const PixiBattlefieldHost = lazy(() =>
+  import("./game-view/pixi/PixiBattlefieldHost.js").then((module) => ({
+    default: module.PixiBattlefieldHost
+  }))
+);
 
 function renderSetupScreen(store: GameStore): string {
   const playerCharacter = store.getSelectedCharacter();
@@ -275,41 +282,65 @@ function onBattleAction(store: GameStore, target: HTMLElement, onChange: () => v
   return false;
 }
 
-export function mountApp(app: HTMLDivElement): void {
-  const store = createGameStore();
+export function GameApp() {
+  const storeRef = useRef<GameStore | null>(null);
+  const [, setRenderVersion] = useState(0);
 
-  const render = () => {
-    const state = store.getState();
-    if (state.screen === "setup") {
-      app.innerHTML = renderSetupScreen(store);
-    } else if (state.screen === "mulligan") {
-      app.innerHTML = renderMulliganScreen(store, state);
-    } else {
-      app.innerHTML = renderBoard(store, state);
-    }
-    store.scheduleAiTurn(render);
-  };
+  if (!storeRef.current) {
+    storeRef.current = createGameStore();
+  }
 
-  app.addEventListener("click", (event: MouseEvent) => {
-    const target = (event.target as Element | null)?.closest<HTMLElement>("[data-action]");
-    if (!target) return;
+  const store = storeRef.current;
+  const forceRender = useCallback(() => {
+    setRenderVersion((version) => version + 1);
+  }, []);
 
-    const state = store.getState();
-    const handled =
-      state.screen === "setup"
-        ? onSetupAction(store, target)
-        : state.screen === "mulligan"
-          ? onMulliganAction(store, target)
-          : onBattleAction(store, target, render);
+  const state = store.getState();
+  const markup =
+    state.screen === "setup" ? renderSetupScreen(store) : state.screen === "mulligan" ? renderMulliganScreen(store, state) : "";
 
-    if (handled) {
-      render();
-    }
+  useEffect(() => {
+    store.scheduleAiTurn(forceRender);
   });
 
-  window.addEventListener("beforeunload", () => {
-    store.dispose();
-  });
+  useEffect(() => {
+    return () => {
+      store.dispose();
+    };
+  }, [store]);
 
-  render();
+  const handleClick = useCallback(
+    (event: ReactMouseEvent<HTMLDivElement>) => {
+      const target = (event.target as Element | null)?.closest<HTMLElement>("[data-action]");
+      if (!target || !event.currentTarget.contains(target)) return;
+
+      const currentState = store.getState();
+      const handled =
+        currentState.screen === "setup"
+          ? onSetupAction(store, target)
+          : currentState.screen === "mulligan"
+            ? onMulliganAction(store, target)
+            : onBattleAction(store, target, forceRender);
+
+      if (handled) {
+        forceRender();
+      }
+    },
+    [forceRender, store]
+  );
+
+  if (state.screen === "game") {
+    return (
+      <>
+        <Suspense fallback={null}>
+          <PixiBattlefieldHost state={state} attackFx={store.uiState.attackFx} cardFx={store.uiState.cardFx} />
+        </Suspense>
+        <ReactBattleBoard store={store} state={state} onChange={forceRender} />
+      </>
+    );
+  }
+
+  return (
+    <div className="legacy-app-root" onClick={handleClick} dangerouslySetInnerHTML={{ __html: markup }} />
+  );
 }

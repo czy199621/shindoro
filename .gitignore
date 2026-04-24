@@ -1,2 +1,6 @@
 node_modules/
 .shindoro-update-state.json
+.aws-deploy/
+.test-dist/
+.vite-server.*.log
+deploy-aws.config.json

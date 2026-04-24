@@ -619,6 +619,10 @@ button:disabled {
   opacity: 0.55;
 }
 
+.card[aria-disabled="true"] {
+  cursor: not-allowed;
+}
+
 .card h4,
 .minion-card h4,
 .persistent-card h4 {
@@ -633,6 +637,173 @@ button:disabled {
 .small-note {
   color: var(--muted);
   font-size: 13px;
+}
+
+.keyword-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.keyword-badge {
+  display: inline-flex;
+  align-items: center;
+  min-height: 22px;
+  padding: 4px 8px;
+  border-radius: 999px;
+  border: 1px solid rgba(36, 29, 23, 0.1);
+  background: rgba(255, 255, 255, 0.76);
+  color: var(--ink);
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.keyword-badge.rush {
+  color: #8c2d20;
+  background: rgba(224, 93, 61, 0.16);
+  border-color: rgba(178, 58, 43, 0.24);
+}
+
+.keyword-badge.guard {
+  color: #215a78;
+  background: rgba(56, 110, 143, 0.16);
+  border-color: rgba(56, 110, 143, 0.22);
+}
+
+.keyword-badge.menace {
+  color: #5b4f63;
+  background: rgba(104, 91, 112, 0.14);
+  border-color: rgba(104, 91, 112, 0.2);
+}
+
+.keyword-badge.magicRes {
+  color: #7b5a12;
+  background: rgba(198, 146, 41, 0.18);
+  border-color: rgba(198, 146, 41, 0.26);
+}
+
+.card-detail-tooltip {
+  position: fixed;
+  z-index: 60;
+  width: min(340px, calc(100vw - 28px));
+  max-height: min(430px, calc(100vh - 28px));
+  overflow: hidden;
+  pointer-events: none;
+  padding: 14px 16px;
+  border-radius: 16px;
+  border: 1px solid rgba(52, 39, 24, 0.18);
+  background: rgba(255, 250, 241, 0.98);
+  box-shadow: 0 18px 48px rgba(24, 17, 12, 0.26);
+  color: var(--ink);
+  backdrop-filter: blur(8px);
+}
+
+.card-detail-header {
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+  justify-content: space-between;
+}
+
+.card-detail-title {
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 20px;
+  font-weight: 700;
+  line-height: 1.15;
+}
+
+.card-detail-type {
+  margin-top: 4px;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.card-detail-cost {
+  min-width: 38px;
+  padding: 8px 10px;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #386e8f, #214a67);
+  color: white;
+  font-weight: 800;
+  text-align: center;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.28);
+}
+
+.card-detail-keywords {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 10px;
+}
+
+.card-detail-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(86px, 1fr));
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.card-detail-stats span {
+  min-width: 0;
+  padding: 8px 10px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.72);
+  border: 1px solid rgba(52, 39, 24, 0.1);
+  font-size: 13px;
+  font-weight: 800;
+  text-align: center;
+}
+
+.card-detail-description {
+  margin: 12px 0 0;
+  color: var(--ink);
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.card-detail-effects {
+  display: grid;
+  gap: 6px;
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: 1px solid var(--line);
+}
+
+.card-detail-effects strong {
+  color: var(--muted);
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.card-detail-effects p {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.42;
+}
+
+.card-detail-flavor {
+  margin: 10px 0 0;
+  color: var(--muted);
+  font-size: 12px;
+  font-style: italic;
+  line-height: 1.4;
+}
+
+.card-detail-status {
+  margin-top: 12px;
+  padding: 8px 10px;
+  border-radius: 12px;
+  background: rgba(198, 146, 41, 0.14);
+  color: #6d4d08;
+  font-size: 12px;
+  font-weight: 800;
 }
 
 .card-cost {
@@ -913,6 +1084,7 @@ button:disabled {
 .modal-backdrop {
   position: fixed;
   inset: 0;
+  z-index: 20;
   display: grid;
   place-items: center;
   padding: 24px;
@@ -950,7 +1122,32 @@ button:disabled {
   min-height: 100vh;
 }
 
+.legacy-app-root {
+  position: relative;
+  z-index: 1;
+  min-height: 100vh;
+}
+
+.pixi-battlefield-host {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+}
+
+.pixi-battlefield-effects {
+  z-index: 2;
+  opacity: 1;
+}
+
+.pixi-battlefield-host canvas {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
 .game-shell {
+  position: relative;
+  z-index: 1;
   width: 100%;
   max-width: none;
   height: 100vh;
@@ -1182,6 +1379,17 @@ button:disabled {
   font-size: 12px;
 }
 
+.game-shell .keyword-row {
+  gap: 4px;
+  margin-top: 6px;
+}
+
+.game-shell .keyword-badge {
+  min-height: 18px;
+  padding: 3px 6px;
+  font-size: 10px;
+}
+
 .game-shell .card-cost {
   top: 8px;
   right: 8px;
@@ -1411,6 +1619,245 @@ button:disabled {
 .game-shell .danger-btn,
 .game-shell .ghost-btn {
   padding: 10px 14px;
+}
+
+.game-shell {
+  height: 100dvh;
+  padding: 10px 12px 12px;
+  gap: 10px;
+}
+
+.game-shell .hero {
+  min-height: 86px;
+  grid-template-columns: minmax(280px, 1fr) minmax(500px, 680px);
+  padding: 12px 16px;
+  border-radius: 18px;
+  gap: 12px;
+}
+
+.game-shell .hero-copy {
+  display: grid;
+  gap: 4px;
+}
+
+.game-shell .hero-copy h1 {
+  font-size: clamp(22px, 1.7vw, 30px);
+  line-height: 1.05;
+}
+
+.game-shell .hero-copy p {
+  margin: 0;
+  max-width: 70ch;
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+.game-shell .hero-stats {
+  min-width: 0;
+}
+
+.game-shell .battle-hero-stats {
+  grid-template-columns: repeat(4, minmax(92px, 1fr));
+}
+
+.game-shell .battle-hero-stats .pill {
+  min-height: 58px;
+  display: grid;
+  align-content: center;
+  border-radius: 12px;
+}
+
+.game-shell .board-shell {
+  padding: 10px;
+  border-radius: 18px;
+  background:
+    linear-gradient(180deg, rgba(255, 252, 246, 0.9), rgba(244, 235, 221, 0.86)),
+    var(--panel);
+}
+
+.game-shell .battle-layout {
+  grid-template-columns: minmax(0, 1fr) clamp(300px, 20vw, 360px);
+  gap: 10px;
+}
+
+.game-shell .battle-main {
+  grid-template-rows: minmax(156px, 1fr) minmax(176px, 1.08fr) clamp(172px, 21vh, 216px);
+  gap: 10px;
+}
+
+.game-shell .battlefield-half {
+  gap: 10px;
+}
+
+.game-shell .enemy-half {
+  grid-template-columns: clamp(248px, 15vw, 318px) minmax(0, 1fr);
+}
+
+.game-shell .player-half {
+  grid-template-columns: minmax(0, 1fr) clamp(248px, 15vw, 318px);
+}
+
+.game-shell .field-zone,
+.game-shell .hand-zone {
+  border-radius: 16px;
+}
+
+.game-shell .zone-header {
+  min-height: 28px;
+}
+
+.game-shell .section-title {
+  font-size: clamp(16px, 1.05vw, 20px);
+  line-height: 1.1;
+}
+
+.game-shell .zone-header .small-note {
+  max-width: 40ch;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.game-shell .zone-stack {
+  gap: 6px;
+  overflow: hidden;
+}
+
+.game-shell .zone-stack-player {
+  grid-template-rows: minmax(42px, auto) minmax(42px, auto) minmax(0, 1fr);
+}
+
+.game-shell .persistent-row {
+  min-height: 42px;
+  max-height: 72px;
+}
+
+.game-shell .minion-row {
+  min-height: 126px;
+}
+
+.game-shell .hand-row {
+  align-items: stretch;
+}
+
+.game-shell .card,
+.game-shell .minion-card,
+.game-shell .persistent-card {
+  display: grid;
+  text-align: left;
+  overflow: hidden;
+}
+
+.game-shell .card {
+  min-height: 158px;
+  max-height: 188px;
+  grid-template-rows: auto auto auto minmax(0, 1fr) auto;
+}
+
+.game-shell .minion-card {
+  min-height: 138px;
+  max-height: 166px;
+  grid-template-rows: auto auto minmax(0, 1fr) auto auto;
+}
+
+.game-shell .persistent-card {
+  min-height: 82px;
+  max-height: 106px;
+  grid-template-rows: auto auto minmax(0, 1fr);
+}
+
+.game-shell .card h4,
+.game-shell .minion-card h4,
+.game-shell .persistent-card h4 {
+  padding-right: 30px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.game-shell .card p,
+.game-shell .minion-card p,
+.game-shell .persistent-card p {
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+.game-shell .persistent-card p {
+  -webkit-line-clamp: 1;
+}
+
+.game-shell .minion-meta {
+  min-height: 32px;
+}
+
+.game-shell .stats-line {
+  align-self: end;
+}
+
+.game-shell .hud {
+  min-height: 0;
+  gap: 8px;
+  justify-content: start;
+}
+
+.game-shell .hud-title {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.game-shell .hud-passive {
+  max-height: 52px;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+}
+
+.game-shell .hud-resource-row {
+  margin-top: 0;
+}
+
+.game-shell .hud-stats {
+  margin-top: 0;
+}
+
+.game-shell .slot-metrics {
+  margin-top: auto;
+}
+
+.game-shell .sidebar {
+  display: grid;
+  grid-template-rows: minmax(0, 1.15fr) minmax(0, 0.85fr);
+  gap: 10px;
+}
+
+.game-shell .momentum-panel,
+.game-shell .battle-log-panel {
+  overflow: hidden;
+}
+
+.game-shell .momentum-outlook,
+.game-shell .momentum-detail,
+.game-shell .momentum-settlement {
+  display: none;
+}
+
+.game-shell .battle-log-panel {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+}
+
+.game-shell .battle-log-header {
+  margin-bottom: 8px;
+}
+
+.game-shell .battle-log-panel .log-list {
+  overflow: auto;
 }
 
 @keyframes attack-lunge {

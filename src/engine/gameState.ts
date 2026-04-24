@@ -19,7 +19,7 @@ import type {
   SlotAdjustOptions
 } from "../types.js";
 import { createEmptyPlayerState, createRuntimeCard, shuffle } from "./rules.js";
-import { chooseAiTalentIds } from "./ai.js";
+import { chooseAiMulliganIndices, chooseAiTalentIds } from "./ai.js";
 import {
   attack,
   attackWith,
@@ -248,11 +248,7 @@ export class ShinDoroGame implements GameAiAdapter {
   }
 
   getRecommendedMulliganIndices(playerId: PlayerId): number[] {
-    const player = this.getPlayer(playerId);
-    return player.hand
-      .map((card, index) => ({ card, index }))
-      .filter(({ card }) => card.id !== "coin" && card.currentCost >= 4)
-      .map(({ index }) => index);
+    return chooseAiMulliganIndices(this.state, playerId);
   }
 
   completePlayerMulligan(indices: number[]) {

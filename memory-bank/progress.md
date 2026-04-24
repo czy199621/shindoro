@@ -574,3 +574,85 @@
   - `Board.tsx` 已接入新的 `EffectLayer` 和区域高亮
   - `Card.tsx` 已为使魔和持续物 / 陷阱卡补入场类名与卡面演出
   - `dist/` 已通过构建同步更新
+
+## 2026-04-25
+
+### Vite + React + TypeScript + PixiJS 第一阶段迁移
+
+- 涉及文件：
+  - `package.json`
+  - `package-lock.json`
+  - `index.html`
+  - `tsconfig.json`
+  - `tsconfig.test.json`
+  - `vite.config.ts`
+  - `src/main.tsx`
+  - `src/App.tsx`
+  - `src/style.css`
+  - `src/game-view/pixi/PixiBattlefieldHost.tsx`
+  - `tests/engine.test.js`
+  - `deploy-aws.ps1`
+  - `AWS_DEPLOY.md`
+  - `.gitignore`
+
+- 本次改动：
+  - 项目入口从 `src/main.ts` + 原生 DOM mount 迁移到 `src/main.tsx` + React `createRoot()`。
+  - `src/App.tsx` 改成 React 根组件，但暂时保留旧字符串模板渲染层，避免一次性重写 UI 导致玩法回归风险。
+  - 新增 PixiJS 依赖和 `PixiBattlefieldHost`，作为后续 Canvas/WebGL 战场层挂载点。
+  - PixiJS 采用 `React.lazy()` 按需加载，只在进入对战画面时加载。
+  - 引擎层和数据层保持现有结构，`src/engine/` 与 `src/data/` 没有因前端迁移被重写。
+  - 测试构建输出从 `dist/` 改为 `.test-dist/`，避免和 Vite 网站产物冲突。
+  - `dist/` 现在改为 Vite 正式静态站点产物。
+  - AWS 部署脚本改为上传 Vite `dist/` 目录内容，而不是上传旧的 `index.html + dist + src/style.css` 结构。
+
+- 验证：
+  - `npm.cmd install` 成功，新增 React、React DOM、Vite、PixiJS 相关依赖。
+  - `npm.cmd test` 通过，`27/27`。
+  - `npm.cmd run build` 通过，Vite 生成 `dist/index.html` 与 `dist/assets/*`。
+  - `deploy-aws.ps1 -DryRun -SkipTests` 通过，会上传 Vite assets，并删除 S3 上旧的 `/dist/*` 与 `/src/style.css` 文件。
+  - 本地 Vite dev server 已验证可访问：`http://localhost:4173/` 返回 `200`。
+
+- 注意事项：
+  - PowerShell 中直接执行 `.\deploy-aws.ps1` 可能被执行策略拦截，推荐继续使用 `npm.cmd run deploy:aws` 或 `deploy-aws.bat`。
+  - Vite 在沙箱环境里可能出现 `spawn EPERM`，实际本机权限运行 `npm.cmd run build` 可以通过。
+  - 当前 PixiJS 只是架构挂载点，尚未真正接管卡牌、战场、攻击轨迹和粒子表现。
+  - 下一步建议先把旧字符串模板逐步拆成 React 组件，再将战场表现迁移到 PixiJS。
+
+### Kapipara AI 天赋约束与 AWS 部署补充记录
+
+- Kapi AI 已强制拿：
+  - `wide_grip`：手牌上限 +2
+  - `vitality_ritual`：最大生命 +6
+- 已新增测试保护该规则，避免未来 AI 调整时丢失。
+- 当前 AWS 线上地址：
+  - `https://d2j3zgbvkaujmi.cloudfront.net/`
+- CloudFront 默认根对象已修正为 `index.html`。
+- 正确 Distribution ID 是 `E3JF5ILT0KVD5W`，其中中间字符是数字 `0`，不是字母 `O`。
+
+
+### React battle board, Pixi effects, and card inspection tooltip
+
+- Files
+  - `src/components/react/CardView.tsx`
+  - `src/components/react/PlayerHUDView.tsx`
+  - `src/components/react/ReactBattleBoard.tsx`
+  - `src/game-view/pixi/PixiBattlefieldHost.tsx`
+  - `src/App.tsx`
+  - `src/style.css`
+  - `memory-bank/2026-04-25-react-board-pixi.md`
+  - `memory-bank/architecture.md`
+  - `memory-bank/progress.md`
+- Summary
+  - Replaced the battle screen's old `renderBoard()` string-template path with real React components while keeping setup and mulligan on the legacy compatibility path.
+  - Added React card, minion, persistent/trap, player HUD, battle board, pending choice, game-over, battle log, and momentum panel composition.
+  - Kept PixiJS as a display-only foreground effects layer for attack trails, damage numbers, hit bursts, summon particles, and spell/trap/persistent bursts.
+  - Removed the temporary Pixi battlefield underlay; Pixi now creates only the fixed `pixi-battlefield-effects` canvas with `pointer-events: none`.
+  - Added DOM coordinate mapping through `data-pixi-entity-id` so Pixi effects align to real React cards and HUDs.
+  - Tightened battle layout rows, sidebar, card heights, text clamping, and internal overflow so the board stays readable during play.
+  - Added a unified hover/focus card-detail tooltip for hand cards, board minions, persistents, and traps, including support for currently unplayable hand cards.
+- Verification
+  - `npm.cmd run build`
+  - `npm.cmd test` passed: 27/27
+  - Local Vite server returned HTTP 200
+- Related updates checked
+  - Summarized the daily implementation note from `memory-bank/2026-04-25-react-board-pixi.md` into the long-term architecture and progress records.

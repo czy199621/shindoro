@@ -4,13 +4,28 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "clean": "node -e \"require('node:fs').rmSync('dist', { recursive: true, force: true })\"",
-    "build": "npm run clean && tsc -p tsconfig.json",
-    "serve": "node server.js",
-    "start": "npm run build && node server.js",
-    "test": "npm run build && node --test --test-isolation=none tests/engine.test.js"
+    "clean": "npm run clean:site && npm run clean:test",
+    "clean:site": "node -e \"require('node:fs').rmSync('dist', { recursive: true, force: true })\"",
+    "clean:test": "node -e \"require('node:fs').rmSync('.test-dist', { recursive: true, force: true })\"",
+    "typecheck": "tsc -p tsconfig.json",
+    "build": "npm run clean:site && npm run typecheck && vite build",
+    "build:test": "npm run clean:test && tsc -p tsconfig.test.json",
+    "dev": "vite --host 0.0.0.0 --port 4173",
+    "preview": "vite preview --host 0.0.0.0 --port 4173",
+    "serve": "npm run preview",
+    "start": "npm run dev",
+    "test": "npm run build:test && node --test --test-isolation=none tests/engine.test.js",
+    "deploy:aws": "powershell -NoProfile -ExecutionPolicy Bypass -File ./deploy-aws.ps1"
+  },
+  "dependencies": {
+    "pixi.js": "^8.0.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
   },
   "devDependencies": {
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "@vitejs/plugin-react": "^5.0.0",
     "typescript": "^5.9.3"
   }
 }

@@ -1,0 +1,8 @@
+{
+  "bucket": "your-s3-bucket-name",
+  "distributionId": "YOUR_CLOUDFRONT_DISTRIBUTION_ID",
+  "region": "ap-northeast-1",
+  "profile": "default",
+  "skipTests": false,
+  "skipInvalidation": false
+}

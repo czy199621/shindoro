@@ -20,6 +20,40 @@
   - The momentum panel header now shows just the title and current V badge, without the earlier descriptive subtitle.
   - When there is no previous settlement result yet, the panel now omits the old default settlement hint box instead of showing placeholder copy.
 
+## 2026-04-25 React Battle Board And Pixi Effects
+
+- Battle screen rendering
+  - `src/components/react/ReactBattleBoard.tsx` is now the active renderer for `state.screen === "game"`.
+  - Setup and mulligan still use the legacy string-template compatibility path in `src/App.tsx`.
+  - The battle screen is composed from real React components for cards, HUDs, board zones, controls, modals, battle log, and momentum display.
+- React component ownership
+  - `src/components/react/CardView.tsx` owns hand cards, board minions, persistent cards, traps, keyword badges, stat badges, and card inspection data.
+  - `src/components/react/PlayerHUDView.tsx` owns hero/player HUD display including HP, mana, hand/deck counts, jump slot, and god-draw slot.
+  - `src/components/react/ReactBattleBoard.tsx` owns board composition, player actions, pending choice modal, game-over modal, effect banner, battle log, momentum panel, and the card-detail tooltip portal.
+- PixiJS boundary
+  - `src/game-view/pixi/PixiBattlefieldHost.tsx` receives `GameState`, `attackFx`, and `cardFx`.
+  - PixiJS is display-only and does not decide legal actions, damage, or turn flow.
+  - PixiJS owns non-interactive foreground battle effects: attack trails, hit bursts, floating damage numbers, summon particles, and spell/trap/persistent bursts.
+  - React remains responsible for readable UI state such as selected attackers, targetability, card text, buttons, and modals.
+- Pixi coordinate model
+  - React battle entities expose `data-pixi-entity-id`.
+  - Hero HUDs use `P1_hero` and `P2_hero`; minions, persistents, and traps use their `instanceId`.
+  - `PixiBattlefieldHost` resolves effect origins and targets from DOM element centers before falling back to estimated battlefield positions.
+  - Damage snapshots preserve the last resolved position so damage numbers and hit bursts can still appear when a destroyed minion has already left the DOM.
+- Layering model
+  - The old Pixi battlefield underlay was removed because it polluted the battle layout.
+  - `PixiBattlefieldHost` now creates only the fixed `pixi-battlefield-effects` canvas.
+  - The Pixi effects layer uses `pointer-events: none`; modal overlays and the card-detail tooltip sit above it through higher z-index layers.
+- Battle layout
+  - The battle header is a compact status strip.
+  - The main battle view uses stable viewport rows for enemy field, player field, and player hand.
+  - The action log lives in the right sidebar below the momentum panel.
+  - Cards, minions, persistents, HUDs, momentum, and log panels use tighter height constraints and internal overflow so long text does not stretch the board.
+- Card detail tooltip
+  - Hovering or focusing a hand card, board minion, persistent card, or trap shows the unified card-detail tooltip.
+  - Unplayable hand cards still expose hover/focus inspection via `aria-disabled` plus a guarded click handler.
+  - The tooltip shows name, type, cost, tags, stats, description, summarized effects, flavor text, and current status.
+
 ## 2026-04-24 Design And Rule Sync
 
 - `SKILL.md`
@@ -283,3 +317,48 @@
 
 - 当前业务代码统一从 `src/data/cards.ts`、`src/data/characters.ts`、`src/data/talents.ts` 取数
 - 因为根入口保持稳定，角色、卡牌、天赋的模块化拆分不会强迫 UI、引擎、测试同步改 import
+
+## 2026-04-25 架构更新：Vite + React + TypeScript + PixiJS 第一阶段
+
+### 当前前端架构
+
+- 项目已经从原生 DOM 入口迁移到 `Vite + React + TypeScript`。
+- `index.html` 现在由 Vite 接管，入口为 `/src/main.tsx`。
+- `src/main.tsx` 使用 `react-dom/client` 的 `createRoot()` 挂载 `GameApp`。
+- `src/App.tsx` 现在是 React 组件，但为了降低迁移风险，仍通过兼容层调用原有字符串模板渲染函数。
+- 当前 UI 仍主要由 `src/components/*.tsx` 的旧模板函数输出 HTML 字符串，React 负责生命周期、点击事件入口和后续组件化承载。
+- PixiJS 已加入依赖，并新增 `src/game-view/pixi/PixiBattlefieldHost.tsx` 作为战场 Canvas/WebGL 层的挂载点。
+- PixiJS 使用 `React.lazy()` + `Suspense` 按需加载，只在 `state.screen === "game"` 时加载，避免设置页和换牌页提前加载 Pixi bundle。
+
+### 构建与测试分层
+
+- `dist/` 现在是 Vite 的正式网站构建产物，不再是 TypeScript 规则代码编译产物。
+- 规则测试改为编译到 `.test-dist/`。
+- `tsconfig.test.json` 只编译 `src/data/`、`src/engine/`、`src/types.ts`。
+- `tests/engine.test.js` 从 `../.test-dist/...` 导入被测模块。
+- `tsconfig.json` 改为 Vite 前端类型检查配置，使用 `moduleResolution: "Bundler"` 与 `noEmit: true`。
+
+### 常用命令
+
+- `npm.cmd start`：启动 Vite dev server，默认地址 `http://localhost:4173/`。
+- `npm.cmd run dev`：与 `start` 等价。
+- `npm.cmd run build`：类型检查并执行 `vite build`，输出正式站点到 `dist/`。
+- `npm.cmd test`：编译规则层到 `.test-dist/`，然后运行 `tests/engine.test.js`。
+- `npm.cmd run deploy:aws`：上传 Vite `dist/` 产物到 S3，并刷新 CloudFront。
+
+### AWS 部署架构
+
+- 当前线上托管为：
+  - 私有 S3 bucket：`shindoro-demo-bucket`
+  - CloudFront distribution：`E3JF5ILT0KVD5W`
+  - CloudFront domain：`https://d2j3zgbvkaujmi.cloudfront.net/`
+- CloudFront 已设置默认根对象 `index.html`。
+- `deploy-aws.ps1` 现在会运行测试和 Vite build，将 `dist/` 内容复制到 `.aws-deploy/`，再同步到 S3 并创建 CloudFront invalidation。
+- `deploy-aws.config.json` 为本地私有配置，已加入 `.gitignore`，不要提交。
+
+### 后续迁移方向
+
+- 当前完成的是架构迁移第一阶段，不是完整商业级 UI 重写。
+- 下一步建议将 `Card.tsx`、`Board.tsx`、`PlayerHUD.tsx` 等从字符串模板逐步拆成真正 React 组件。
+- 后续再将战场、手牌、攻击轨迹、伤害数字等表现逐步交给 PixiJS。
+- 引擎层继续保持纯 TypeScript，不让 UI 直接修改规则状态。

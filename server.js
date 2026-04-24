@@ -4,6 +4,7 @@ import path from "node:path";
 import url from "node:url";
 
 const __dirname = path.dirname(url.fileURLToPath(import.meta.url));
+const rootDir = path.resolve(__dirname);
 const port = Number(process.env.PORT || 4173);
 
 const mimeTypes = {
@@ -18,10 +19,38 @@ const mimeTypes = {
   ".jpeg": "image/jpeg"
 };
 
+function resolveRequestPath(rawUrl) {
+  let pathname;
+  try {
+    pathname = new URL(rawUrl || "/", "http://localhost").pathname;
+  } catch {
+    return null;
+  }
+
+  let decodedPath;
+  try {
+    decodedPath = decodeURIComponent(pathname);
+  } catch {
+    return null;
+  }
+
+  const relativePath = decodedPath === "/" ? "index.html" : decodedPath.replace(/^[/\\]+/, "");
+  const filePath = path.resolve(rootDir, relativePath);
+
+  if (filePath !== rootDir && !filePath.startsWith(rootDir + path.sep)) {
+    return null;
+  }
+
+  return filePath;
+}
+
 const server = http.createServer((req, res) => {
-  const requestPath = req.url === "/" ? "/index.html" : req.url;
-  const safePath = path.normalize(decodeURIComponent(requestPath)).replace(/^(\.\.[/\\])+/, "");
-  const filePath = path.join(__dirname, safePath);
+  const filePath = resolveRequestPath(req.url);
+  if (!filePath) {
+    res.writeHead(404, { "Content-Type": "text/plain; charset=utf-8" });
+    res.end("Not Found");
+    return;
+  }
 
   fs.stat(filePath, (statError, stats) => {
     if (statError || !stats.isFile()) {

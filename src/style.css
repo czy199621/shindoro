@@ -635,6 +635,52 @@ button:disabled {
   font-size: 13px;
 }
 
+.keyword-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.keyword-badge {
+  display: inline-flex;
+  align-items: center;
+  min-height: 22px;
+  padding: 4px 8px;
+  border-radius: 999px;
+  border: 1px solid rgba(36, 29, 23, 0.1);
+  background: rgba(255, 255, 255, 0.76);
+  color: var(--ink);
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.keyword-badge.rush {
+  color: #8c2d20;
+  background: rgba(224, 93, 61, 0.16);
+  border-color: rgba(178, 58, 43, 0.24);
+}
+
+.keyword-badge.guard {
+  color: #215a78;
+  background: rgba(56, 110, 143, 0.16);
+  border-color: rgba(56, 110, 143, 0.22);
+}
+
+.keyword-badge.menace {
+  color: #5b4f63;
+  background: rgba(104, 91, 112, 0.14);
+  border-color: rgba(104, 91, 112, 0.2);
+}
+
+.keyword-badge.magicRes {
+  color: #7b5a12;
+  background: rgba(198, 146, 41, 0.18);
+  border-color: rgba(198, 146, 41, 0.26);
+}
+
 .card-cost {
   position: absolute;
   top: 10px;
@@ -1180,6 +1226,17 @@ button:disabled {
 .game-shell .persistent-meta,
 .game-shell .small-note {
   font-size: 12px;
+}
+
+.game-shell .keyword-row {
+  gap: 4px;
+  margin-top: 6px;
+}
+
+.game-shell .keyword-badge {
+  min-height: 18px;
+  padding: 3px 6px;
+  font-size: 10px;
 }
 
 .game-shell .card-cost {

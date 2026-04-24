@@ -5,8 +5,11 @@ function getPreservedSlotValue(game, playerId) {
 export function resolveUltimateGodDraw(game, playerId, cardId) {
     const player = game.getPlayer(playerId);
     const picked = removeFirstMatching(player.reserveDeck, (card) => card.id === cardId) ?? player.reserveDeck.shift();
-    if (!picked)
+    if (!picked) {
+        player.godDrawSlot = getPreservedSlotValue(game, playerId);
+        game.log(`${game.getCharacter(player.character).name} 的备牌库为空，13 点神抽槽没有找到可加入的牌。`);
         return;
+    }
     player.deck.unshift({ ...picked, currentCost: picked.currentCost, baseCost: picked.baseCost });
     player.temporaryFlags.nextDrawDiscount = Math.max(player.temporaryFlags.nextDrawDiscount, 2);
     player.godDrawSlot = getPreservedSlotValue(game, playerId);

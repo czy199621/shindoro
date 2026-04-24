@@ -163,7 +163,7 @@ export function playCard(game: ShinDoroGame, runtimeId: string): boolean {
 }
 
 export function playCardAtIndex(game: ShinDoroGame, playerId: PlayerId, index: number): boolean {
-  if (game.state.phase !== "mainTurn") return false;
+  if (game.state.winner || game.state.currentPlayer !== playerId || game.state.phase !== "mainTurn") return false;
   const player = game.getPlayer(playerId);
   const card = player.hand[index];
   if (!card) return false;
@@ -496,6 +496,14 @@ export function attackWith(
   targetId: string,
   targetType: "hero" | "minion"
 ): boolean {
+  if (
+    game.state.winner ||
+    game.state.currentPlayer !== playerId ||
+    (game.state.phase !== "mainTurn" && game.state.phase !== "combat")
+  ) {
+    return false;
+  }
+
   const player = game.getPlayer(playerId);
   const attacker = player.board.find((minion) => minion.instanceId === attackerId);
   if (!attacker || !attacker.canAttack) return false;
@@ -508,17 +516,21 @@ export function attackWith(
     return false;
   }
 
-  attacker.canAttack = false;
-  if (game.state.phase === "mainTurn") {
-    game.state.phase = "combat";
-  }
-
   if (targetType === "hero") {
+    if (targetId !== `${opponentId}_hero`) return false;
+    attacker.canAttack = false;
+    if (game.state.phase === "mainTurn") {
+      game.state.phase = "combat";
+    }
     dealHeroDamage(game, opponent.id, attacker.attack);
     game.log(`${attacker.name} 对敌方英雄造成了 ${attacker.attack} 点伤害。`, "alert");
   } else {
     const defender = opponent.board.find((minion) => minion.instanceId === targetId);
     if (!defender) return false;
+    attacker.canAttack = false;
+    if (game.state.phase === "mainTurn") {
+      game.state.phase = "combat";
+    }
     defender.health -= attacker.attack;
     attacker.health -= defender.attack;
     const attackedEffects = defender.effects.filter((effect) => effect.trigger === "onAttacked");
@@ -534,6 +546,14 @@ export function attackWith(
 }
 
 export function getAttackTargets(game: ShinDoroGame, attackerId: string, playerId: PlayerId) {
+  if (
+    game.state.winner ||
+    game.state.currentPlayer !== playerId ||
+    (game.state.phase !== "mainTurn" && game.state.phase !== "combat")
+  ) {
+    return [];
+  }
+
   const player = game.getPlayer(playerId);
   const attacker = player.board.find((minion) => minion.instanceId === attackerId);
   if (!attacker || !attacker.canAttack) return [];
@@ -552,11 +572,19 @@ export function getAttackTargets(game: ShinDoroGame, attackerId: string, playerI
 }
 
 export function getPlayableCards(game: ShinDoroGame, playerId: PlayerId): RuntimeCard[] {
+  if (game.state.winner || game.state.currentPlayer !== playerId || game.state.phase !== "mainTurn") return [];
   const player = game.getPlayer(playerId);
-  return player.hand.filter((card) => card.currentCost <= player.mana);
+  return player.hand.filter((card) => card.currentCost <= player.mana && (card.type !== "minion" || player.board.length < 7));
 }
 
 export function getReadyAttackers(game: ShinDoroGame, playerId: PlayerId) {
+  if (
+    game.state.winner ||
+    game.state.currentPlayer !== playerId ||
+    (game.state.phase !== "mainTurn" && game.state.phase !== "combat")
+  ) {
+    return [];
+  }
   return game.getPlayer(playerId).board.filter((minion) => minion.canAttack);
 }
 

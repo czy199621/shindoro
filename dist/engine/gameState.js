@@ -3,7 +3,7 @@ import { getCardDefinition } from "../data/cards.js";
 import { STARTING_DECKS } from "../data/decks.js";
 import { TALENT_LOOKUP } from "../data/talents.js";
 import { createEmptyPlayerState, createRuntimeCard, shuffle } from "./rules.js";
-import { chooseAiTalentIds } from "./ai.js";
+import { chooseAiMulliganIndices, chooseAiTalentIds } from "./ai.js";
 import { attack, attackWith, checkForDeaths, checkGameOver, drawCards, getAttackTargets, getAIAttackTargets, getPlayableCards, getReadyAttackers, playCard, playCardAtIndex, resolveAction, resolveEffects, resolveOnTurnStart, summonMinion, triggerTraps } from "./effects.js";
 import { beginTurn, buildTurnStartQueue, completePlayerMulligan, endTurn, finishStartTurn, handlePendingChoice, performMulligan, processTurnStartQueue, runAiStep, runAiTurn } from "./phases.js";
 import { adjustSlot, applyAdvantageSlots, resolveCharacterSlot, resolveOptionalGodDraw, resolveUltimateGodDraw } from "./slotResolver.js";
@@ -177,11 +177,7 @@ export class ShinDoroGame {
         this.state.players[AI_ID].hand.push(createRuntimeCard(getCardDefinition("coin")));
     }
     getRecommendedMulliganIndices(playerId) {
-        const player = this.getPlayer(playerId);
-        return player.hand
-            .map((card, index) => ({ card, index }))
-            .filter(({ card }) => card.id !== "coin" && card.currentCost >= 4)
-            .map(({ index }) => index);
+        return chooseAiMulliganIndices(this.state, playerId);
     }
     completePlayerMulligan(indices) {
         return completePlayerMulligan(this, indices);

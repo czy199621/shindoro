@@ -202,6 +202,8 @@ export function createGameStore({ game = new ShinDoroGame() } = {}) {
         const attackerId = uiState.selectedAttackerId;
         if (!attackerId || uiState.attackFx)
             return false;
+        if (!buildTargetSet().has(targetId))
+            return false;
         clearAttackTimers();
         uiState.attackFx = { attackerId, targetId, targetType };
         attackResolveTimer = window.setTimeout(() => {
@@ -319,7 +321,13 @@ export function createGameStore({ game = new ShinDoroGame() } = {}) {
         toggleAttacker(minionId) {
             if (uiState.attackFx)
                 return;
-            uiState.selectedAttackerId = uiState.selectedAttackerId === minionId ? null : minionId;
+            if (uiState.selectedAttackerId === minionId) {
+                uiState.selectedAttackerId = null;
+                return;
+            }
+            if (!game.getAttackTargets(minionId).length)
+                return;
+            uiState.selectedAttackerId = minionId;
         },
         playCard(runtimeId) {
             clearAttackFx();

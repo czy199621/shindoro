@@ -1,10 +1,40 @@
 import type { MinionInstance, PlayerState, RuntimeCard } from "../types.js";
 import { escapeHtml } from "./html.js";
 
+const TAG_LABELS: Record<string, string> = {
+  rush: "冲锋",
+  guard: "护卫",
+  menace: "威压",
+  magicRes: "魔抗"
+};
+
+const TAG_CLASSES: Record<string, string> = {
+  rush: "rush",
+  guard: "guard",
+  menace: "menace",
+  magicRes: "magicRes"
+};
+
 function resolveThreat(attack: number | undefined, health: number | undefined, threat: number | undefined): number | null {
   if (threat !== undefined) return threat;
   if (attack === undefined || health === undefined) return null;
   return Math.floor(attack + health / 2);
+}
+
+function renderKeywordTags(tags: string[] | undefined): string {
+  if (!tags?.length) return "";
+
+  return `
+    <div class="keyword-row" aria-label="词条">
+      ${tags
+        .map((tag) => {
+          const label = TAG_LABELS[tag] ?? tag;
+          const className = TAG_CLASSES[tag] ? ` ${TAG_CLASSES[tag]}` : "";
+          return `<span class="keyword-badge${className}">${escapeHtml(label)}</span>`;
+        })
+        .join("")}
+    </div>
+  `;
 }
 
 function renderMinionStats(
@@ -30,7 +60,8 @@ export function renderHandCard(card: RuntimeCard, disabled = false, extraClass =
     <button class="card ${escapeHtml(card.type)} ${disabled ? "disabled" : ""} ${extraClass}" data-action="play-card" data-runtime-id="${escapeHtml(card.runtimeId)}" ${disabled ? "disabled" : ""}>
       <span class="card-cost">${card.currentCost}</span>
       <h4>${escapeHtml(card.name)}</h4>
-      <p class="card-meta">${escapeHtml(card.type)}${card.tags?.length ? ` · ${escapeHtml(card.tags.join(" / "))}` : ""}</p>
+      <p class="card-meta">${escapeHtml(card.type)}</p>
+      ${renderKeywordTags(card.tags)}
       <p>${escapeHtml(card.description)}</p>
       ${card.type === "minion" ? renderMinionStats(card.attack, card.health, card.threat) : ""}
     </button>
@@ -43,6 +74,7 @@ export function renderMulliganCard(card: RuntimeCard, selected: boolean): string
       <span class="card-cost">${card.currentCost}</span>
       <h4>${escapeHtml(card.name)}</h4>
       <p class="card-meta">${escapeHtml(card.type)}</p>
+      ${renderKeywordTags(card.tags)}
       <p>${escapeHtml(card.description)}</p>
       ${card.type === "minion" ? renderMinionStats(card.attack, card.health, card.threat) : ""}
       <p class="small-note">${selected ? "已标记为换牌" : "点击以选择换牌"}</p>
@@ -82,6 +114,7 @@ export function renderMinionCard(
   return `
     <button class="${classes.join(" ")}" data-action="${action}" data-minion-id="${escapeHtml(minion.instanceId)}">
       <h4>${escapeHtml(minion.name)}</h4>
+      ${renderKeywordTags(minion.tags)}
       <p class="minion-meta">${escapeHtml(minion.description)}</p>
       ${renderMinionStats(minion.attack, minion.health, minion.threat, minion.maxHealth)}
       <p class="small-note">${minion.canAttack && isPlayer ? "可以攻击" : "暂时不能攻击"}</p>

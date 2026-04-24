@@ -67,6 +67,9 @@ function applyDrawPhaseEffects(game, playerId) {
         }
     }
 }
+function choiceIncludesCard(choice, cardId) {
+    return Boolean(cardId && choice.choices.some((entry) => entry.cardId === cardId));
+}
 export function completePlayerMulligan(game, indices) {
     game.performMulligan(PLAYER_ID, indices);
     game.state.screen = "game";
@@ -153,6 +156,12 @@ export function processTurnStartQueue(game) {
                 game.resolveUltimateGodDraw(item.playerId, cardId);
                 continue;
             }
+            if (!player.reserveDeck.length) {
+                game.state.turnStartQueue.shift();
+                player.godDrawSlot = Math.max(0, player.temporaryFlags.preserveBurstSlotAmount);
+                game.log("备牌库为空，13 点神抽槽没有可加入的牌。");
+                continue;
+            }
             game.state.phase = "slotResolution";
             game.state.pendingChoice = {
                 type: "ultimateGodDraw",
@@ -234,10 +243,10 @@ export function handlePendingChoice(game, payload) {
     if (!choice)
         return;
     if (choice.type === "ultimateGodDraw") {
+        if (!choiceIncludesCard(choice, payload.cardId))
+            return;
         game.state.turnStartQueue.shift();
-        if (payload.cardId) {
-            game.resolveUltimateGodDraw(choice.playerId, payload.cardId);
-        }
+        game.resolveUltimateGodDraw(choice.playerId, payload.cardId);
         game.state.pendingChoice = null;
         game.processTurnStartQueue();
         return;
@@ -261,6 +270,8 @@ export function handlePendingChoice(game, payload) {
         return;
     }
     if (choice.type === "optionalGodDraw") {
+        if (payload.action === "use" && !choiceIncludesCard(choice, payload.cardId))
+            return;
         game.state.turnStartQueue.shift();
         if (payload.action === "use" && payload.cardId) {
             game.resolveOptionalGodDraw(choice.playerId, payload.cardId);

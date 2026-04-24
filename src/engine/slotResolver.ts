@@ -9,7 +9,11 @@ function getPreservedSlotValue(game: ShinDoroGame, playerId: PlayerId): number {
 export function resolveUltimateGodDraw(game: ShinDoroGame, playerId: PlayerId, cardId: string): void {
   const player = game.getPlayer(playerId);
   const picked = removeFirstMatching(player.reserveDeck, (card) => card.id === cardId) ?? player.reserveDeck.shift();
-  if (!picked) return;
+  if (!picked) {
+    player.godDrawSlot = getPreservedSlotValue(game, playerId);
+    game.log(`${game.getCharacter(player.character).name} 的备牌库为空，13 点神抽槽没有找到可加入的牌。`);
+    return;
+  }
 
   player.deck.unshift({ ...picked, currentCost: picked.currentCost, baseCost: picked.baseCost });
   player.temporaryFlags.nextDrawDiscount = Math.max(player.temporaryFlags.nextDrawDiscount, 2);

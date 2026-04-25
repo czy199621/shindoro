@@ -21,8 +21,14 @@ function isMagicSource(context: EffectContext): boolean {
 
 function canBeTargetedByMagic(minion: MinionInstance, actingPlayerId: PlayerId, context: EffectContext): boolean {
   if (minion.ownerId === actingPlayerId) return true;
+  if (minion.tags.includes("stealth")) return false;
   if (!minion.tags.includes("magicRes")) return true;
   return !isMagicSource(context);
+}
+
+function canBeTargetedByCombat(minion: MinionInstance, actingPlayerId: PlayerId): boolean {
+  if (minion.ownerId === actingPlayerId) return true;
+  return !minion.tags.includes("stealth");
 }
 
 function getGuardMinions(game: ShinDoroGame, playerId: PlayerId) {
@@ -80,12 +86,12 @@ function addCardToHand(game: ShinDoroGame, playerId: PlayerId, cardId: string): 
 
   if (player.hand.length >= player.handLimit) {
     player.graveyard.push({ id: card.id, name: card.name, runtimeId: card.runtimeId });
-    game.log(`${game.getCharacter(player.character).name} burns ${card.name} because the hand is full.`);
+    game.log(`${game.getCharacter(player.character).name} 因手牌已满烧掉了 ${card.name}。`);
     return;
   }
 
   player.hand.push(card);
-  game.log(`${game.getCharacter(player.character).name} adds ${card.name} to hand.`);
+  game.log(`${game.getCharacter(player.character).name} 将 ${card.name} 加入手牌。`);
 }
 
 function resolvePriorityExile(game: ShinDoroGame, playerId: PlayerId, mode: "health" | "attackAndHealth"): void {
@@ -327,8 +333,17 @@ export function resolveAction(
         action.amount
       );
       break;
+    case "applyOpponentNextTurnManaMultiplier":
+      opponent.temporaryFlags.nextTurnManaMultiplier = Math.min(
+        opponent.temporaryFlags.nextTurnManaMultiplier,
+        action.multiplier
+      );
+      break;
     case "millDeck":
       millCards(game, playerId, action.target, action.count);
+      break;
+    case "millDeckUntilRemaining":
+      resolveMillDeckUntilRemaining(game, playerId, action.target, action.remaining, action.onlyIfAbove);
       break;
     case "setMillOnDamageTaken":
       player.temporaryFlags.millOnDamageTaken = Math.max(player.temporaryFlags.millOnDamageTaken, action.amount);
@@ -349,6 +364,35 @@ export function resolveAction(
           context.source.maxHealth += action.hp;
         }
       }
+      break;
+    case "grantExtraTurn":
+      player.temporaryFlags.extraTurnPending = true;
+      if (action.loseIfNoWin) {
+        player.temporaryFlags.loseAtEndOfExtraTurn = true;
+      }
+      game.log(`${game.getCharacter(player.character).name} 获得了一个额外回合。`, "alert");
+      break;
+    case "purgeAllMagicAndOtherMinions":
+      resolvePurgeAllMagicAndOtherMinions(game, playerId, context, action.healPerRemoved ?? 0);
+      break;
+    case "swapHeroHp":
+      [player.hp, opponent.hp] = [
+        Math.min(player.maxHp, opponent.hp),
+        Math.min(opponent.maxHp, player.hp)
+      ];
+      game.log("双方角色的当前生命值发生了互换。", "alert");
+      break;
+    case "destroyAllMinions":
+      resolveDestroyAllMinions(game);
+      break;
+    case "destroyAllEnemyMinions":
+      resolveDestroyPlayerMinions(opponent);
+      break;
+    case "destroyPersistents":
+      resolveDestroyPersistents(game, playerId, action.target);
+      break;
+    case "destroyEnemyTraps":
+      resolveDestroyEnemyTraps(game, playerId);
       break;
     default:
       break;
@@ -381,7 +425,7 @@ function resolveDamageAction(
 
   const affected = [];
   if (action.target === "allEnemyMinions") {
-    affected.push(...availableEnemyMinions);
+    affected.push(...opponent.board);
   } else if (action.target === "allFriendlyMinions") {
     affected.push(...player.board);
   } else if (action.target === "strongestEnemyMinion") {
@@ -402,6 +446,83 @@ function resolveDamageAction(
   for (const unit of affected) {
     unit.health -= amount;
   }
+}
+
+function resolveMillDeckUntilRemaining(
+  game: ShinDoroGame,
+  sourcePlayerId: PlayerId,
+  target: "self" | "opponent",
+  remaining: number,
+  onlyIfAbove?: number
+): void {
+  const targetPlayer = target === "self" ? game.getPlayer(sourcePlayerId) : game.getOpponent(sourcePlayerId);
+  if (onlyIfAbove !== undefined && targetPlayer.deck.length <= onlyIfAbove) return;
+  const count = Math.max(0, targetPlayer.deck.length - remaining);
+  millCards(game, sourcePlayerId, target, count);
+}
+
+function resolveDestroyPlayerMinions(player: ReturnType<ShinDoroGame["getPlayer"]>, exceptInstanceId?: string): number {
+  let count = 0;
+  for (const minion of player.board) {
+    if (minion.instanceId === exceptInstanceId) continue;
+    if (minion.health > 0) {
+      minion.health = 0;
+      count += 1;
+    }
+  }
+  return count;
+}
+
+function resolveDestroyAllMinions(game: ShinDoroGame): number {
+  return resolveDestroyPlayerMinions(game.getPlayer("P1")) + resolveDestroyPlayerMinions(game.getPlayer("P2"));
+}
+
+function resolvePurgeAllMagicAndOtherMinions(
+  game: ShinDoroGame,
+  playerId: PlayerId,
+  context: EffectContext,
+  healPerRemoved: number
+): void {
+  const sourceId = context.source && !("type" in context.source) ? context.source.instanceId : undefined;
+  let removed = 0;
+
+  for (const targetPlayerId of [PLAYER_ID, AI_ID]) {
+    const targetPlayer = game.getPlayer(targetPlayerId);
+    removed += targetPlayer.persistents.length + targetPlayer.traps.length;
+    targetPlayer.persistents = [];
+    targetPlayer.traps = [];
+    removed += resolveDestroyPlayerMinions(targetPlayer, sourceId);
+  }
+
+  if (healPerRemoved > 0 && removed > 0) {
+    const player = game.getPlayer(playerId);
+    player.hp = Math.min(player.maxHp, player.hp + removed * healPerRemoved);
+  }
+
+  game.log(`肃清效果移除了 ${removed} 张场上卡牌。`, "alert");
+}
+
+function resolveDestroyPersistents(game: ShinDoroGame, playerId: PlayerId, target: "all" | "enemy"): void {
+  const targetPlayers = target === "all" ? [game.getPlayer("P1"), game.getPlayer("P2")] : [game.getOpponent(playerId)];
+  let destroyed = 0;
+  for (const targetPlayer of targetPlayers) {
+    for (const card of targetPlayer.persistents) {
+      targetPlayer.graveyard.push({ id: card.sourceCardId, name: card.name, runtimeId: card.instanceId });
+      destroyed += 1;
+    }
+    targetPlayer.persistents = [];
+  }
+  game.log(`破坏了 ${destroyed} 张持续魔法。`);
+}
+
+function resolveDestroyEnemyTraps(game: ShinDoroGame, playerId: PlayerId): void {
+  const opponent = game.getOpponent(playerId);
+  const destroyed = opponent.traps.length;
+  for (const card of opponent.traps) {
+    opponent.graveyard.push({ id: card.sourceCardId, name: card.name, runtimeId: card.instanceId });
+  }
+  opponent.traps = [];
+  game.log(`破坏了 ${destroyed} 张敌方触发魔法。`);
 }
 
 function resolveBuffAction(
@@ -506,7 +627,8 @@ export function attackWith(
 
   const player = game.getPlayer(playerId);
   const attacker = player.board.find((minion) => minion.instanceId === attackerId);
-  if (!attacker || !attacker.canAttack) return false;
+  const maxAttacks = attacker?.tags.includes("doubleStrike") ? 2 : 1;
+  if (!attacker || !attacker.canAttack || attacker.attacksThisTurn >= maxAttacks) return false;
 
   const opponentId = game.getOpponentId(playerId);
   const opponent = game.getPlayer(opponentId);
@@ -518,21 +640,41 @@ export function attackWith(
 
   if (targetType === "hero") {
     if (targetId !== `${opponentId}_hero`) return false;
-    attacker.canAttack = false;
+    attacker.attacksThisTurn += 1;
+    attacker.canAttack = attacker.attacksThisTurn < maxAttacks;
     if (game.state.phase === "mainTurn") {
       game.state.phase = "combat";
     }
     dealHeroDamage(game, opponent.id, attacker.attack);
+    if (attacker.tags.includes("lifesteal")) {
+      player.hp = Math.min(player.maxHp, player.hp + Math.max(0, attacker.attack));
+    }
+    attacker.tags = attacker.tags.filter((tag) => tag !== "stealth");
     game.log(`${attacker.name} 对敌方英雄造成了 ${attacker.attack} 点伤害。`, "alert");
   } else {
     const defender = opponent.board.find((minion) => minion.instanceId === targetId);
     if (!defender) return false;
-    attacker.canAttack = false;
+    if (!canBeTargetedByCombat(defender, playerId)) return false;
+    attacker.attacksThisTurn += 1;
+    attacker.canAttack = attacker.attacksThisTurn < maxAttacks;
     if (game.state.phase === "mainTurn") {
       game.state.phase = "combat";
     }
     defender.health -= attacker.attack;
     attacker.health -= defender.attack;
+    if (attacker.tags.includes("deadly") && attacker.attack > 0) {
+      defender.health = 0;
+    }
+    if (defender.tags.includes("deadly") && defender.attack > 0) {
+      attacker.health = 0;
+    }
+    if (attacker.tags.includes("lifesteal")) {
+      player.hp = Math.min(player.maxHp, player.hp + Math.max(0, attacker.attack));
+    }
+    if (defender.tags.includes("lifesteal")) {
+      opponent.hp = Math.min(opponent.maxHp, opponent.hp + Math.max(0, defender.attack));
+    }
+    attacker.tags = attacker.tags.filter((tag) => tag !== "stealth");
     const attackedEffects = defender.effects.filter((effect) => effect.trigger === "onAttacked");
     for (const effect of attackedEffects) {
       game.resolveAction(opponentId, effect.action, { source: defender });
@@ -567,7 +709,9 @@ export function getAttackTargets(game: ShinDoroGame, attackerId: string, playerI
 
   return [
     { type: "hero" as const, id: `${opponentId}_hero`, label: "敌方英雄" },
-    ...opponent.board.map((minion) => ({ type: "minion" as const, id: minion.instanceId, label: minion.name }))
+    ...opponent.board
+      .filter((minion) => canBeTargetedByCombat(minion, playerId))
+      .map((minion) => ({ type: "minion" as const, id: minion.instanceId, label: minion.name }))
   ];
 }
 

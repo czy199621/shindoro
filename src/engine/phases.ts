@@ -58,16 +58,19 @@ function applyTurnStartPassives(game: ShinDoroGame, playerId: PlayerId): void {
 function applyTurnStartMana(game: ShinDoroGame, playerId: PlayerId): void {
   const player = game.getPlayer(playerId);
   const manaPenalty = player.temporaryFlags.nextTurnManaPenalty;
+  const manaMultiplier = player.temporaryFlags.nextTurnManaMultiplier;
   player.temporaryFlags.nextTurnManaPenalty = 0;
+  player.temporaryFlags.nextTurnManaMultiplier = 1;
 
   player.maxMana = clamp(player.maxMana + 1, 0, 10);
   const openingBonusMana = player.temporaryFlags.openingBonusMana;
   player.temporaryFlags.openingBonusMana = 0;
-  player.mana = clamp(player.maxMana - manaPenalty + openingBonusMana, 0, 10);
+  player.mana = clamp(Math.floor(player.maxMana * manaMultiplier) - manaPenalty + openingBonusMana, 0, 10);
 }
 
 function readyBoardForTurn(player: PlayerState): void {
   for (const minion of player.board) {
+    minion.attacksThisTurn = 0;
     minion.canAttack = true;
     minion.summonedThisTurn = false;
     if (minion.tags.includes("rush")) {
@@ -154,6 +157,13 @@ export function beginTurn(game: ShinDoroGame): void {
 
 export function buildTurnStartQueue(game: ShinDoroGame, playerId: PlayerId): void {
   const player = game.getPlayer(playerId);
+  const slotSealActive = Object.values(game.state.players).some((candidate) =>
+    candidate.board.some((minion) => minion.tags.includes("slotSeal"))
+  );
+  if (slotSealActive) {
+    game.log("绝对裁决者·尤斯蒂娅封锁了双方的跳脸与神抽发动。", "alert");
+    return;
+  }
   if (player.jumpSlot >= 13) {
     game.state.turnStartQueue.push({ type: "ultimateJump", playerId });
   }
@@ -265,6 +275,13 @@ export function processTurnStartQueue(game: ShinDoroGame): void {
 export function finishStartTurn(game: ShinDoroGame): void {
   const player = game.getCurrentPlayer();
 
+  for (const minion of player.board) {
+    if (minion.tags.includes("regeneration") && minion.health < minion.maxHealth) {
+      minion.health = Math.min(minion.maxHealth, minion.health + 1);
+      game.log(`${minion.name} 通过回复恢复了 1 点生命。`);
+    }
+  }
+
   game.resolveOnTurnStart(player.id);
   game.checkForDeaths();
   if (game.state.winner) return;
@@ -351,6 +368,22 @@ export function endTurn(game: ShinDoroGame): boolean {
   game.applyAdvantageSlots(value, gain);
   game.checkGameOver();
   if (game.state.winner) return false;
+
+  if (!currentPlayer.temporaryFlags.extraTurnPending && currentPlayer.temporaryFlags.loseAtEndOfExtraTurn) {
+    game.state.winner = game.getOpponentId(currentPlayer.id);
+    game.state.phase = "gameOver";
+    currentPlayer.temporaryFlags.loseAtEndOfExtraTurn = false;
+    game.log("额外回合结束时未能击败对手，发动者败北。", "alert");
+    return false;
+  }
+
+  if (currentPlayer.temporaryFlags.extraTurnPending) {
+    currentPlayer.temporaryFlags.extraTurnPending = false;
+    game.state.turn += 1;
+    game.log(`${game.getCharacter(currentPlayer.character).name} 开始额外回合。`, "alert");
+    game.beginTurn();
+    return true;
+  }
 
   game.state.currentPlayer = game.getOpponentId(game.state.currentPlayer);
   game.state.turn += 1;

@@ -108,5 +108,53 @@ export const SPELL_CARDS: CardDefinition[] = [
       { trigger: "onPlay", action: { type: "damage", target: "allEnemyMinions", amount: 3 } },
       { trigger: "onPlay", action: { type: "damage", target: "enemyHero", amount: 3 } }
     ]
+  },
+  {
+    id: "wrath_of_god",
+    name: "神之愤怒",
+    cost: 5,
+    type: "spell",
+    description: "破坏场上所有使魔。",
+    effects: [{ trigger: "onPlay", action: { type: "destroyAllMinions" } }]
+  },
+  {
+    id: "heavenly_thunder",
+    name: "万雷天引",
+    cost: 8,
+    type: "spell",
+    description: "破坏对方场上所有使魔。",
+    effects: [{ trigger: "onPlay", action: { type: "destroyAllEnemyMinions" } }]
+  },
+  {
+    id: "void_barrier",
+    name: "虚无结界",
+    cost: 3,
+    type: "spell",
+    description: "破坏场上所有持续魔法。",
+    effects: [{ trigger: "onPlay", action: { type: "destroyPersistents", target: "all" } }]
+  },
+  {
+    id: "purifying_light",
+    name: "净化之光",
+    cost: 5,
+    type: "spell",
+    description: "破坏对方场上所有持续魔法。",
+    effects: [{ trigger: "onPlay", action: { type: "destroyPersistents", target: "enemy" } }]
+  },
+  {
+    id: "truth_searchlight",
+    name: "真实的探照灯",
+    cost: 3,
+    type: "spell",
+    description: "破坏对方场上所有盖伏的触发魔法。",
+    effects: [{ trigger: "onPlay", action: { type: "destroyEnemyTraps" } }]
+  },
+  {
+    id: "stagnant_hourglass",
+    name: "停滞的时沙",
+    cost: 5,
+    type: "spell",
+    description: "对方下一个回合开始阶段获得的费用点减半，向下取整。",
+    effects: [{ trigger: "onPlay", action: { type: "applyOpponentNextTurnManaMultiplier", multiplier: 0.5 } }]
   }
 ];

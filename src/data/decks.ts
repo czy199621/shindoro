@@ -24,6 +24,13 @@ function defineDeck(mainDeck: string[], sideboard: string[]): DeckConfig {
   return { mainDeck, sideboard };
 }
 
+const PUBLIC_SIDEBOARD_FINISHERS = [
+  "ouroboros_time_usurper",
+  "michael_divine_executor",
+  "chaos_imaginary_shadow",
+  "justitia_absolute_judge"
+];
+
 export const STARTING_DECKS: Record<string, DeckConfig> = {
   character_a: defineDeck(
     [
@@ -46,7 +53,7 @@ export const STARTING_DECKS: Record<string, DeckConfig> = {
       ...copies("grave_knight", 2),
       ...copies("landmine_girl", 3)
     ],
-    ["judgment_beam", "miracle_guardian", "top_donor"]
+    PUBLIC_SIDEBOARD_FINISHERS
   ),
   character_b: defineDeck(
     [
@@ -69,7 +76,7 @@ export const STARTING_DECKS: Record<string, DeckConfig> = {
       ...copies("ambush_sigil", 2),
       "miracle_guardian"
     ],
-    ["judgment_beam", "miracle_guardian", "top_donor"]
+    PUBLIC_SIDEBOARD_FINISHERS
   ),
   character_c: defineDeck(
     [
@@ -91,7 +98,7 @@ export const STARTING_DECKS: Record<string, DeckConfig> = {
       ...copies("iron_colossus", 3),
       ...copies("arc_bolt", 2)
     ],
-    ["judgment_beam", "miracle_guardian", "top_donor"]
+    PUBLIC_SIDEBOARD_FINISHERS
   ),
   character_d: defineDeck(
     [
@@ -114,7 +121,7 @@ export const STARTING_DECKS: Record<string, DeckConfig> = {
       ...copies("judgment_beam", 2),
       "top_donor"
     ],
-    ["judgment_beam", "miracle_guardian", "iron_rice_bowl"]
+    PUBLIC_SIDEBOARD_FINISHERS
   ),
   character_e: defineDeck(
     [
@@ -137,7 +144,7 @@ export const STARTING_DECKS: Record<string, DeckConfig> = {
       ...copies("grave_knight", 2),
       ...copies("cinder_storm", 1)
     ],
-    ["judgment_beam", "divine_intervention", "miracle_guardian"]
+    PUBLIC_SIDEBOARD_FINISHERS
   ),
   character_f: defineDeck(
     [
@@ -160,6 +167,6 @@ export const STARTING_DECKS: Record<string, DeckConfig> = {
       ...copies("cinder_storm", 2),
       ...copies("ambush_sigil", 2)
     ],
-    ["judgment_beam", "divine_intervention", "top_donor"]
+    PUBLIC_SIDEBOARD_FINISHERS
   )
 };

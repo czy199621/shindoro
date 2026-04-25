@@ -6,7 +6,17 @@ function getPreservedSlotValue(game: ShinDoroGame, playerId: PlayerId): number {
   return Math.max(0, game.getPlayer(playerId).temporaryFlags.preserveBurstSlotAmount);
 }
 
+function areSlotAbilitiesDisabled(game: ShinDoroGame): boolean {
+  return Object.values(game.state.players).some((player) =>
+    player.board.some((minion) => minion.tags.includes("slotSeal"))
+  );
+}
+
 export function resolveUltimateGodDraw(game: ShinDoroGame, playerId: PlayerId, cardId: string): void {
+  if (areSlotAbilitiesDisabled(game)) {
+    game.log("跳脸与神抽被封锁，13 点神抽无法发动。", "alert");
+    return;
+  }
   const player = game.getPlayer(playerId);
   const picked = removeFirstMatching(player.reserveDeck, (card) => card.id === cardId) ?? player.reserveDeck.shift();
   if (!picked) {
@@ -22,6 +32,10 @@ export function resolveUltimateGodDraw(game: ShinDoroGame, playerId: PlayerId, c
 }
 
 export function resolveOptionalGodDraw(game: ShinDoroGame, playerId: PlayerId, cardId: string): void {
+  if (areSlotAbilitiesDisabled(game)) {
+    game.log("跳脸与神抽被封锁，10 点神抽无法发动。", "alert");
+    return;
+  }
   const player = game.getPlayer(playerId);
   const picked = removeFirstMatching(player.deck, (card) => card.id === cardId);
   if (!picked) return;
@@ -32,6 +46,10 @@ export function resolveOptionalGodDraw(game: ShinDoroGame, playerId: PlayerId, c
 }
 
 export function resolveCharacterSlot(game: ShinDoroGame, playerId: PlayerId, tier: "jump10" | "jump13"): void {
+  if (areSlotAbilitiesDisabled(game)) {
+    game.log("跳脸与神抽被封锁，角色大招无法发动。", "alert");
+    return;
+  }
   const player = game.getPlayer(playerId);
   const character = game.getCharacter(player.character);
   const ability = character.slotAbilities[tier];

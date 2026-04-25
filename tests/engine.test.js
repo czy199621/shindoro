@@ -94,14 +94,20 @@ test("slot gain uses 1/2/3 breakpoints", () => {
   assert.equal(getSlotGain(9), 3);
 });
 
-test("starting decks use legal card ids, 50-card main decks, 3-card sideboards, and 3-copy limit", () => {
+test("starting decks use legal card ids, 50-card main decks, public sideboards, and 3-copy limit", () => {
   for (const character of CHARACTERS) {
     assert.ok(STARTING_DECKS[character.id], `${character.id} is missing a starting deck`);
   }
 
   for (const deck of Object.values(STARTING_DECKS)) {
     assert.equal(deck.mainDeck.length, 50);
-    assert.equal(deck.sideboard.length, 3);
+    assert.equal(deck.sideboard.length, 4);
+    assert.deepEqual(deck.sideboard, [
+      "ouroboros_time_usurper",
+      "michael_divine_executor",
+      "chaos_imaginary_shadow",
+      "justitia_absolute_judge"
+    ]);
 
     const counts = new Map();
     for (const cardId of deck.mainDeck) {
@@ -154,6 +160,189 @@ test("Kapipara AI locks hand limit and max hp talents", () => {
     assert.ok(talentIds.includes("wide_grip"), `Kapipara should take wide_grip for ${seat}`);
     assert.ok(talentIds.includes("vitality_ritual"), `Kapipara should take vitality_ritual for ${seat}`);
   }
+});
+
+test("chaos mills the opposing deck down to seven cards only when above seven", () => {
+  const game = new ShinDoroGame({ rng: () => 0.42 });
+  game.setupMatch({
+    playerCharacterId: "character_a",
+    aiCharacterId: "character_b",
+    playerTalentIds: []
+  });
+  game.completePlayerMulligan([]);
+
+  const ai = game.getState().players.P2;
+  ai.deck = Array.from({ length: 10 }, () => createRuntimeCard(getCardDefinition("burn")));
+
+  game.summonMinion("P1", getCardDefinition("chaos_imaginary_shadow"), {
+    triggerOnPlay: true,
+    canTriggerTrap: false
+  });
+
+  assert.equal(ai.deck.length, 7);
+  assert.equal(ai.graveyard.filter((card) => card.id === "burn").length, 3);
+
+  game.summonMinion("P1", getCardDefinition("chaos_imaginary_shadow"), {
+    triggerOnPlay: true,
+    canTriggerTrap: false
+  });
+  assert.equal(ai.deck.length, 7);
+});
+
+test("justitia swaps hp and blocks slot abilities while on board", () => {
+  const game = new ShinDoroGame({ rng: () => 0.42 });
+  game.setupMatch({
+    playerCharacterId: "character_a",
+    aiCharacterId: "character_b",
+    playerTalentIds: []
+  });
+  game.completePlayerMulligan([]);
+
+  const state = game.getState();
+  state.players.P1.hp = 6;
+  state.players.P2.hp = 18;
+  state.players.P1.jumpSlot = 13;
+
+  game.summonMinion("P1", getCardDefinition("justitia_absolute_judge"), {
+    triggerOnPlay: true,
+    canTriggerTrap: false
+  });
+
+  assert.equal(state.players.P1.hp, 18);
+  assert.equal(state.players.P2.hp, 6);
+
+  game.beginTurn();
+
+  assert.equal(state.pendingChoice, null);
+  assert.equal(state.phase, "mainTurn");
+  assert.equal(state.players.P1.jumpSlot, 13);
+});
+
+test("michael purges magic cards and all other minions then heals", () => {
+  const game = new ShinDoroGame({ rng: () => 0.42 });
+  game.setupMatch({
+    playerCharacterId: "character_a",
+    aiCharacterId: "character_b",
+    playerTalentIds: []
+  });
+  game.completePlayerMulligan([]);
+
+  const state = game.getState();
+  state.players.P1.hp = 10;
+  game.summonMinion("P1", getCardDefinition("ember_wolf"), { canTriggerTrap: false });
+  game.summonMinion("P2", getCardDefinition("shield_doll"), { canTriggerTrap: false });
+  state.players.P1.persistents.push({
+    instanceId: "persistent_test_1",
+    ownerId: "P1",
+    sourceCardId: "war_banner",
+    name: "战祀旗",
+    threat: 2,
+    description: "",
+    effects: [],
+    type: "persistent"
+  });
+  state.players.P2.traps.push({
+    instanceId: "trap_test_1",
+    ownerId: "P2",
+    sourceCardId: "mirror_wall",
+    name: "镜像之墙",
+    threat: 0,
+    description: "",
+    effects: [],
+    type: "trap"
+  });
+
+  const michael = game.summonMinion("P1", getCardDefinition("michael_divine_executor"), {
+    triggerOnPlay: true,
+    canTriggerTrap: false
+  });
+  game.checkForDeaths();
+
+  assert.equal(state.players.P1.board.length, 1);
+  assert.equal(state.players.P1.board[0].instanceId, michael.instanceId);
+  assert.equal(state.players.P2.board.length, 0);
+  assert.equal(state.players.P1.persistents.length, 0);
+  assert.equal(state.players.P2.traps.length, 0);
+  assert.equal(state.players.P1.hp, 14);
+});
+
+test("ouroboros grants one risky extra turn", () => {
+  const game = new ShinDoroGame({ rng: () => 0.42 });
+  game.setupMatch({
+    playerCharacterId: "character_a",
+    aiCharacterId: "character_b",
+    playerTalentIds: []
+  });
+  game.completePlayerMulligan([]);
+
+  const state = game.getState();
+  state.phase = "mainTurn";
+
+  game.summonMinion("P1", getCardDefinition("ouroboros_time_usurper"), {
+    triggerOnPlay: true,
+    canTriggerTrap: false
+  });
+  game.endTurn();
+
+  assert.equal(state.currentPlayer, "P1");
+  assert.equal(state.winner, null);
+
+  state.phase = "mainTurn";
+  game.endTurn();
+
+  assert.equal(state.winner, "P2");
+});
+
+test("high-level magic clears boards support cards traps and next-turn mana", () => {
+  const game = new ShinDoroGame({ rng: () => 0.42 });
+  game.setupMatch({
+    playerCharacterId: "character_a",
+    aiCharacterId: "character_b",
+    playerTalentIds: []
+  });
+  game.completePlayerMulligan([]);
+
+  const state = game.getState();
+  game.summonMinion("P1", getCardDefinition("ember_wolf"), { canTriggerTrap: false });
+  game.summonMinion("P2", getCardDefinition("shield_doll"), { canTriggerTrap: false });
+  game.resolveAction("P1", { type: "destroyAllEnemyMinions" }, {});
+  game.checkForDeaths();
+  assert.equal(state.players.P1.board.length, 1);
+  assert.equal(state.players.P2.board.length, 0);
+
+  state.players.P2.persistents.push({
+    instanceId: "persistent_test_2",
+    ownerId: "P2",
+    sourceCardId: "war_banner",
+    name: "战祀旗",
+    threat: 2,
+    description: "",
+    effects: [],
+    type: "persistent"
+  });
+  state.players.P2.traps.push({
+    instanceId: "trap_test_2",
+    ownerId: "P2",
+    sourceCardId: "mirror_wall",
+    name: "镜像之墙",
+    threat: 0,
+    description: "",
+    effects: [],
+    type: "trap"
+  });
+
+  game.resolveAction("P1", { type: "destroyPersistents", target: "enemy" }, {});
+  game.resolveAction("P1", { type: "destroyEnemyTraps" }, {});
+  assert.equal(state.players.P2.persistents.length, 0);
+  assert.equal(state.players.P2.traps.length, 0);
+
+  state.players.P2.maxMana = 5;
+  state.players.P2.temporaryFlags.openingBonusMana = 0;
+  game.resolveAction("P1", { type: "applyOpponentNextTurnManaMultiplier", multiplier: 0.5 }, {});
+  state.currentPlayer = "P2";
+  game.beginTurn();
+  assert.equal(state.players.P2.maxMana, 6);
+  assert.equal(state.players.P2.mana, 3);
 });
 
 test("AI mulligan keeps profile cards and replaces slow cards", () => {

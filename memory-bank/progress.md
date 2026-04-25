@@ -1,5 +1,37 @@
 # Progress
 
+## 2026-04-25
+
+### 公共备牌库终结者与大魔法实装
+
+- 涉及文件：
+  - `src/types.ts`
+  - `src/data/decks.ts`
+  - `src/data/cards/minions.ts`
+  - `src/data/cards/minions/sideboardFinishers.ts`
+  - `src/data/cards/spells.ts`
+  - `src/engine/effects.ts`
+  - `src/engine/phases.ts`
+  - `src/engine/slotResolver.ts`
+  - `tests/engine.test.js`
+  - `design/update.md`
+  - `design/game_rule.md`
+  - `design/game_design.md`
+  - `design/minion.md`
+  - `memory-bank/architecture.md`
+  - `memory-bank/progress.md`
+- 本次改动：
+  - 根据 `design/update_design.md` 接入 4 张公共 13 点神抽终结者和 6 张大魔法。
+  - 每名角色的备牌库统一改为公共终结者集合。
+  - 新增额外回合、失败败北、肃清、磨牌到 7 张、生命互换、双槽封锁、清场、拆除持续魔法、拆除触发魔法和下回合费用减半等效果。
+  - 补充吸血、必杀、潜行指定限制、连击攻击次数和回复关键词的基础规则处理。
+  - 补全 `design/update.md` 中被截断的“看破”说明，并同步规则、设计和使魔图鉴。
+- 验证：
+  - `npm.cmd test`
+- 关联修正检查：
+  - 已同步规则文档、设计文档、使魔图鉴、架构记忆和引擎测试。
+  - 尚未为大魔法建立独立法术图鉴；当前由 `game_rule.md` 与 `game_design.md` 承载说明。
+
 ## 2026-04-24
 
 ### Added archive-based auto-update fallback for non-Git installs

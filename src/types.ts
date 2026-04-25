@@ -128,10 +128,22 @@ export interface ApplyOpponentNextTurnManaPenaltyAction {
   amount: number;
 }
 
+export interface ApplyOpponentNextTurnManaMultiplierAction {
+  type: "applyOpponentNextTurnManaMultiplier";
+  multiplier: number;
+}
+
 export interface MillDeckAction {
   type: "millDeck";
   target: "self" | "opponent";
   count: number;
+}
+
+export interface MillDeckUntilRemainingAction {
+  type: "millDeckUntilRemaining";
+  target: "self" | "opponent";
+  remaining: number;
+  onlyIfAbove?: number;
 }
 
 export interface SetMillOnDamageTakenAction {
@@ -155,6 +167,37 @@ export interface BuffSelfIfHeroHpBelowAction {
   hp?: number;
 }
 
+export interface GrantExtraTurnAction {
+  type: "grantExtraTurn";
+  loseIfNoWin?: boolean;
+}
+
+export interface PurgeAllMagicAndOtherMinionsAction {
+  type: "purgeAllMagicAndOtherMinions";
+  healPerRemoved?: number;
+}
+
+export interface SwapHeroHpAction {
+  type: "swapHeroHp";
+}
+
+export interface DestroyAllMinionsAction {
+  type: "destroyAllMinions";
+}
+
+export interface DestroyAllEnemyMinionsAction {
+  type: "destroyAllEnemyMinions";
+}
+
+export interface DestroyPersistentsAction {
+  type: "destroyPersistents";
+  target: "all" | "enemy";
+}
+
+export interface DestroyEnemyTrapsAction {
+  type: "destroyEnemyTraps";
+}
+
 export type EffectAction =
   | DamageAction
   | HealAction
@@ -170,11 +213,20 @@ export type EffectAction =
   | GainManaAction
   | SetIgnoreGuardAction
   | ApplyOpponentNextTurnManaPenaltyAction
+  | ApplyOpponentNextTurnManaMultiplierAction
   | MillDeckAction
+  | MillDeckUntilRemainingAction
   | SetMillOnDamageTakenAction
   | ExilePriorityEnemyMinionAndDamageHeroAction
   | GrantAdjacentGuardAction
-  | BuffSelfIfHeroHpBelowAction;
+  | BuffSelfIfHeroHpBelowAction
+  | GrantExtraTurnAction
+  | PurgeAllMagicAndOtherMinionsAction
+  | SwapHeroHpAction
+  | DestroyAllMinionsAction
+  | DestroyAllEnemyMinionsAction
+  | DestroyPersistentsAction
+  | DestroyEnemyTrapsAction;
 
 export interface Effect {
   trigger: EffectTrigger;
@@ -217,6 +269,7 @@ export interface MinionInstance {
   effects: Effect[];
   canAttack: boolean;
   summonedThisTurn: boolean;
+  attacksThisTurn: number;
 }
 
 export interface PersistentInstance {
@@ -316,9 +369,12 @@ export interface TemporaryFlags {
   lowHpTurnStartHeal: { threshold: number; amount: number } | null;
   preserveBurstSlotAmount: number;
   nextTurnManaPenalty: number;
+  nextTurnManaMultiplier: number;
   ignoreGuardThisTurn: boolean;
   millOnDamageTaken: number;
   damageTakenThisTurn: number;
+  extraTurnPending: boolean;
+  loseAtEndOfExtraTurn: boolean;
 }
 
 export interface PlayerState {

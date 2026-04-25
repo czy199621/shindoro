@@ -53,7 +53,8 @@ export function createMinionInstance(card: CardDefinition | RuntimeCard, ownerId
     tags: [...(card.tags ?? [])],
     effects: structuredClone(card.effects ?? []),
     canAttack: (card.tags ?? []).includes("rush"),
-    summonedThisTurn: true
+    summonedThisTurn: true,
+    attacksThisTurn: 0
   };
 }
 
@@ -201,9 +202,12 @@ export function createEmptyPlayerState(playerId: PlayerId, characterId: string):
       lowHpTurnStartHeal: null,
       preserveBurstSlotAmount: 0,
       nextTurnManaPenalty: 0,
+      nextTurnManaMultiplier: 1,
       ignoreGuardThisTurn: false,
       millOnDamageTaken: 0,
-      damageTakenThisTurn: 0
+      damageTakenThisTurn: 0,
+      extraTurnPending: false,
+      loseAtEndOfExtraTurn: false
     }
   };
 }

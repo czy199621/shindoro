@@ -54,6 +54,24 @@
   - Unplayable hand cards still expose hover/focus inspection via `aria-disabled` plus a guarded click handler.
   - The tooltip shows name, type, cost, tags, stats, description, summarized effects, flavor text, and current status.
 
+## 2026-04-25 公共备牌库终结者与大魔法
+
+- 公共备牌库
+  - `src/data/cards/minions/sideboardFinishers.ts` 维护 4 张公共 13 点神抽终结者。
+  - `src/data/cards/minions.ts` 继续作为使魔聚合入口，并导出公共终结者模块。
+  - `src/data/decks.ts` 中每名角色的 `sideboard` 当前统一接入 4 张公共终结者。
+- 大魔法
+  - `src/data/cards/spells.ts` 新增 6 张大魔法：全场清场、单向清场、持续魔法拆除、触发魔法拆除和下回合费用减半。
+- 引擎动作
+  - `src/types.ts` 扩展了额外回合、肃清、磨牌到指定剩余数、生命互换、清场、拆除持续魔法、拆除陷阱和费用倍率等效果动作。
+  - `src/engine/effects.ts` 实现这些动作，并补充吸血、必杀、潜行指定限制和连击攻击次数的基础处理。
+  - `src/engine/phases.ts` 处理额外回合、额外回合失败败北、回复关键词和下回合费用倍率。
+  - `src/engine/slotResolver.ts` 会在 `slotSeal` 使魔在场时阻止双方发动跳脸与神抽。
+- 文档同步
+  - `design/game_rule.md` 记录公共终极备牌库、大魔法和看破当前数字版口径。
+  - `design/game_design.md` 记录本次更新的实现落点。
+  - `design/minion.md` 追加公共备牌库终结者条目。
+
 ## 2026-04-24 Design And Rule Sync
 
 - `SKILL.md`

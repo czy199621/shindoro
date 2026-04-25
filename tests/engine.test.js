@@ -131,6 +131,11 @@ test("talents use dynamic first/second pricing", () => {
   assert.equal(getTalentCost(TALENT_LOOKUP.first_guardrail, "second"), null);
   assert.equal(getTalentCost(TALENT_LOOKUP.second_counterpush, "first"), null);
   assert.equal(getTalentCost(TALENT_LOOKUP.second_counterpush, "second"), 2);
+  assert.equal(getTalentCost(TALENT_LOOKUP.mana_breakthrough, "first"), 2);
+  assert.equal(getTalentCost(TALENT_LOOKUP.abyssal_mana, "second"), 3);
+  assert.equal(getTalentCost(TALENT_LOOKUP.mental_pollution, "second"), 2);
+  assert.equal(getTalentCost(TALENT_LOOKUP.void_backflow, "first"), 3);
+  assert.equal(getTalentCost(TALENT_LOOKUP.grace_surge, "first"), 1);
 });
 
 test("AI talent profiles stay legal for both seats", () => {
@@ -343,6 +348,106 @@ test("high-level magic clears boards support cards traps and next-turn mana", ()
   game.beginTurn();
   assert.equal(state.players.P2.maxMana, 6);
   assert.equal(state.players.P2.mana, 3);
+});
+
+test("mana cap talents allow mana to grow beyond ten", () => {
+  const game = new ShinDoroGame({ rng: () => 0.42 });
+  game.setupMatch({
+    playerCharacterId: "character_g",
+    aiCharacterId: "character_a",
+    playerTalentIds: ["abyssal_mana"]
+  });
+
+  const state = game.getState();
+  for (let index = 0; index < 12; index += 1) {
+    state.currentPlayer = "P1";
+    game.beginTurn();
+  }
+
+  assert.equal(state.players.P1.maxMana, 12);
+  assert.equal(state.players.P1.mana, 12);
+});
+
+test("overflow talents convert burned cards into opponent discard and mill", () => {
+  const game = new ShinDoroGame({ rng: () => 0.42 });
+  game.setupMatch({
+    playerCharacterId: "character_g",
+    aiCharacterId: "character_a",
+    playerTalentIds: ["mental_pollution", "void_backflow"]
+  });
+
+  const state = game.getState();
+  state.players.P1.handLimit = 1;
+  state.players.P1.hand = [createRuntimeCard(getCardDefinition("burn"))];
+  state.players.P1.deck = [createRuntimeCard(getCardDefinition("arc_bolt"))];
+  state.players.P2.hand = [
+    createRuntimeCard(getCardDefinition("inspiration")),
+    createRuntimeCard(getCardDefinition("judgment_beam"))
+  ];
+  state.players.P2.deck = Array.from({ length: 5 }, () => createRuntimeCard(getCardDefinition("shield_doll")));
+
+  game.drawCards("P1", 1, "测试");
+
+  assert.equal(state.players.P1.hand.length, 1);
+  assert.equal(state.players.P1.graveyard.some((card) => card.id === "arc_bolt"), true);
+  assert.equal(state.players.P2.hand.length, 1);
+  assert.equal(state.players.P2.deck.length, 2);
+});
+
+test("grace surge increases healing received by one", () => {
+  const game = new ShinDoroGame({ rng: () => 0.42 });
+  game.setupMatch({
+    playerCharacterId: "character_g",
+    aiCharacterId: "character_a",
+    playerTalentIds: ["grace_surge"]
+  });
+
+  const player = game.getState().players.P1;
+  player.hp = 10;
+  game.resolveAction("P1", { type: "heal", target: "selfHero", amount: 4 }, {});
+
+  assert.equal(player.hp, 15);
+});
+
+test("Izumi Ameko slot abilities convert empty hands into damage", () => {
+  const game = new ShinDoroGame({ rng: () => 0.42 });
+  game.setupMatch({
+    playerCharacterId: "character_g",
+    aiCharacterId: "character_a",
+    playerTalentIds: []
+  });
+
+  const state = game.getState();
+  state.players.P2.hp = 20;
+  state.players.P2.hand = [];
+  game.resolveCharacterSlot("P1", "jump10");
+  assert.equal(state.players.P2.hp, 12);
+
+  state.players.P2.hp = 20;
+  state.players.P2.hand = [createRuntimeCard(getCardDefinition("burn"))];
+  game.resolveCharacterSlot("P1", "jump13");
+  assert.equal(state.players.P2.hand.length, 0);
+  assert.equal(state.players.P2.hp, 16);
+});
+
+test("Izumi Ameko overkill discards highest-cost cards first", () => {
+  const game = new ShinDoroGame({ rng: () => 0.42 });
+  game.setupMatch({
+    playerCharacterId: "character_g",
+    aiCharacterId: "character_a",
+    playerTalentIds: []
+  });
+
+  const state = game.getState();
+  state.players.P2.hand = [
+    createRuntimeCard(getCardDefinition("coin")),
+    createRuntimeCard(getCardDefinition("burn")),
+    createRuntimeCard(getCardDefinition("judgment_beam"))
+  ];
+
+  game.resolveCharacterSlot("P1", "jump13");
+
+  assert.deepEqual(state.players.P2.hand.map((card) => card.id), ["coin"]);
 });
 
 test("AI mulligan keeps profile cards and replaces slow cards", () => {

@@ -40,5 +40,25 @@ export const RESOURCE_TALENTS: TalentDefinition[] = [
     repeatLimit: 1,
     description: "费用高于 6 的使魔法力消耗 -1。",
     effect: { type: "reduceHighCostMinionCost", threshold: 6, amount: 1 }
+  },
+  {
+    id: "mana_breakthrough",
+    name: "魔力突破",
+    category: "resource",
+    pricing: { first: 2, second: 2 },
+    availableFor: "both",
+    repeatLimit: 1,
+    description: "游戏最大费用上限提升至 11 点。",
+    effect: { type: "setManaCap", amount: 11 }
+  },
+  {
+    id: "abyssal_mana",
+    name: "深渊魔力",
+    category: "resource",
+    pricing: { first: 3, second: 3 },
+    availableFor: "both",
+    repeatLimit: 1,
+    description: "游戏最大费用上限提升至 12 点。",
+    effect: { type: "setManaCap", amount: 12 }
   }
 ];

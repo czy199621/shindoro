@@ -20,5 +20,15 @@ export const SURVIVAL_TALENTS: TalentDefinition[] = [
     repeatLimit: 1,
     description: "生命值不高于 5 时，回合开始恢复 2 点生命。",
     effect: { type: "healOnLowHpTurnStart", threshold: 5, amount: 2 }
+  },
+  {
+    id: "grace_surge",
+    name: "恩泽涌动",
+    category: "survival",
+    pricing: { first: 1, second: 1 },
+    availableFor: "both",
+    repeatLimit: 1,
+    description: "任何恢复生命值的效果额外 +1。",
+    effect: { type: "increaseHealingReceived", amount: 1 }
   }
 ];

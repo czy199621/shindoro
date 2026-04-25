@@ -194,6 +194,7 @@ export function createEmptyPlayerState(playerId: PlayerId, characterId: string):
       slotGainModifier: { jump: 0, godDraw: 0 } as Record<SlotType, number>,
       openingBonusDraw: 0,
       openingBonusMana: 0,
+      maxManaCap: 10,
       openingSlotBonus: { jump: 0, godDraw: 0 } as Record<SlotType, number>,
       lowCostRushMaxCost: null,
       highCostMinionDiscount: null,
@@ -207,7 +208,10 @@ export function createEmptyPlayerState(playerId: PlayerId, characterId: string):
       millOnDamageTaken: 0,
       damageTakenThisTurn: 0,
       extraTurnPending: false,
-      loseAtEndOfExtraTurn: false
+      loseAtEndOfExtraTurn: false,
+      overflowOpponentDiscardCount: 0,
+      overflowOpponentMillCount: 0,
+      healingReceivedBonus: 0
     }
   };
 }

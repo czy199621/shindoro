@@ -48,7 +48,7 @@ function applyTurnStartPassives(game: ShinDoroGame, playerId: PlayerId): void {
   const lowHpHeal = player.temporaryFlags.lowHpTurnStartHeal;
   if (lowHpHeal && player.hp < lowHpHeal.threshold) {
     const before = player.hp;
-    player.hp = Math.min(player.maxHp, player.hp + lowHpHeal.amount);
+    player.hp = Math.min(player.maxHp, player.hp + lowHpHeal.amount + player.temporaryFlags.healingReceivedBonus);
     if (player.hp > before) {
       game.log(`${character.name} 因低血量天赋回复了 ${player.hp - before} 点生命。`);
     }
@@ -62,10 +62,14 @@ function applyTurnStartMana(game: ShinDoroGame, playerId: PlayerId): void {
   player.temporaryFlags.nextTurnManaPenalty = 0;
   player.temporaryFlags.nextTurnManaMultiplier = 1;
 
-  player.maxMana = clamp(player.maxMana + 1, 0, 10);
+  player.maxMana = clamp(player.maxMana + 1, 0, player.temporaryFlags.maxManaCap);
   const openingBonusMana = player.temporaryFlags.openingBonusMana;
   player.temporaryFlags.openingBonusMana = 0;
-  player.mana = clamp(Math.floor(player.maxMana * manaMultiplier) - manaPenalty + openingBonusMana, 0, 10);
+  player.mana = clamp(
+    Math.floor(player.maxMana * manaMultiplier) - manaPenalty + openingBonusMana,
+    0,
+    player.temporaryFlags.maxManaCap
+  );
 }
 
 function readyBoardForTurn(player: PlayerState): void {
@@ -85,7 +89,7 @@ function applyDrawPhaseEffects(game: ShinDoroGame, playerId: PlayerId): void {
 
   if (character.passive.key === "healOnDrawPhase") {
     const before = player.hp;
-    player.hp = Math.min(player.maxHp, player.hp + 1);
+    player.hp = Math.min(player.maxHp, player.hp + 1 + player.temporaryFlags.healingReceivedBonus);
     if (player.hp > before) {
       game.log(`${character.name} 在抓牌阶段回复了 1 点生命。`);
     }
@@ -277,7 +281,7 @@ export function finishStartTurn(game: ShinDoroGame): void {
 
   for (const minion of player.board) {
     if (minion.tags.includes("regeneration") && minion.health < minion.maxHealth) {
-      minion.health = Math.min(minion.maxHealth, minion.health + 1);
+      minion.health = Math.min(minion.maxHealth, minion.health + 1 + player.temporaryFlags.healingReceivedBonus);
       game.log(`${minion.name} 通过回复恢复了 1 点生命。`);
     }
   }

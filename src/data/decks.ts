@@ -168,5 +168,28 @@ export const STARTING_DECKS: Record<string, DeckConfig> = {
       ...copies("ambush_sigil", 2)
     ],
     PUBLIC_SIDEBOARD_FINISHERS
+  ),
+  character_g: defineDeck(
+    [
+      ...copies("inspiration", 3),
+      ...copies("sage_archive", 3),
+      ...copies("novice_mage", 3),
+      ...copies("archivist_owl", 3),
+      ...copies("mirror_sage", 3),
+      ...copies("pact_weaver", 3),
+      ...copies("desperate_gamble", 3),
+      ...copies("underdog_shrine", 3),
+      ...copies("soul_shatter", 3),
+      ...copies("arc_bolt", 3),
+      ...copies("cinder_storm", 3),
+      ...copies("healing_prayer", 3),
+      ...copies("divine_intervention", 3),
+      ...copies("shield_doll", 3),
+      ...copies("dawn_healer", 3),
+      ...copies("day_off", 2),
+      ...copies("dorm_matron", 2),
+      "truth_searchlight"
+    ],
+    PUBLIC_SIDEBOARD_FINISHERS
   )
 };

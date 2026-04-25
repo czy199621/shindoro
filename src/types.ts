@@ -31,7 +31,8 @@ export type PassiveKey =
   | "loseOneSlotAtTurnStart"
   | "loseHpAtTurnStart"
   | "gainGodDrawOnBigDamage"
-  | "healOnDrawPhase";
+  | "healOnDrawPhase"
+  | "handDestructionMastery";
 
 export interface Condition {
   type: TriggerConditionType;
@@ -95,6 +96,15 @@ export interface DiscardAction {
   type: "discard";
   target: DiscardTarget;
   count: number;
+}
+
+export interface DiscardWithEmptyHandDamageAction {
+  type: "discardWithEmptyHandDamage";
+  target: "opponent";
+  count: number;
+  mode?: "random" | "highestCost";
+  damageIfOne: number;
+  damageIfZero: number;
 }
 
 export interface SetTopDeckAction {
@@ -207,6 +217,7 @@ export type EffectAction =
   | DestroyAction
   | AddSlotAction
   | DiscardAction
+  | DiscardWithEmptyHandDamageAction
   | SetTopDeckAction
   | DiscountNextDrawAction
   | AddCardToHandAction
@@ -312,6 +323,7 @@ export type TalentEffect =
   | { type: "setTopDeckByRule"; rule: "lowestCostSpell" | "lowestCostCard" }
   | { type: "modifySlotGain"; slot: SlotType; amount: number }
   | { type: "bonusMana"; amount: number }
+  | { type: "setManaCap"; amount: number }
   | { type: "bonusDraw"; amount: number }
   | { type: "giveRushToLowCostMinions"; maxCost: number }
   | { type: "reduceHighCostMinionCost"; threshold: number; amount: number }
@@ -319,7 +331,10 @@ export type TalentEffect =
   | { type: "increaseSpellDamage"; amount: number }
   | { type: "healOnLowHpTurnStart"; threshold: number; amount: number }
   | { type: "retainSlotAfterBurst"; amount: number }
-  | { type: "openingSlotBonus"; slot: SlotType; amount: number };
+  | { type: "openingSlotBonus"; slot: SlotType; amount: number }
+  | { type: "overflowOpponentDiscard"; count: number }
+  | { type: "overflowOpponentMill"; count: number }
+  | { type: "increaseHealingReceived"; amount: number };
 
 export type TalentSeat = "first" | "second";
 export type TalentAvailability = "both" | TalentSeat;
@@ -361,6 +376,7 @@ export interface TemporaryFlags {
   slotGainModifier: Record<SlotType, number>;
   openingBonusDraw: number;
   openingBonusMana: number;
+  maxManaCap: number;
   openingSlotBonus: Record<SlotType, number>;
   lowCostRushMaxCost: number | null;
   highCostMinionDiscount: { threshold: number; amount: number } | null;
@@ -375,6 +391,9 @@ export interface TemporaryFlags {
   damageTakenThisTurn: number;
   extraTurnPending: boolean;
   loseAtEndOfExtraTurn: boolean;
+  overflowOpponentDiscardCount: number;
+  overflowOpponentMillCount: number;
+  healingReceivedBonus: number;
 }
 
 export interface PlayerState {

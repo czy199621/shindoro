@@ -1,13 +1,13 @@
 # Shindoro
 
 `Shindoro` 是一个基于 TypeScript 的卡牌对战原型项目。
-当前版本以 [design/game_rule.md](./design/game_rule.md) 的 v1.2 规则为基准，使用原生 DOM 渲染而不是 React 运行时。
+当前版本以 [design/game_rule.md](./design/game_rule.md) 的 v1.2 规则为基准，使用 Vite + React 承载前端，并保留纯 TypeScript 规则引擎。
 
 ## 当前状态
 
 - 玩家 vs AI 对战
-- 6 名角色，编号 A-F
-- `50` 张主卡组 + `3` 张备牌库
+- 7 名角色，编号 A-G
+- `50` 张主卡组 + `4` 张公共备牌库
 - 先后手动态定价天赋
 - `turnStart -> slotResolution -> draw -> mainTurn -> combat -> turnEnd` 阶段流
 - 跳脸槽 / 神抽槽系统

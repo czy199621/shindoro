@@ -5,6 +5,7 @@ import { CHARACTER_C } from "./characters/characterC.js";
 import { CHARACTER_D } from "./characters/characterD.js";
 import { CHARACTER_E } from "./characters/characterE.js";
 import { CHARACTER_F } from "./characters/characterF.js";
+import { CHARACTER_G } from "./characters/characterG.js";
 
 export {
   CHARACTER_A,
@@ -36,6 +37,11 @@ export {
   CHARACTER_F_SLOT_ABILITIES,
   CHARACTER_F_PASSIVE
 } from "./characters/characterF.js";
+export {
+  CHARACTER_G,
+  CHARACTER_G_SLOT_ABILITIES,
+  CHARACTER_G_PASSIVE
+} from "./characters/characterG.js";
 
 export const CHARACTERS: CharacterDefinition[] = [
   CHARACTER_A,
@@ -43,7 +49,8 @@ export const CHARACTERS: CharacterDefinition[] = [
   CHARACTER_C,
   CHARACTER_D,
   CHARACTER_E,
-  CHARACTER_F
+  CHARACTER_F,
+  CHARACTER_G
 ];
 
 export const CHARACTER_LOOKUP: Record<string, CharacterDefinition> = Object.fromEntries(

@@ -72,6 +72,23 @@
   - `design/game_design.md` 记录本次更新的实现落点。
   - `design/minion.md` 追加公共备牌库终结者条目。
 
+## 2026-04-25 泉亚猫与破坏流天赋
+
+- 角色
+  - `src/data/characters/characterG.ts` 新增第 7 名角色泉亚猫。
+  - `src/data/characters.ts` 继续作为角色聚合入口，当前角色编号为 A-G。
+  - 泉亚猫的大招通过 `discardWithEmptyHandDamage` 表达：正常弃牌；对方手牌不足时转化为生命损失。
+- 天赋
+  - `src/data/talents/resource.ts` 新增 `mana_breakthrough` 和 `abyssal_mana`，分别把最大费用上限提高到 11 和 12。
+  - `src/data/talents/deckControl.ts` 新增 `mental_pollution` 和 `void_backflow`，在自身因手牌上限爆牌时转化为对方弃牌或磨牌。
+  - `src/data/talents/survival.ts` 新增 `grace_surge`，让恢复效果额外 +1。
+- 引擎
+  - `src/engine/effects.ts` 统一处理爆牌联动、弃牌模式、空手惩罚、恢复加成和超过 10 点的临时法力上限。
+  - `src/engine/phases.ts` 使用玩家自己的 `maxManaCap` 推进费用上限，并让阶段性恢复读取恢复加成。
+  - `src/engine/gameState.ts` 在开局天赋结算时写入新临时标记。
+- 测试
+  - `tests/engine.test.js` 覆盖新角色数据、天赋价格、费用上限、爆牌联动、恢复加成和泉亚猫大招。
+
 ## 2026-04-24 Design And Rule Sync
 
 - `SKILL.md`
@@ -118,8 +135,8 @@
 
 - 项目类型：TypeScript 卡牌对战原型
 - 规则基准：`design/game_rule.md` v1.2
-- 角色数量：6 名角色，编号 A-F
-- 卡组结构：`50` 张主卡组 + `3` 张备牌库
+- 角色数量：7 名角色，编号 A-G
+- 卡组结构：`50` 张主卡组 + `4` 张公共备牌库
 - 天赋体系：先后手动态定价，支持座位限制
 - 关键阶段：`turnStart -> slotResolution -> draw -> mainTurn -> combat -> turnEnd`
 - 测试方式：测试直接运行 `dist/` 下的编译产物
@@ -205,7 +222,7 @@
   - 天赋总入口
   - 对外提供 `TALENTS`、`TALENT_LOOKUP`、`getTalentCost()`、`isTalentAvailableForSeat()`
 - `src/data/decks.ts`
-  - 六名角色的默认卡组配置
+  - 七名角色的默认卡组配置
 
 ### 角色模块
 
@@ -215,6 +232,7 @@
 - `src/data/characters/characterD.ts`
 - `src/data/characters/characterE.ts`
 - `src/data/characters/characterF.ts`
+- `src/data/characters/characterG.ts`
 
 每个角色文件独立维护：
 

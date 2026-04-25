@@ -2,6 +2,40 @@
 
 ## 2026-04-25
 
+### 泉亚猫与大后期破坏流实装
+
+- 涉及文件：
+  - `src/types.ts`
+  - `src/data/characters.ts`
+  - `src/data/characters/characterG.ts`
+  - `src/data/decks.ts`
+  - `src/data/talents/resource.ts`
+  - `src/data/talents/deckControl.ts`
+  - `src/data/talents/survival.ts`
+  - `src/engine/gameState.ts`
+  - `src/engine/effects.ts`
+  - `src/engine/phases.ts`
+  - `src/engine/ai.ts`
+  - `tests/engine.test.js`
+  - `README.md`
+  - `design/game_rule.md`
+  - `design/game_design.md`
+  - `design/角色图鉴.md`
+  - `memory-bank/architecture.md`
+  - `memory-bank/progress.md`
+- 本次改动：
+  - 根据 `design/update.md` 新增第 7 名角色泉亚猫，接入角色聚合、默认卡组与 AI 画像。
+  - 新增 5 个天赋：魔力突破、深渊魔力、精神污染、虚空倒灌、恩泽涌动。
+  - 增加最大费用上限、爆牌触发对方弃牌、爆牌触发磨牌、恢复量加成、手牌不足转伤害等规则能力。
+  - 泉亚猫 10 点大招使用随机弃牌，13 点大招使用最高费用优先弃牌来模拟精准挑选。
+  - 同步 README、规则文档、设计文档、角色图鉴和架构记忆中的角色数量、备牌库与新增系统说明。
+- 验证：
+  - `npm.cmd test`
+  - `npm.cmd run build`
+- 关联修正检查：
+  - 已补充费用上限、爆牌联动、恢复加成、泉亚猫空手惩罚和最高费用弃牌测试。
+  - `dist/` 已通过 Vite 构建同步。
+
 ### 公共备牌库终结者与大魔法实装
 
 - 涉及文件：

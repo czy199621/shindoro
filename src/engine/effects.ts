@@ -80,6 +80,66 @@ function dealHeroDamage(game: ShinDoroGame, targetPlayerId: PlayerId, amount: nu
   }
 }
 
+function healHero(game: ShinDoroGame, targetPlayerId: PlayerId, amount: number): number {
+  if (amount <= 0) return 0;
+  const player = game.getPlayer(targetPlayerId);
+  const total = amount + player.temporaryFlags.healingReceivedBonus;
+  const before = player.hp;
+  player.hp = Math.min(player.maxHp, player.hp + total);
+  return player.hp - before;
+}
+
+function discardCardsFromHand(
+  game: ShinDoroGame,
+  targetPlayerId: PlayerId,
+  count: number,
+  mode: "last" | "random" | "highestCost" = "last"
+): number {
+  const targetPlayer = game.getPlayer(targetPlayerId);
+  let discarded = 0;
+
+  for (let index = 0; index < count; index += 1) {
+    if (!targetPlayer.hand.length) break;
+
+    let cardIndex = targetPlayer.hand.length - 1;
+    if (mode === "random") {
+      cardIndex = Math.floor(game.rng() * targetPlayer.hand.length);
+    } else if (mode === "highestCost") {
+      cardIndex = targetPlayer.hand
+        .map((card, handIndex) => ({ card, handIndex }))
+        .sort((left, right) => {
+          if (right.card.currentCost !== left.card.currentCost) {
+            return right.card.currentCost - left.card.currentCost;
+          }
+          return right.card.baseCost - left.card.baseCost;
+        })[0]?.handIndex ?? targetPlayer.hand.length - 1;
+    }
+
+    const [removed] = targetPlayer.hand.splice(cardIndex, 1);
+    if (!removed) continue;
+    targetPlayer.graveyard.push({ id: removed.id, name: removed.name, runtimeId: removed.runtimeId });
+    discarded += 1;
+  }
+
+  if (discarded > 0) {
+    game.log(`${game.getCharacter(targetPlayer.character).name} 弃置了 ${discarded} 张手牌。`);
+  }
+  return discarded;
+}
+
+function triggerOverflowConsequences(game: ShinDoroGame, playerId: PlayerId): void {
+  const player = game.getPlayer(playerId);
+  const opponentId = game.getOpponentId(playerId);
+
+  if (player.temporaryFlags.overflowOpponentDiscardCount > 0) {
+    discardCardsFromHand(game, opponentId, player.temporaryFlags.overflowOpponentDiscardCount, "random");
+  }
+
+  if (player.temporaryFlags.overflowOpponentMillCount > 0) {
+    millCards(game, playerId, "opponent", player.temporaryFlags.overflowOpponentMillCount);
+  }
+}
+
 function addCardToHand(game: ShinDoroGame, playerId: PlayerId, cardId: string): void {
   const player = game.getPlayer(playerId);
   const card = createRuntimeCard(getCardDefinition(cardId));
@@ -87,6 +147,7 @@ function addCardToHand(game: ShinDoroGame, playerId: PlayerId, cardId: string): 
   if (player.hand.length >= player.handLimit) {
     player.graveyard.push({ id: card.id, name: card.name, runtimeId: card.runtimeId });
     game.log(`${game.getCharacter(player.character).name} 因手牌已满烧掉了 ${card.name}。`);
+    triggerOverflowConsequences(game, playerId);
     return;
   }
 
@@ -152,6 +213,7 @@ export function drawCards(game: ShinDoroGame, playerId: PlayerId, count: number,
     if (player.hand.length >= player.handLimit) {
       player.graveyard.push({ id: drawn.id, name: drawn.name, runtimeId: drawn.runtimeId });
       game.log(`${game.getCharacter(player.character).name} 因手牌已满烧掉了 ${drawn.name}。`);
+      triggerOverflowConsequences(game, playerId);
       continue;
     }
 
@@ -282,9 +344,9 @@ export function resolveAction(
       break;
     case "heal":
       if (action.target === "selfHero") {
-        player.hp = Math.min(player.maxHp, player.hp + action.amount);
+        healHero(game, player.id, action.amount);
       } else if (action.target === "enemyHero") {
-        opponent.hp = Math.min(opponent.maxHp, opponent.hp + action.amount);
+        healHero(game, opponent.id, action.amount);
       }
       break;
     case "draw":
@@ -315,6 +377,9 @@ export function resolveAction(
     case "discard":
       resolveDiscardAction(game, playerId, action.target, action.count);
       break;
+    case "discardWithEmptyHandDamage":
+      resolveDiscardWithEmptyHandDamage(game, playerId, action);
+      break;
     case "setTopDeck":
       resolveSetTopDeck(game, playerId, action.cardId);
       break;
@@ -322,7 +387,7 @@ export function resolveAction(
       player.temporaryFlags.nextDrawDiscount = Math.max(player.temporaryFlags.nextDrawDiscount, action.amount);
       break;
     case "gainMana":
-      player.mana = Math.min(10, player.mana + action.amount);
+      player.mana = Math.min(player.temporaryFlags.maxManaCap, player.mana + action.amount);
       break;
     case "setIgnoreGuard":
       player.temporaryFlags.ignoreGuardThisTurn = action.enabled ?? true;
@@ -495,8 +560,7 @@ function resolvePurgeAllMagicAndOtherMinions(
   }
 
   if (healPerRemoved > 0 && removed > 0) {
-    const player = game.getPlayer(playerId);
-    player.hp = Math.min(player.maxHp, player.hp + removed * healPerRemoved);
+    healHero(game, playerId, removed * healPerRemoved);
   }
 
   game.log(`肃清效果移除了 ${removed} 张场上卡牌。`, "alert");
@@ -588,14 +652,32 @@ function resolveDiscardAction(
   discardTarget: "self" | "opponent",
   count: number
 ): void {
-  const targetPlayer = discardTarget === "self" ? game.getPlayer(playerId) : game.getOpponent(playerId);
-  for (let index = 0; index < count; index += 1) {
-    if (!targetPlayer.hand.length) break;
-    const removed = targetPlayer.hand.pop();
-    if (removed) {
-      targetPlayer.graveyard.push({ id: removed.id, name: removed.name, runtimeId: removed.runtimeId });
-    }
+  const targetPlayerId = discardTarget === "self" ? playerId : game.getOpponentId(playerId);
+  discardCardsFromHand(game, targetPlayerId, count);
+}
+
+function resolveDiscardWithEmptyHandDamage(
+  game: ShinDoroGame,
+  playerId: PlayerId,
+  action: Extract<EffectAction, { type: "discardWithEmptyHandDamage" }>
+): void {
+  const targetPlayerId = game.getOpponentId(playerId);
+  const targetPlayer = game.getPlayer(targetPlayerId);
+
+  if (targetPlayer.hand.length === 0) {
+    dealHeroDamage(game, targetPlayerId, action.damageIfZero);
+    game.log(`${game.getCharacter(targetPlayer.character).name} 没有手牌，额外失去 ${action.damageIfZero} 点生命。`, "alert");
+    return;
   }
+
+  if (targetPlayer.hand.length === 1) {
+    discardCardsFromHand(game, targetPlayerId, 1, action.mode ?? "random");
+    dealHeroDamage(game, targetPlayerId, action.damageIfOne);
+    game.log(`${game.getCharacter(targetPlayer.character).name} 仅有 1 张手牌，额外失去 ${action.damageIfOne} 点生命。`, "alert");
+    return;
+  }
+
+  discardCardsFromHand(game, targetPlayerId, action.count, action.mode ?? "random");
 }
 
 function resolveSetTopDeck(game: ShinDoroGame, playerId: PlayerId, cardId: string): void {
@@ -647,7 +729,7 @@ export function attackWith(
     }
     dealHeroDamage(game, opponent.id, attacker.attack);
     if (attacker.tags.includes("lifesteal")) {
-      player.hp = Math.min(player.maxHp, player.hp + Math.max(0, attacker.attack));
+      healHero(game, player.id, Math.max(0, attacker.attack));
     }
     attacker.tags = attacker.tags.filter((tag) => tag !== "stealth");
     game.log(`${attacker.name} 对敌方英雄造成了 ${attacker.attack} 点伤害。`, "alert");
@@ -669,10 +751,10 @@ export function attackWith(
       attacker.health = 0;
     }
     if (attacker.tags.includes("lifesteal")) {
-      player.hp = Math.min(player.maxHp, player.hp + Math.max(0, attacker.attack));
+      healHero(game, player.id, Math.max(0, attacker.attack));
     }
     if (defender.tags.includes("lifesteal")) {
-      opponent.hp = Math.min(opponent.maxHp, opponent.hp + Math.max(0, defender.attack));
+      healHero(game, opponent.id, Math.max(0, defender.attack));
     }
     attacker.tags = attacker.tags.filter((tag) => tag !== "stealth");
     const attackedEffects = defender.effects.filter((effect) => effect.trigger === "onAttacked");

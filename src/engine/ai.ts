@@ -66,6 +66,7 @@ const DEFAULT_PROFILE: AiProfile = {
     "opening_insight",
     "mana_favor",
     "wide_grip",
+    "grace_surge",
     "spell_focus",
     "vitality_ritual",
     "second_counterpush",
@@ -231,6 +232,42 @@ const AI_PROFILES: Record<string, AiProfile> = {
     godDrawHpThreshold: 15,
     preferredGodDrawIds: ["tactical_insight", "blade_dancer", "landmine_girl", "dorm_matron", "divine_intervention", "soul_shatter"],
     preferredReserveIds: ["top_donor", "divine_intervention", "judgment_beam"]
+  },
+  character_g: {
+    ...DEFAULT_PROFILE,
+    talentPriority: ["mental_pollution", "void_backflow", "grace_surge", "wide_grip", "abyssal_mana", "foretold_scroll"],
+    mulliganMaxCost: 4,
+    mulliganKeepIds: [
+      "inspiration",
+      "sage_archive",
+      "novice_mage",
+      "archivist_owl",
+      "pact_weaver",
+      "desperate_gamble",
+      "soul_shatter",
+      "arc_bolt"
+    ],
+    minionAttack: 0.7,
+    minionHealth: 1.15,
+    rush: 1.1,
+    guard: 1.8,
+    defensiveTag: 1.6,
+    faceDamage: 0.9,
+    removal: 2.7,
+    aoe: 1.8,
+    heal: 1.8,
+    draw: 3.0,
+    jumpSlot: 2.75,
+    godDrawSlot: 2.2,
+    persistent: 2.6,
+    trap: 2.0,
+    attackFace: 0.75,
+    trade: 1.7,
+    preserveMinion: 1.35,
+    godDrawHandThreshold: 5,
+    godDrawHpThreshold: 14,
+    preferredGodDrawIds: ["inspiration", "sage_archive", "soul_shatter", "cinder_storm", "divine_intervention"],
+    preferredReserveIds: ["chaos_imaginary_shadow", "justitia_absolute_judge", "michael_divine_executor", "ouroboros_time_usurper"]
   }
 };
 
@@ -439,10 +476,16 @@ function scoreEffectAction(state: GameState, playerId: PlayerId, card: RuntimeCa
     }
     case "discard":
       return action.target === "opponent" ? action.count * 1.7 : -action.count * 2;
+    case "discardWithEmptyHandDamage":
+      return action.count * 2.2 + (opp.hand.length <= 1 ? action.damageIfOne : 0) + (opp.hand.length === 0 ? action.damageIfZero : 0);
     case "millDeck":
       return action.count * (me.character === "character_f" ? 1.2 : 0.35);
+    case "millDeckUntilRemaining":
+      return Math.max(0, opp.deck.length - action.remaining) * 0.45;
     case "applyOpponentNextTurnManaPenalty":
       return action.amount * (me.character === "character_e" ? 2.3 : 1.25);
+    case "applyOpponentNextTurnManaMultiplier":
+      return (1 - action.multiplier) * 5;
     case "setIgnoreGuard":
       return opp.board.some((minion) => minion.tags.includes("guard")) && boardAttack(me) > 0 ? 5.5 : 1.2;
     case "summon":

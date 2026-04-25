@@ -172,6 +172,9 @@ export class ShinDoroGame implements GameAiAdapter {
         case "bonusMana":
           player.temporaryFlags.openingBonusMana += effect.amount;
           break;
+        case "setManaCap":
+          player.temporaryFlags.maxManaCap = Math.max(player.temporaryFlags.maxManaCap, effect.amount);
+          break;
         case "setTopDeckByRule":
           this.moveDeckCardToTopByRule(player, effect.rule);
           break;
@@ -207,6 +210,15 @@ export class ShinDoroGame implements GameAiAdapter {
           } else {
             player.godDrawSlot += effect.amount;
           }
+          break;
+        case "overflowOpponentDiscard":
+          player.temporaryFlags.overflowOpponentDiscardCount += effect.count;
+          break;
+        case "overflowOpponentMill":
+          player.temporaryFlags.overflowOpponentMillCount += effect.count;
+          break;
+        case "increaseHealingReceived":
+          player.temporaryFlags.healingReceivedBonus += effect.amount;
           break;
         default:
           break;

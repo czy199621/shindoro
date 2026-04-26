@@ -170,6 +170,16 @@ export function removeFirstMatching<T>(items: T[], predicate: (item: T) => boole
   return items.splice(index, 1)[0] ?? null;
 }
 
+export function canPlayCardForPlayer(card: RuntimeCard, player: PlayerState, turn: number): boolean {
+  if (player.mana < card.currentCost) return false;
+  if (card.type === "minion" && player.board.length >= 7) return false;
+
+  const minTurn = card.playRestrictions?.minTurn;
+  if (minTurn !== undefined && turn < minTurn) return false;
+
+  return true;
+}
+
 export function createEmptyPlayerState(playerId: PlayerId, characterId: string): PlayerState {
   return {
     id: playerId,
@@ -192,6 +202,7 @@ export function createEmptyPlayerState(playerId: PlayerId, characterId: string):
     temporaryFlags: {
       nextDrawDiscount: 0,
       slotGainModifier: { jump: 0, godDraw: 0 } as Record<SlotType, number>,
+      naturalSlotGainCapBonus: { jump: 0, godDraw: 0 } as Record<SlotType, number>,
       openingBonusDraw: 0,
       openingBonusMana: 0,
       maxManaCap: 10,
@@ -204,6 +215,7 @@ export function createEmptyPlayerState(playerId: PlayerId, characterId: string):
       preserveBurstSlotAmount: 0,
       nextTurnManaPenalty: 0,
       nextTurnManaMultiplier: 1,
+      nextTurnManaOverride: null,
       ignoreGuardThisTurn: false,
       millOnDamageTaken: 0,
       damageTakenThisTurn: 0,

@@ -2,6 +2,23 @@
 
 ## 2026-04-25
 
+### 战场盖伏数量标记
+
+- 涉及文件：
+  - `src/components/react/ReactBattleBoard.tsx`
+  - `src/components/Board.tsx`
+  - `src/style.css`
+  - `memory-bank/progress.md`
+- 本次改动：
+  - 在双方战场标题区加入固定计数徽章，显示 `持续 X` 与 `盖伏 X`。
+  - 盖伏数量大于 0 时使用更醒目的徽章状态，方便玩家快速识别场上盖伏数量。
+  - 同步更新 React 战斗面板与旧字符串渲染备用面板，保持两条渲染路径展示一致。
+- 验证：
+  - `npm.cmd test`
+  - `npm.cmd run build`
+- 关联修正检查：
+  - 仅调整 UI 展示与样式，不修改规则、卡牌数据或测试断言。
+
 ### 泉亚猫与大后期破坏流实装
 
 - 涉及文件：
@@ -696,9 +713,9 @@
 - 正确 Distribution ID 是 `E3JF5ILT0KVD5W`，其中中间字符是数字 `0`，不是字母 `O`。
 
 
-### React battle board, Pixi effects, and card inspection tooltip
+### React 战斗面板、Pixi 特效与卡牌检视提示
 
-- Files
+- 修改文件：
   - `src/components/react/CardView.tsx`
   - `src/components/react/PlayerHUDView.tsx`
   - `src/components/react/ReactBattleBoard.tsx`
@@ -708,17 +725,56 @@
   - `memory-bank/2026-04-25-react-board-pixi.md`
   - `memory-bank/architecture.md`
   - `memory-bank/progress.md`
-- Summary
-  - Replaced the battle screen's old `renderBoard()` string-template path with real React components while keeping setup and mulligan on the legacy compatibility path.
-  - Added React card, minion, persistent/trap, player HUD, battle board, pending choice, game-over, battle log, and momentum panel composition.
-  - Kept PixiJS as a display-only foreground effects layer for attack trails, damage numbers, hit bursts, summon particles, and spell/trap/persistent bursts.
-  - Removed the temporary Pixi battlefield underlay; Pixi now creates only the fixed `pixi-battlefield-effects` canvas with `pointer-events: none`.
-  - Added DOM coordinate mapping through `data-pixi-entity-id` so Pixi effects align to real React cards and HUDs.
-  - Tightened battle layout rows, sidebar, card heights, text clamping, and internal overflow so the board stays readable during play.
-  - Added a unified hover/focus card-detail tooltip for hand cards, board minions, persistents, and traps, including support for currently unplayable hand cards.
-- Verification
+- 修改内容：
+  - 将战斗画面旧的 `renderBoard()` 字符串模板路径替换为真实 React 组件，同时保留设置与换牌阶段的旧兼容路径。
+  - 增加 React 卡牌、使魔、持续魔法/盖伏、玩家状态、战斗面板、待处理选择、游戏结束、战斗日志和势能面板组合。
+  - 保留 PixiJS 作为只负责显示的前景特效层，用于攻击轨迹、伤害数字、命中特效、召唤粒子和法术/盖伏/持续魔法爆发。
+  - 移除临时 Pixi 战场底图；Pixi 现在只创建固定的 `pixi-battlefield-effects` 画布，并设置 `pointer-events: none`。
+  - 通过 `data-pixi-entity-id` 增加 DOM 坐标映射，使 Pixi 特效能对齐真实 React 卡牌和玩家状态区域。
+  - 收紧战斗布局行高、侧栏、卡牌高度、文本截断和内部溢出，使战斗中画面保持可读。
+  - 增加统一的悬停/聚焦卡牌详情提示，覆盖手牌、场上使魔、持续魔法与盖伏，也支持当前不可打出的手牌。
+- 验证：
   - `npm.cmd run build`
-  - `npm.cmd test` passed: 27/27
-  - Local Vite server returned HTTP 200
-- Related updates checked
-  - Summarized the daily implementation note from `memory-bank/2026-04-25-react-board-pixi.md` into the long-term architecture and progress records.
+  - `npm.cmd test` 通过：27/27。
+  - 本地 Vite 服务器返回 HTTP 200。
+- 相关同步：
+  - 已将 `memory-bank/2026-04-25-react-board-pixi.md` 的当日实现记录汇总进长期架构和进度记录。
+
+### v1.2.1 核心魔法、特殊使魔与槽位上限更新
+
+- 修改文件：
+  - `src/types.ts`
+  - `src/engine/rules.ts`
+  - `src/engine/effects.ts`
+  - `src/engine/phases.ts`
+  - `src/engine/slotResolver.ts`
+  - `src/engine/gameState.ts`
+  - `src/engine/ai.ts`
+  - `src/data/cards/spells.ts`
+  - `src/data/cards/traps.ts`
+  - `src/data/cards/persistents.ts`
+  - `src/data/cards/minions/lowCost.ts`
+  - `src/data/cards/minions/midCost.ts`
+  - `src/data/cards/minions/sideboardFinishers.ts`
+  - `src/data/decks.ts`
+  - `src/data/talents/resource.ts`
+  - `src/data/talents/spell.ts`
+  - `src/data/talents/slotControl.ts`
+  - `tests/engine.test.js`
+  - `design/game_rule.md`
+  - `design/game_design.md`
+  - `design/minion.md`
+  - `memory-bank/progress.md`
+
+- 本次修改：
+  - 新增 `绝影刺客·瞬`，并加入公开大地牌库；攻击时可无视护卫。
+  - 修正 `虚数之影·卡奥斯`为最多磨 15 张，并在敌方牌库剩 7 张时停止。
+  - 新增 `时空篡夺`、`爆裂炎枪`、`流星火雨`、`大魔力宝石`、`魔力干涸`。
+  - 新增第 5 回合后可用的出牌限制、费用为 5 时触发的盖伏检测、额外回合 12 费覆盖逻辑。
+  - 增加跳脸槽与神抽槽的自然增长上限，并加入 `跳脸上限突破`、`神抽上限突破`与 `逆境神龛`的上限加成。
+  - 调整 `巨步推进`、`法术专注`、`招财猫`、`典籍猫头鹰`、`逆境神龛`。
+  - 补充 44 个引擎测试，覆盖新增卡牌、陷阱触发、额外回合、槽位上限和卡牌重做。
+
+- 验证：
+  - `npm.cmd run typecheck` 通过。
+  - `npm.cmd test` 通过：44/44。

@@ -28,6 +28,7 @@ const PUBLIC_SIDEBOARD_FINISHERS = [
   "ouroboros_time_usurper",
   "michael_divine_executor",
   "chaos_imaginary_shadow",
+  "shun_shadow_assassin",
   "justitia_absolute_judge"
 ];
 

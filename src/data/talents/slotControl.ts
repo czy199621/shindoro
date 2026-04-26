@@ -20,5 +20,25 @@ export const SLOT_CONTROL_TALENTS: TalentDefinition[] = [
     repeatLimit: 1,
     description: "若你为后手，开局跳脸槽 +2。",
     effect: { type: "openingSlotBonus", slot: "jump", amount: 2 }
+  },
+  {
+    id: "jump_cap_breakthrough",
+    name: "跳脸上限突破",
+    category: "slotControl",
+    pricing: { first: 2, second: 2 },
+    availableFor: "both",
+    repeatLimit: 1,
+    description: "你的单回合自然跳脸槽增长上限 +2。",
+    effect: { type: "increaseNaturalSlotGainCap", slot: "jump", amount: 2 }
+  },
+  {
+    id: "god_draw_cap_breakthrough",
+    name: "神抽上限突破",
+    category: "slotControl",
+    pricing: { first: 1, second: 1 },
+    availableFor: "both",
+    repeatLimit: 1,
+    description: "你的单回合自然神抽槽增长上限 +2。",
+    effect: { type: "increaseNaturalSlotGainCap", slot: "godDraw", amount: 2 }
   }
 ];

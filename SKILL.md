@@ -116,6 +116,7 @@ description: 用于处理“内容更新”类任务，包括文案、规则、�
 - 改代码前先看 `memory-bank/architecture.md` 和 `memory-bank/progress.md`。
 - 改代码后把重要变化追加到 `memory-bank/progress.md`；如果本次修改只涉及 `.md` 文档文件，则不需要写入 `memory-bank/progress.md`。
 - 所有 `.md` 文档文件必须使用中文书写。
+- 改修结束后，必须为每一处改修写上中文注释或说明；说明要让外行也能看懂，避免只写函数名、字段名或技术术语。
 - 如果项目结构、文件职责或工作流变了，也同步更新 `memory-bank/architecture.md`。
 - 如果行为发生变化，检查是否需要运行构建或测试。
 - 当有修改使魔以及追加使魔的时候，请同步更新使魔图鉴文档；默认目标为 `design/minion.md`，若当前仓库实际维护的是 `design/minion_codex.md`，则必须同步更新该文件并保持内容一致。

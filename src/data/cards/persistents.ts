@@ -6,8 +6,8 @@ export const PERSISTENT_CARDS: CardDefinition[] = [
     name: "逆境神龛",
     cost: 3,
     type: "persistent",
-    threat: 1,
-    description: "你的回合开始时：神抽槽 +1。",
+    threat: 2,
+    description: "你的回合开始时：神抽槽 +1。此卡在场时，你的神抽槽单回合自然增长上限 +1。",
     effects: [{ trigger: "onTurnStart", action: { type: "addSlot", slot: "godDraw", amount: 1 } }]
   },
   {

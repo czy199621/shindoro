@@ -8,6 +8,15 @@ import { renderMomentumPanel } from "./MomentumPanel.js";
 import { renderPlayerHUD } from "./PlayerHUD.js";
 import { renderGameOver, renderPendingChoice } from "./ResolutionPanel.js";
 
+function renderFieldCounts(persistents: number, traps: number): string {
+  return `
+    <div class="field-counts" aria-label="持续物 ${persistents} 张，盖伏 ${traps} 张">
+      <span class="field-count-badge persistent">持续 ${persistents}</span>
+      <span class="field-count-badge trap ${traps > 0 ? "active" : ""}">盖伏 ${traps}</span>
+    </div>
+  `;
+}
+
 export function renderBoard(store: GameStore, state: GameState): string {
   const player = state.players.P1;
   const enemy = state.players.P2;
@@ -151,7 +160,7 @@ export function renderBoard(store: GameStore, state: GameState): string {
               <section class="zone field-zone ${enemyBoardZoneClass} ${enemyZoneMetaClass}">
                 <div class="zone-header">
                   <h2 class="section-title">敌方战场</h2>
-                  <span class="small-note">持续物 ${enemy.persistents.length} / 陷阱 ${enemy.traps.length}</span>
+                  ${renderFieldCounts(enemy.persistents.length, enemy.traps.length)}
                 </div>
                 <div class="zone-stack">
                   <div class="persistent-row zone-lane ${enemyPersistentRowClass}">${enemyPersistents}</div>
@@ -164,7 +173,7 @@ export function renderBoard(store: GameStore, state: GameState): string {
               <section class="zone field-zone ${playerBoardZoneClass}">
                 <div class="zone-header">
                   <h2 class="section-title">你的战场</h2>
-                  <span class="small-note">先选择可攻击使魔，再指定敌方英雄或守护目标进行攻击。</span>
+                  ${renderFieldCounts(player.persistents.length, player.traps.length)}
                 </div>
                 <div class="zone-stack zone-stack-player">
                   <div class="persistent-row zone-lane ${playerPersistentRowClass}">${playerPersistents}</div>

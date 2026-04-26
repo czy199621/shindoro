@@ -220,6 +220,9 @@ export class ShinDoroGame implements GameAiAdapter {
         case "increaseHealingReceived":
           player.temporaryFlags.healingReceivedBonus += effect.amount;
           break;
+        case "increaseNaturalSlotGainCap":
+          player.temporaryFlags.naturalSlotGainCapBonus[effect.slot] += effect.amount;
+          break;
         default:
           break;
       }
@@ -331,7 +334,11 @@ export class ShinDoroGame implements GameAiAdapter {
     resolveEffects(this, playerId, effects, context);
   }
 
-  triggerTraps(ownerId: PlayerId, conditionType: "enemyCastsSpell" | "enemySummonsMinion", context: EffectContext): void {
+  triggerTraps(
+    ownerId: PlayerId,
+    conditionType: "enemyCastsSpell" | "enemySummonsMinion" | "enemyManaEquals",
+    context: EffectContext
+  ): void {
     triggerTraps(this, ownerId, conditionType, context);
   }
 

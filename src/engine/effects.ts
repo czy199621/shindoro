@@ -1,6 +1,12 @@
 import { getCardDefinition } from "../data/cards.js";
 import type { CardDefinition, Effect, EffectAction, EffectContext, MinionInstance, PlayerId, RuntimeCard } from "../types.js";
-import { createMinionInstance, createPersistentInstance, createRuntimeCard, removeFirstMatching } from "./rules.js";
+import {
+  canPlayCardForPlayer,
+  createMinionInstance,
+  createPersistentInstance,
+  createRuntimeCard,
+  removeFirstMatching
+} from "./rules.js";
 import type { ShinDoroGame } from "./gameState.js";
 
 const PLAYER_ID: PlayerId = "P1";
@@ -140,6 +146,14 @@ function triggerOverflowConsequences(game: ShinDoroGame, playerId: PlayerId): vo
   }
 }
 
+function getManaGainAmount(game: ShinDoroGame, action: Extract<EffectAction, { type: "gainMana" }>): number {
+  const scaled = action.amountIfTurnAtLeast;
+  if (scaled && game.state.turn >= scaled.turn) {
+    return scaled.amount;
+  }
+  return action.amount;
+}
+
 function addCardToHand(game: ShinDoroGame, playerId: PlayerId, cardId: string): void {
   const player = game.getPlayer(playerId);
   const card = createRuntimeCard(getCardDefinition(cardId));
@@ -235,11 +249,11 @@ export function playCardAtIndex(game: ShinDoroGame, playerId: PlayerId, index: n
   const player = game.getPlayer(playerId);
   const card = player.hand[index];
   if (!card) return false;
-  if (player.mana < card.currentCost) return false;
-  if (card.type === "minion" && player.board.length >= 7) return false;
+  if (!canPlayCardForPlayer(card, player, game.state.turn)) return false;
 
   player.mana -= card.currentCost;
   player.hand.splice(index, 1);
+  game.triggerTraps(game.getOpponentId(playerId), "enemyManaEquals", { triggeredMana: player.mana });
   game.log(`${game.getCharacter(player.character).name} 打出了 ${card.name}。`);
 
   if (card.type === "minion") {
@@ -307,12 +321,12 @@ export function resolveEffects(game: ShinDoroGame, playerId: PlayerId, effects: 
 export function triggerTraps(
   game: ShinDoroGame,
   ownerId: PlayerId,
-  conditionType: "enemyCastsSpell" | "enemySummonsMinion",
+  conditionType: "enemyCastsSpell" | "enemySummonsMinion" | "enemyManaEquals",
   context: EffectContext
 ): void {
   const owner = game.getPlayer(ownerId);
   const triggered = owner.traps.filter((trap) =>
-    trap.effects.some((effect) => effect.trigger === "onTriggerMet" && effect.condition?.type === conditionType)
+    trap.effects.some((effect) => isTrapConditionMet(effect, conditionType, context))
   );
 
   if (!triggered.length) return;
@@ -320,13 +334,25 @@ export function triggerTraps(
   for (const trap of triggered) {
     owner.traps = owner.traps.filter((item) => item.instanceId !== trap.instanceId);
     for (const effect of trap.effects) {
-      if (effect.trigger === "onTriggerMet" && effect.condition?.type === conditionType) {
+      if (isTrapConditionMet(effect, conditionType, context)) {
         game.log(`${game.getCharacter(owner.character).name} 触发了陷阱 ${trap.name}。`, "alert");
         game.resolveAction(ownerId, effect.action, { ...context, source: trap });
       }
     }
     owner.graveyard.push({ id: trap.sourceCardId, name: trap.name, runtimeId: trap.instanceId });
   }
+}
+
+function isTrapConditionMet(
+  effect: Effect,
+  conditionType: "enemyCastsSpell" | "enemySummonsMinion" | "enemyManaEquals",
+  context: EffectContext
+): boolean {
+  if (effect.trigger !== "onTriggerMet" || effect.condition?.type !== conditionType) return false;
+  if (conditionType === "enemyManaEquals") {
+    return context.triggeredMana === effect.condition.mana;
+  }
+  return true;
 }
 
 export function resolveAction(
@@ -375,7 +401,7 @@ export function resolveAction(
       game.adjustSlot(playerId, action.slot, action.amount, "效果");
       break;
     case "discard":
-      resolveDiscardAction(game, playerId, action.target, action.count);
+      resolveDiscardAction(game, playerId, action.target, action.count, action.mode);
       break;
     case "discardWithEmptyHandDamage":
       resolveDiscardWithEmptyHandDamage(game, playerId, action);
@@ -387,8 +413,14 @@ export function resolveAction(
       player.temporaryFlags.nextDrawDiscount = Math.max(player.temporaryFlags.nextDrawDiscount, action.amount);
       break;
     case "gainMana":
-      player.mana = Math.min(player.temporaryFlags.maxManaCap, player.mana + action.amount);
+      player.mana = Math.min(player.temporaryFlags.maxManaCap, player.mana + getManaGainAmount(game, action));
+      game.triggerTraps(game.getOpponentId(playerId), "enemyManaEquals", { triggeredMana: player.mana });
       break;
+    case "reduceMana": {
+      const targetPlayer = action.target === "self" ? player : opponent;
+      targetPlayer.mana = Math.max(0, targetPlayer.mana - action.amount);
+      break;
+    }
     case "setIgnoreGuard":
       player.temporaryFlags.ignoreGuardThisTurn = action.enabled ?? true;
       break;
@@ -408,7 +440,7 @@ export function resolveAction(
       millCards(game, playerId, action.target, action.count);
       break;
     case "millDeckUntilRemaining":
-      resolveMillDeckUntilRemaining(game, playerId, action.target, action.remaining, action.onlyIfAbove);
+      resolveMillDeckUntilRemaining(game, playerId, action.target, action.remaining, action.onlyIfAbove, action.maxCount);
       break;
     case "setMillOnDamageTaken":
       player.temporaryFlags.millOnDamageTaken = Math.max(player.temporaryFlags.millOnDamageTaken, action.amount);
@@ -432,6 +464,9 @@ export function resolveAction(
       break;
     case "grantExtraTurn":
       player.temporaryFlags.extraTurnPending = true;
+      if (action.extraTurnMana !== undefined) {
+        player.temporaryFlags.nextTurnManaOverride = action.extraTurnMana;
+      }
       if (action.loseIfNoWin) {
         player.temporaryFlags.loseAtEndOfExtraTurn = true;
       }
@@ -518,11 +553,12 @@ function resolveMillDeckUntilRemaining(
   sourcePlayerId: PlayerId,
   target: "self" | "opponent",
   remaining: number,
-  onlyIfAbove?: number
+  onlyIfAbove?: number,
+  maxCount?: number
 ): void {
   const targetPlayer = target === "self" ? game.getPlayer(sourcePlayerId) : game.getOpponent(sourcePlayerId);
   if (onlyIfAbove !== undefined && targetPlayer.deck.length <= onlyIfAbove) return;
-  const count = Math.max(0, targetPlayer.deck.length - remaining);
+  const count = Math.max(0, Math.min(maxCount ?? Number.POSITIVE_INFINITY, targetPlayer.deck.length - remaining));
   millCards(game, sourcePlayerId, target, count);
 }
 
@@ -650,10 +686,11 @@ function resolveDiscardAction(
   game: ShinDoroGame,
   playerId: PlayerId,
   discardTarget: "self" | "opponent",
-  count: number
+  count: number,
+  mode: "last" | "random" | "highestCost" = "last"
 ): void {
   const targetPlayerId = discardTarget === "self" ? playerId : game.getOpponentId(playerId);
-  discardCardsFromHand(game, targetPlayerId, count);
+  discardCardsFromHand(game, targetPlayerId, count, mode);
 }
 
 function resolveDiscardWithEmptyHandDamage(
@@ -714,7 +751,8 @@ export function attackWith(
 
   const opponentId = game.getOpponentId(playerId);
   const opponent = game.getPlayer(opponentId);
-  const guardMinions = player.temporaryFlags.ignoreGuardThisTurn ? [] : getGuardMinions(game, opponentId);
+  const ignoresGuard = player.temporaryFlags.ignoreGuardThisTurn || attacker.tags.includes("ignoreGuard");
+  const guardMinions = ignoresGuard ? [] : getGuardMinions(game, opponentId);
   if (guardMinions.length && targetType === "hero") return false;
   if (guardMinions.length && targetType === "minion" && !guardMinions.some((minion) => minion.instanceId === targetId)) {
     return false;
@@ -784,7 +822,8 @@ export function getAttackTargets(game: ShinDoroGame, attackerId: string, playerI
 
   const opponentId = game.getOpponentId(playerId);
   const opponent = game.getPlayer(opponentId);
-  const guardMinions = player.temporaryFlags.ignoreGuardThisTurn ? [] : getGuardMinions(game, opponentId);
+  const ignoresGuard = player.temporaryFlags.ignoreGuardThisTurn || attacker.tags.includes("ignoreGuard");
+  const guardMinions = ignoresGuard ? [] : getGuardMinions(game, opponentId);
   if (guardMinions.length) {
     return guardMinions.map((minion) => ({ type: "minion" as const, id: minion.instanceId, label: minion.name }));
   }
@@ -800,7 +839,7 @@ export function getAttackTargets(game: ShinDoroGame, attackerId: string, playerI
 export function getPlayableCards(game: ShinDoroGame, playerId: PlayerId): RuntimeCard[] {
   if (game.state.winner || game.state.currentPlayer !== playerId || game.state.phase !== "mainTurn") return [];
   const player = game.getPlayer(playerId);
-  return player.hand.filter((card) => card.currentCost <= player.mana && (card.type !== "minion" || player.board.length < 7));
+  return player.hand.filter((card) => canPlayCardForPlayer(card, player, game.state.turn));
 }
 
 export function getReadyAttackers(game: ShinDoroGame, playerId: PlayerId) {

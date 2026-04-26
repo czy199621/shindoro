@@ -88,6 +88,15 @@ export const SPELL_CARDS: CardDefinition[] = [
     effects: [{ trigger: "onPlay", action: { type: "gainMana", amount: 1 } }]
   },
   {
+    id: "great_mana_gem",
+    name: "大魔力宝石",
+    cost: 0,
+    type: "spell",
+    description: "第 5 回合后才能使用。本回合获得 2 点可用费用；第 7 回合后改为获得 3 点。",
+    playRestrictions: { minTurn: 5 },
+    effects: [{ trigger: "onPlay", action: { type: "gainMana", amount: 2, amountIfTurnAtLeast: { turn: 7, amount: 3 } } }]
+  },
+  {
     id: "divine_intervention",
     name: "神意介入",
     cost: 4,
@@ -124,6 +133,30 @@ export const SPELL_CARDS: CardDefinition[] = [
     type: "spell",
     description: "破坏对方场上所有使魔。",
     effects: [{ trigger: "onPlay", action: { type: "destroyAllEnemyMinions" } }]
+  },
+  {
+    id: "time_usurpation",
+    name: "时空篡夺",
+    cost: 10,
+    type: "spell",
+    description: "当前回合结束后，立即进行一个额外回合。该额外回合的费用上限与当前费用强制变为 12。",
+    effects: [{ trigger: "onPlay", action: { type: "grantExtraTurn", extraTurnMana: 12 } }]
+  },
+  {
+    id: "burst_flame_lance",
+    name: "爆裂炎枪",
+    cost: 4,
+    type: "spell",
+    description: "对敌方角色造成 5 点伤害。",
+    effects: [{ trigger: "onPlay", action: { type: "damage", target: "enemyHero", amount: 5 } }]
+  },
+  {
+    id: "meteor_fire_rain",
+    name: "流星火雨",
+    cost: 6,
+    type: "spell",
+    description: "对所有敌方使魔造成 4 点伤害。",
+    effects: [{ trigger: "onPlay", action: { type: "damage", target: "allEnemyMinions", amount: 4 } }]
   },
   {
     id: "void_barrier",

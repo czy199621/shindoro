@@ -1,4 +1,4 @@
-import type { PlayerId, SlotAdjustOptions } from "../types.js";
+import type { PlayerId, SlotAdjustOptions, SlotType } from "../types.js";
 import { removeFirstMatching } from "./rules.js";
 import type { ShinDoroGame } from "./gameState.js";
 
@@ -10,6 +10,15 @@ function areSlotAbilitiesDisabled(game: ShinDoroGame): boolean {
   return Object.values(game.state.players).some((player) =>
     player.board.some((minion) => minion.tags.includes("slotSeal"))
   );
+}
+
+function getNaturalSlotGainCap(game: ShinDoroGame, playerId: PlayerId, slot: SlotType): number {
+  const player = game.getPlayer(playerId);
+  const baseCap = slot === "jump" ? 3 : 5;
+  const shrineBonus =
+    slot === "godDraw" ? player.persistents.filter((card) => card.sourceCardId === "underdog_shrine").length : 0;
+
+  return baseCap + (player.temporaryFlags.naturalSlotGainCapBonus[slot] ?? 0) + shrineBonus;
 }
 
 export function resolveUltimateGodDraw(game: ShinDoroGame, playerId: PlayerId, cardId: string): void {
@@ -83,6 +92,10 @@ export function adjustSlot(
     total += 1;
   }
 
+  if (options.maxGain !== undefined) {
+    total = Math.min(total, options.maxGain);
+  }
+
   const key = slot === "jump" ? "jumpSlot" : "godDrawSlot";
   const before = player[key];
   player[key] = Math.min(13, player[key] + total);
@@ -109,11 +122,17 @@ export function applyAdvantageSlots(game: ShinDoroGame, value: number, gain: num
   game.log(`势能差结算为 ${value >= 0 ? "+" : ""}${value}，本次槽位收益为 ${gain}。`, Math.abs(value) >= 4 ? "alert" : "neutral");
 
   if (disadvantagedCharacter.passive.key === "extraGodDrawOnDisadvantage" && gain === 1) {
-    game.adjustSlot(disadvantagedId, "godDraw", gain + 2, "角色被动");
+    game.adjustSlot(disadvantagedId, "godDraw", gain + 2, "角色被动", {
+      maxGain: getNaturalSlotGainCap(game, disadvantagedId, "godDraw")
+    });
     game.log(`${disadvantagedCharacter.name} 的被动额外强化了劣势方的神抽槽。`, "alert");
     return;
   }
 
-  game.adjustSlot(advantagedId, "jump", gain, "势能结算");
-  game.adjustSlot(disadvantagedId, "godDraw", gain, "势能结算");
+  game.adjustSlot(advantagedId, "jump", gain, "势能结算", {
+    maxGain: getNaturalSlotGainCap(game, advantagedId, "jump")
+  });
+  game.adjustSlot(disadvantagedId, "godDraw", gain, "势能结算", {
+    maxGain: getNaturalSlotGainCap(game, disadvantagedId, "godDraw")
+  });
 }

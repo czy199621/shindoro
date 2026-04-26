@@ -331,6 +331,15 @@ function BattleLogPanel({ state }: { state: GameState }) {
   );
 }
 
+function FieldCounts({ persistents, traps }: { persistents: number; traps: number }) {
+  return (
+    <div className="field-counts" aria-label={`持续物 ${persistents} 张，盖伏 ${traps} 张`}>
+      <span className="field-count-badge persistent">持续 {persistents}</span>
+      <span className={classNames("field-count-badge trap", traps > 0 && "active")}>盖伏 {traps}</span>
+    </div>
+  );
+}
+
 function PendingChoiceModal({
   choice,
   onUse,
@@ -587,9 +596,7 @@ export function ReactBattleBoard({
               <section className={classNames("zone field-zone", enemyBoardZoneClass, enemyZoneMetaClass)}>
                 <div className="zone-header">
                   <h2 className="section-title">敌方战场</h2>
-                  <span className="small-note">
-                    持续物 {enemy.persistents.length} / 陷阱 {enemy.traps.length}
-                  </span>
+                  <FieldCounts persistents={enemy.persistents.length} traps={enemy.traps.length} />
                 </div>
                 <div className="zone-stack">
                   <div className={classNames("persistent-row zone-lane", enemyPersistentRowClass)}>
@@ -635,7 +642,7 @@ export function ReactBattleBoard({
               <section className={classNames("zone field-zone", playerBoardZoneClass)}>
                 <div className="zone-header">
                   <h2 className="section-title">你的战场</h2>
-                  <span className="small-note">先选择可攻击随从，再指定敌方随从或英雄作为目标。</span>
+                  <FieldCounts persistents={player.persistents.length} traps={player.traps.length} />
                 </div>
                 <div className="zone-stack zone-stack-player">
                   <div className={classNames("persistent-row zone-lane", playerPersistentRowClass)}>

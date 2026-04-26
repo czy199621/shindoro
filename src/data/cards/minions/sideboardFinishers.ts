@@ -33,14 +33,26 @@ export const SIDEBOARD_FINISHER_MINIONS: CardDefinition[] = [
     attack: 0,
     health: 5,
     threat: 3,
-    description: "护卫。进场时，若敌方卡组数量大于 7 张，则将敌方卡组顶端牌送入墓地，直至其仅剩 7 张。",
+    description: "护卫。进场时，若敌方卡组数量大于 7 张，将敌方卡组顶端至多 15 张送入墓地，但会在敌方卡组仅剩 7 张时停止。",
     tags: ["sideboardFinisher", "guard"],
     effects: [
       {
         trigger: "onPlay",
-        action: { type: "millDeckUntilRemaining", target: "opponent", remaining: 7, onlyIfAbove: 7 }
+        action: { type: "millDeckUntilRemaining", target: "opponent", remaining: 7, onlyIfAbove: 7, maxCount: 15 }
       }
     ]
+  },
+  {
+    id: "shun_shadow_assassin",
+    name: "绝影刺客·瞬",
+    cost: 10,
+    type: "minion",
+    attack: 7,
+    health: 1,
+    threat: 4,
+    description: "疾风。此使魔攻击时无视敌方护卫，可以直接攻击敌方角色或任意可攻击的敌方使魔。",
+    tags: ["sideboardFinisher", "rush", "ignoreGuard"],
+    effects: []
   },
   {
     id: "justitia_absolute_judge",

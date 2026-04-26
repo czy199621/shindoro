@@ -28,5 +28,19 @@ export const TRAP_CARDS: CardDefinition[] = [
         action: { type: "damage", target: "triggeredMinion", amount: 2 }
       }
     ]
+  },
+  {
+    id: "mana_drain",
+    name: "魔力干涸",
+    cost: 2,
+    type: "trap",
+    description: "触发：当对手当前可用费用正好为 5 点时，立刻减少其 3 点当前可用费用。",
+    effects: [
+      {
+        trigger: "onTriggerMet",
+        condition: { type: "enemyManaEquals", mana: 5 },
+        action: { type: "reduceMana", target: "opponent", amount: 3 }
+      }
+    ]
   }
 ];

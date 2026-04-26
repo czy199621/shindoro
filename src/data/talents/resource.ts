@@ -35,7 +35,7 @@ export const RESOURCE_TALENTS: TalentDefinition[] = [
     id: "giant_stride",
     name: "巨步推进",
     category: "resource",
-    pricing: { first: 4, second: 2 },
+    pricing: { first: 3, second: 2 },
     availableFor: "both",
     repeatLimit: 1,
     description: "费用高于 6 的使魔法力消耗 -1。",

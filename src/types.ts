@@ -15,7 +15,7 @@ export type GamePhase =
 export type CardType = "minion" | "spell" | "persistent" | "trap";
 export type SlotType = "jump" | "godDraw";
 export type EffectTrigger = "onPlay" | "onDeath" | "onTurnStart" | "onTriggerMet" | "onAttacked";
-export type TriggerConditionType = "enemyCastsSpell" | "enemySummonsMinion";
+export type TriggerConditionType = "enemyCastsSpell" | "enemySummonsMinion" | "enemyManaEquals";
 export type SlotTier = "jump10" | "jump13";
 export type TalentCategory =
   | "survival"
@@ -36,6 +36,7 @@ export type PassiveKey =
 
 export interface Condition {
   type: TriggerConditionType;
+  mana?: number;
 }
 
 export type DamageTarget =
@@ -96,6 +97,7 @@ export interface DiscardAction {
   type: "discard";
   target: DiscardTarget;
   count: number;
+  mode?: "last" | "random" | "highestCost";
 }
 
 export interface DiscardWithEmptyHandDamageAction {
@@ -126,6 +128,16 @@ export interface AddCardToHandAction {
 export interface GainManaAction {
   type: "gainMana";
   amount: number;
+  amountIfTurnAtLeast?: {
+    turn: number;
+    amount: number;
+  };
+}
+
+export interface ReduceManaAction {
+  type: "reduceMana";
+  target: "self" | "opponent";
+  amount: number;
 }
 
 export interface SetIgnoreGuardAction {
@@ -154,6 +166,7 @@ export interface MillDeckUntilRemainingAction {
   target: "self" | "opponent";
   remaining: number;
   onlyIfAbove?: number;
+  maxCount?: number;
 }
 
 export interface SetMillOnDamageTakenAction {
@@ -180,6 +193,7 @@ export interface BuffSelfIfHeroHpBelowAction {
 export interface GrantExtraTurnAction {
   type: "grantExtraTurn";
   loseIfNoWin?: boolean;
+  extraTurnMana?: number;
 }
 
 export interface PurgeAllMagicAndOtherMinionsAction {
@@ -222,6 +236,7 @@ export type EffectAction =
   | DiscountNextDrawAction
   | AddCardToHandAction
   | GainManaAction
+  | ReduceManaAction
   | SetIgnoreGuardAction
   | ApplyOpponentNextTurnManaPenaltyAction
   | ApplyOpponentNextTurnManaMultiplierAction
@@ -258,6 +273,9 @@ export interface CardDefinition {
   rarity?: "common" | "rare" | "epic";
   flavor?: string;
   tags?: string[];
+  playRestrictions?: {
+    minTurn?: number;
+  };
 }
 
 export interface RuntimeCard extends CardDefinition {
@@ -334,7 +352,8 @@ export type TalentEffect =
   | { type: "openingSlotBonus"; slot: SlotType; amount: number }
   | { type: "overflowOpponentDiscard"; count: number }
   | { type: "overflowOpponentMill"; count: number }
-  | { type: "increaseHealingReceived"; amount: number };
+  | { type: "increaseHealingReceived"; amount: number }
+  | { type: "increaseNaturalSlotGainCap"; slot: SlotType; amount: number };
 
 export type TalentSeat = "first" | "second";
 export type TalentAvailability = "both" | TalentSeat;
@@ -374,6 +393,7 @@ export interface GraveyardEntry {
 export interface TemporaryFlags {
   nextDrawDiscount: number;
   slotGainModifier: Record<SlotType, number>;
+  naturalSlotGainCapBonus: Record<SlotType, number>;
   openingBonusDraw: number;
   openingBonusMana: number;
   maxManaCap: number;
@@ -386,6 +406,7 @@ export interface TemporaryFlags {
   preserveBurstSlotAmount: number;
   nextTurnManaPenalty: number;
   nextTurnManaMultiplier: number;
+  nextTurnManaOverride: number | null;
   ignoreGuardThisTurn: boolean;
   millOnDamageTaken: number;
   damageTakenThisTurn: number;
@@ -495,6 +516,7 @@ export interface EffectContext {
   source?: MinionInstance | PersistentInstance;
   sourceCard?: RuntimeCard;
   triggeredMinion?: MinionInstance;
+  triggeredMana?: number;
 }
 
 export interface PendingChoicePayload {
@@ -505,6 +527,7 @@ export interface PendingChoicePayload {
 export interface SlotAdjustOptions {
   skipTalentModifier?: boolean;
   skipCharacterPassive?: boolean;
+  maxGain?: number;
 }
 
 export interface AttackTarget {

@@ -101,11 +101,12 @@ test("starting decks use legal card ids, 50-card main decks, public sideboards, 
 
   for (const deck of Object.values(STARTING_DECKS)) {
     assert.equal(deck.mainDeck.length, 50);
-    assert.equal(deck.sideboard.length, 4);
+    assert.equal(deck.sideboard.length, 5);
     assert.deepEqual(deck.sideboard, [
       "ouroboros_time_usurper",
       "michael_divine_executor",
       "chaos_imaginary_shadow",
+      "shun_shadow_assassin",
       "justitia_absolute_judge"
     ]);
 
@@ -131,6 +132,9 @@ test("talents use dynamic first/second pricing", () => {
   assert.equal(getTalentCost(TALENT_LOOKUP.first_guardrail, "second"), null);
   assert.equal(getTalentCost(TALENT_LOOKUP.second_counterpush, "first"), null);
   assert.equal(getTalentCost(TALENT_LOOKUP.second_counterpush, "second"), 2);
+  assert.equal(getTalentCost(TALENT_LOOKUP.jump_cap_breakthrough, "first"), 2);
+  assert.equal(getTalentCost(TALENT_LOOKUP.god_draw_cap_breakthrough, "second"), 1);
+  assert.equal(getTalentCost(TALENT_LOOKUP.giant_stride, "first"), 3);
   assert.equal(getTalentCost(TALENT_LOOKUP.mana_breakthrough, "first"), 2);
   assert.equal(getTalentCost(TALENT_LOOKUP.abyssal_mana, "second"), 3);
   assert.equal(getTalentCost(TALENT_LOOKUP.mental_pollution, "second"), 2);
@@ -167,7 +171,7 @@ test("Kapipara AI locks hand limit and max hp talents", () => {
   }
 });
 
-test("chaos mills the opposing deck down to seven cards only when above seven", () => {
+test("chaos mills up to fifteen cards but stops at seven remaining", () => {
   const game = new ShinDoroGame({ rng: () => 0.42 });
   game.setupMatch({
     playerCharacterId: "character_a",
@@ -177,21 +181,44 @@ test("chaos mills the opposing deck down to seven cards only when above seven", 
   game.completePlayerMulligan([]);
 
   const ai = game.getState().players.P2;
+  ai.deck = Array.from({ length: 30 }, () => createRuntimeCard(getCardDefinition("burn")));
+
+  game.summonMinion("P1", getCardDefinition("chaos_imaginary_shadow"), {
+    triggerOnPlay: true,
+    canTriggerTrap: false
+  });
+
+  assert.equal(ai.deck.length, 15);
+  assert.equal(ai.graveyard.filter((card) => card.id === "burn").length, 15);
+
   ai.deck = Array.from({ length: 10 }, () => createRuntimeCard(getCardDefinition("burn")));
 
   game.summonMinion("P1", getCardDefinition("chaos_imaginary_shadow"), {
     triggerOnPlay: true,
     canTriggerTrap: false
   });
-
   assert.equal(ai.deck.length, 7);
-  assert.equal(ai.graveyard.filter((card) => card.id === "burn").length, 3);
+  assert.equal(ai.graveyard.filter((card) => card.id === "burn").length, 18);
+});
 
-  game.summonMinion("P1", getCardDefinition("chaos_imaginary_shadow"), {
-    triggerOnPlay: true,
-    canTriggerTrap: false
+test("shun ignores guard when choosing attack targets", () => {
+  const game = new ShinDoroGame({ rng: () => 0.42 });
+  game.setupMatch({
+    playerCharacterId: "character_a",
+    aiCharacterId: "character_b",
+    playerTalentIds: []
   });
-  assert.equal(ai.deck.length, 7);
+  game.completePlayerMulligan([]);
+
+  const shun = game.summonMinion("P1", getCardDefinition("shun_shadow_assassin"), { canTriggerTrap: false });
+  game.summonMinion("P2", getCardDefinition("landmine_girl"), { canTriggerTrap: false });
+
+  const targets = game.getAttackTargets(shun.instanceId, "P1").map((target) => target.id);
+  assert.ok(targets.includes("P2_hero"));
+
+  const hpBefore = game.getState().players.P2.hp;
+  assert.equal(game.attackWith("P1", shun.instanceId, "P2_hero", "hero"), true);
+  assert.equal(game.getState().players.P2.hp, hpBefore - 7);
 });
 
 test("justitia swaps hp and blocks slot abilities while on board", () => {
@@ -348,6 +375,178 @@ test("high-level magic clears boards support cards traps and next-turn mana", ()
   game.beginTurn();
   assert.equal(state.players.P2.maxMana, 6);
   assert.equal(state.players.P2.mana, 3);
+});
+
+test("time usurpation grants an extra turn with twelve mana", () => {
+  const game = new ShinDoroGame({ rng: () => 0.42 });
+  game.setupMatch({
+    playerCharacterId: "character_a",
+    aiCharacterId: "character_b",
+    playerTalentIds: []
+  });
+  game.completePlayerMulligan([]);
+
+  const state = game.getState();
+  state.players.P1.hand = [createRuntimeCard(getCardDefinition("time_usurpation"))];
+  state.players.P1.maxMana = 10;
+  state.players.P1.mana = 10;
+  state.phase = "mainTurn";
+
+  assert.equal(game.playCardAtIndex("P1", 0), true);
+  assert.equal(game.endTurn(), true);
+  assert.equal(state.currentPlayer, "P1");
+  assert.equal(state.phase, "mainTurn");
+  assert.equal(state.players.P1.maxMana, 12);
+  assert.equal(state.players.P1.mana, 12);
+});
+
+test("great mana gem is locked before turn five and scales on turn seven", () => {
+  const game = new ShinDoroGame({ rng: () => 0.42 });
+  game.setupMatch({
+    playerCharacterId: "character_a",
+    aiCharacterId: "character_b",
+    playerTalentIds: []
+  });
+  game.completePlayerMulligan([]);
+
+  const state = game.getState();
+  state.players.P1.hand = [createRuntimeCard(getCardDefinition("great_mana_gem"))];
+  state.players.P1.mana = 0;
+  state.phase = "mainTurn";
+  state.turn = 4;
+  assert.equal(game.playCardAtIndex("P1", 0), false);
+  assert.equal(state.players.P1.mana, 0);
+
+  state.players.P1.hand = [createRuntimeCard(getCardDefinition("great_mana_gem"))];
+  state.turn = 5;
+  assert.equal(game.playCardAtIndex("P1", 0), true);
+  assert.equal(state.players.P1.mana, 2);
+
+  state.players.P1.hand = [createRuntimeCard(getCardDefinition("great_mana_gem"))];
+  state.players.P1.mana = 0;
+  state.turn = 7;
+  assert.equal(game.playCardAtIndex("P1", 0), true);
+  assert.equal(state.players.P1.mana, 3);
+});
+
+test("mana drain trap fires when enemy current mana equals five", () => {
+  const game = new ShinDoroGame({ rng: () => 0.42 });
+  game.setupMatch({
+    playerCharacterId: "character_a",
+    aiCharacterId: "character_b",
+    playerTalentIds: []
+  });
+  game.completePlayerMulligan([]);
+
+  const state = game.getState();
+  state.players.P2.traps.push({
+    instanceId: "trap_mana_drain",
+    ownerId: "P2",
+    sourceCardId: "mana_drain",
+    name: "魔力干涸",
+    threat: 0,
+    description: "",
+    effects: getCardDefinition("mana_drain").effects,
+    type: "trap"
+  });
+  state.players.P1.maxMana = 4;
+  state.players.P1.mana = 0;
+  state.currentPlayer = "P1";
+
+  game.beginTurn();
+
+  assert.equal(state.players.P1.maxMana, 5);
+  assert.equal(state.players.P1.mana, 2);
+  assert.equal(state.players.P2.traps.length, 0);
+  assert.equal(state.players.P2.graveyard.some((card) => card.id === "mana_drain"), true);
+});
+
+test("new spells and spell focus use updated damage values", () => {
+  const game = new ShinDoroGame({ rng: () => 0.42 });
+  game.setupMatch({
+    playerCharacterId: "character_a",
+    aiCharacterId: "character_b",
+    playerTalentIds: ["spell_focus"]
+  });
+  game.completePlayerMulligan([]);
+
+  const state = game.getState();
+  state.players.P1.hand = [createRuntimeCard(getCardDefinition("burst_flame_lance"))];
+  state.players.P1.mana = 4;
+  state.phase = "mainTurn";
+
+  const hpBefore = state.players.P2.hp;
+  assert.equal(game.playCardAtIndex("P1", 0), true);
+  assert.equal(state.players.P2.hp, hpBefore - 7);
+});
+
+test("revised draw minions use death draw and draw-discard timing", () => {
+  const game = new ShinDoroGame({ rng: () => 0 });
+  game.setupMatch({
+    playerCharacterId: "character_a",
+    aiCharacterId: "character_b",
+    playerTalentIds: []
+  });
+  game.completePlayerMulligan([]);
+
+  const state = game.getState();
+  state.players.P1.hand = [createRuntimeCard(getCardDefinition("archivist_owl")), createRuntimeCard(getCardDefinition("coin"))];
+  state.players.P1.deck = [createRuntimeCard(getCardDefinition("burn"))];
+  state.players.P1.mana = 2;
+  state.phase = "mainTurn";
+
+  assert.equal(getCardDefinition("novice_mage").attack, 1);
+  assert.equal(getCardDefinition("novice_mage").health, 1);
+
+  const novice = game.summonMinion("P1", getCardDefinition("novice_mage"), { canTriggerTrap: false });
+  const handBeforeDeath = state.players.P1.hand.length;
+  novice.health = 0;
+  game.checkForDeaths();
+  assert.equal(state.players.P1.hand.length, handBeforeDeath + 1);
+
+  state.players.P1.hand = [createRuntimeCard(getCardDefinition("archivist_owl")), createRuntimeCard(getCardDefinition("coin"))];
+  state.players.P1.deck = [createRuntimeCard(getCardDefinition("burn"))];
+  state.players.P1.mana = 2;
+  state.phase = "mainTurn";
+
+  assert.equal(game.playCardAtIndex("P1", 0), true);
+  assert.deepEqual(state.players.P1.hand.map((card) => card.id), ["burn"]);
+  assert.equal(state.players.P1.graveyard.some((card) => card.id === "coin"), true);
+});
+
+test("natural slot gain caps can be expanded by talents and shrine", () => {
+  const capped = new ShinDoroGame({ rng: () => 0.42 });
+  capped.setupMatch({
+    playerCharacterId: "character_b",
+    aiCharacterId: "character_a",
+    playerTalentIds: []
+  });
+  capped.getState().players.P1.temporaryFlags.slotGainModifier.jump = 5;
+  capped.applyAdvantageSlots(99, 3);
+  assert.equal(capped.getState().players.P1.jumpSlot, 3);
+
+  const expanded = new ShinDoroGame({ rng: () => 0.42 });
+  expanded.setupMatch({
+    playerCharacterId: "character_a",
+    aiCharacterId: "character_b",
+    playerTalentIds: ["god_draw_cap_breakthrough"]
+  });
+  const state = expanded.getState();
+  state.players.P1.temporaryFlags.slotGainModifier.godDraw = 10;
+  state.players.P1.persistents.push({
+    instanceId: "persistent_underdog",
+    ownerId: "P1",
+    sourceCardId: "underdog_shrine",
+    name: "逆境神龛",
+    threat: 2,
+    description: "",
+    effects: getCardDefinition("underdog_shrine").effects,
+    type: "persistent"
+  });
+
+  expanded.applyAdvantageSlots(-99, 3);
+
+  assert.equal(state.players.P1.godDrawSlot, 8);
 });
 
 test("mana cap talents allow mana to grow beyond ten", () => {

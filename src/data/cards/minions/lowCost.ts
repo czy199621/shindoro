@@ -3,14 +3,14 @@ import type { CardDefinition } from "../../../types.js";
 export const LOW_COST_MINIONS: CardDefinition[] = [
 {
     id: "novice_mage",
-    name: "见习术士",
+    name: "招财猫",
     cost: 2,
     type: "minion",
-    attack: 2,
-    health: 3,
-    threat: 3,
-    description: "战吼：抽 1 张牌。",
-    effects: [{ trigger: "onPlay", action: { type: "draw", count: 1 } }]
+    attack: 1,
+    health: 1,
+    threat: 1,
+    description: "亡语：抽 1 张牌。",
+    effects: [{ trigger: "onDeath", action: { type: "draw", count: 1 } }]
   },
 {
     id: "ember_wolf",

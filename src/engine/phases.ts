@@ -57,6 +57,18 @@ function applyTurnStartPassives(game: ShinDoroGame, playerId: PlayerId): void {
 
 function applyTurnStartMana(game: ShinDoroGame, playerId: PlayerId): void {
   const player = game.getPlayer(playerId);
+  const manaOverride = player.temporaryFlags.nextTurnManaOverride;
+  if (manaOverride !== null) {
+    player.temporaryFlags.nextTurnManaOverride = null;
+    player.temporaryFlags.nextTurnManaPenalty = 0;
+    player.temporaryFlags.nextTurnManaMultiplier = 1;
+    player.temporaryFlags.openingBonusMana = 0;
+    player.maxMana = manaOverride;
+    player.mana = manaOverride;
+    game.triggerTraps(game.getOpponentId(playerId), "enemyManaEquals", { triggeredMana: player.mana });
+    return;
+  }
+
   const manaPenalty = player.temporaryFlags.nextTurnManaPenalty;
   const manaMultiplier = player.temporaryFlags.nextTurnManaMultiplier;
   player.temporaryFlags.nextTurnManaPenalty = 0;
@@ -70,6 +82,7 @@ function applyTurnStartMana(game: ShinDoroGame, playerId: PlayerId): void {
     0,
     player.temporaryFlags.maxManaCap
   );
+  game.triggerTraps(game.getOpponentId(playerId), "enemyManaEquals", { triggeredMana: player.mana });
 }
 
 function readyBoardForTurn(player: PlayerState): void {

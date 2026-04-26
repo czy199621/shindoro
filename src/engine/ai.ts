@@ -13,7 +13,7 @@ import type {
   RuntimeCard,
   TalentSeat
 } from "../types.js";
-import { boardAttack, boardThreat } from "./rules.js";
+import { boardAttack, boardThreat, canPlayCardForPlayer } from "./rules.js";
 
 interface AiProfile {
   talentPriority: string[];
@@ -465,11 +465,15 @@ function scoreEffectAction(state: GameState, playerId: PlayerId, card: RuntimeCa
     case "addSlot":
       return scoreSlotGain(state, playerId, action.slot, action.amount, profile);
     case "gainMana": {
+      const amount =
+        action.amountIfTurnAtLeast && state.turn >= action.amountIfTurnAtLeast.turn
+          ? action.amountIfTurnAtLeast.amount
+          : action.amount;
       const enabled = me.hand.some(
         (handCard) =>
           handCard.runtimeId !== card.runtimeId &&
           handCard.currentCost > me.mana &&
-          handCard.currentCost <= me.mana + action.amount &&
+          handCard.currentCost <= me.mana + amount &&
           (handCard.type !== "minion" || me.board.length < 7)
       );
       return enabled ? 5.2 : 0.8;
@@ -486,6 +490,8 @@ function scoreEffectAction(state: GameState, playerId: PlayerId, card: RuntimeCa
       return action.amount * (me.character === "character_e" ? 2.3 : 1.25);
     case "applyOpponentNextTurnManaMultiplier":
       return (1 - action.multiplier) * 5;
+    case "reduceMana":
+      return action.target === "opponent" ? action.amount * 1.4 : -action.amount * 1.4;
     case "setIgnoreGuard":
       return opp.board.some((minion) => minion.tags.includes("guard")) && boardAttack(me) > 0 ? 5.5 : 1.2;
     case "summon":
@@ -651,7 +657,7 @@ export function chooseAiAction(game: GameAiAdapter, playerId: PlayerId): AiDecis
             score: evaluateCardState(game.state, playerId, card),
             card
           }))
-          .filter(({ card }) => card.currentCost <= me.mana && (card.type !== "minion" || me.board.length < 7))
+          .filter(({ card }) => canPlayCardForPlayer(card, me, game.state.turn))
       : [];
 
   const attacks: Array<Extract<AiDecision, { type: "attack" }>> = [];

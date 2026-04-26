@@ -15,13 +15,16 @@ export const MID_COST_MINIONS: CardDefinition[] = [
 {
     id: "archivist_owl",
     name: "典籍猫头鹰",
-    cost: 3,
+    cost: 2,
     type: "minion",
     attack: 2,
     health: 3,
     threat: 3,
-    description: "战吼：抽 1 张牌。",
-    effects: [{ trigger: "onPlay", action: { type: "draw", count: 1 } }]
+    description: "战吼：抽 1 张牌，然后随机弃 1 张手牌。",
+    effects: [
+      { trigger: "onPlay", action: { type: "draw", count: 1 } },
+      { trigger: "onPlay", action: { type: "discard", target: "self", count: 1, mode: "random" } }
+    ]
   },
 {
     id: "dusk_assassin",

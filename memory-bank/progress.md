@@ -1,5 +1,60 @@
 # Progress
 
+## 2026-04-27
+
+### 抽牌判负规则修正
+
+- 涉及文件：
+  - `src/engine/effects.ts`
+  - `tests/engine.test.js`
+  - `design/game_rule.md`
+  - `design/game_design.md`
+  - `memory-bank/architecture.md`
+  - `memory-bank/progress.md`
+- 本次改动：
+  - 抽牌判负规则改为：只要需要抽牌时牌库已经为空，就立即败北。
+  - 删除旧的“还要手牌为空才败北”判断。
+  - 新增测试覆盖“手里还有牌，但牌库为空且需要抽牌，也会输”的情况。
+- 外行说明：
+  - 以前像是“牌库没了，但手里还有牌，所以还能撑住”；现在改成“轮到你抽牌时没牌可抽，就直接输”。
+  - 这个判断统一放在抽牌函数里，所以摸牌阶段、卡牌效果抽牌、死亡效果抽牌都会走同一条规则。
+- 文档同步：
+  - 已同步规则文档中的胜利条件和摸牌阶段说明。
+  - 已同步设计文档与架构记忆中的抽牌判负口径。
+
+## 2026-04-26
+
+### 对局 UI 亲和度优化
+
+- 涉及文件：
+  - `src/components/react/ReactBattleBoard.tsx`
+  - `src/components/react/CardView.tsx`
+  - `src/components/react/PlayerHUDView.tsx`
+  - `src/style.css`
+  - `design/game_design.md`
+  - `memory-bank/architecture.md`
+  - `memory-bank/progress.md`
+- 本次改动：
+  - 顶部状态区新增“当前建议”，会根据对局状态显示“可以出牌”“可以攻击”“等待 AI 行动”“先处理选择”等提示。
+  - 回合阶段从英文内部字段改为中文阶段名，例如 `mainTurn` 显示为“主要行动”，减少玩家理解成本。
+  - 手牌卡牌新增可用状态标签，能直接显示“可以打出”“费用不足”“战场已满”“第几回合后可用”等原因。
+  - 槽位面板恢复说明文字，会显示“还差几点到 10 点”“10 点已就绪”“13 点已满”，让玩家不用自己心算。
+  - 卡牌详情补全新版关键词和新版效果的中文说明，避免新卡在悬停说明里出现内部英文名。
+  - 空战场、空手牌、无持续物和无盖伏的提示改成更温和的状态说明。
+  - 战斗日志标题从英文改为中文，生命和法力标签也改为中文。
+  - 样式上增加当前建议卡、可打出状态、槽位就绪状态和新版关键词徽章颜色。
+- 验证：
+  - `npm.cmd run build` 通过。
+  - `npm.cmd test` 通过：44/44。
+- 外行说明：
+  - 顶部提示就像“现在轮到你该做什么”的小提醒，玩家不用猜下一步。
+  - 手牌上的状态标签就像商店里的“可购买 / 钱不够”标识，不能用的原因会直接写出来。
+  - 槽位提示把进度条翻译成一句话，玩家能一眼知道离大招还差多少。
+  - 空区域提示不再只是冷冰冰地写“没有”，而是告诉玩家这个区域现在代表什么。
+- 文档同步：
+  - 已同步 `design/game_design.md` 的 UI / UX 目标。
+  - 已同步 `memory-bank/architecture.md` 的 React 战斗面板职责说明。
+
 ## 2026-04-25
 
 ### 战场盖伏数量标记
@@ -72,7 +127,7 @@
   - `memory-bank/architecture.md`
   - `memory-bank/progress.md`
 - 本次改动：
-  - 根据 `design/update_design.md` 接入 4 张公共 13 点神抽终结者和 6 张大魔法。
+  - 根据 `design/update_design.md` 接入首批 4 张公共 13 点神抽终结者和 6 张大魔法；后续 v1.2.1 已扩充为 5 张公共终结者。
   - 每名角色的备牌库统一改为公共终结者集合。
   - 新增额外回合、失败败北、肃清、磨牌到 7 张、生命互换、双槽封锁、清场、拆除持续魔法、拆除触发魔法和下回合费用减半等效果。
   - 补充吸血、必杀、潜行指定限制、连击攻击次数和回复关键词的基础规则处理。
@@ -85,86 +140,86 @@
 
 ## 2026-04-24
 
-### Added archive-based auto-update fallback for non-Git installs
+### 为非 Git 安装加入压缩包自动更新备用路径
 
-- Files
+- 涉及文件：
   - `start-game.ps1`
   - `update-source.json`
   - `.gitignore`
   - `README.md`
   - `memory-bank/architecture.md`
   - `memory-bank/progress.md`
-- Summary
-  - Kept Git-based fast-forward update as the first choice for developer worktrees.
-  - Added a no-Git fallback path that downloads the latest GitHub branch zip, applies managed files into the current folder, and records a local update state file with commit and file hashes.
-  - Added local-change protection for archive-updated installs so post-update edits can cause auto-update to skip instead of silently overwriting files.
-- Verification
-  - PowerShell script syntax parse
-- Related updates checked
-  - Updated the user-facing README and architecture notes so the new update flow is documented alongside the existing launch workflow.
+- 本次改动：
+  - 保留 Git 快进更新作为开发目录的优先更新方式。
+  - 新增无 Git 备用路径：下载最新 GitHub 分支压缩包，把受管理文件写入当前目录，并记录本地更新状态、提交号和文件哈希。
+  - 为压缩包更新路径加入本地修改保护，避免自动更新静默覆盖用户改过的文件。
+- 验证：
+  - PowerShell 脚本语法解析通过。
+- 关联修正检查：
+  - 已更新面向用户的 README 和架构说明，把新更新流程与现有启动流程放在同一处说明。
 
-### Removed the empty-state settlement hint box
+### 移除无结算数据时的默认提示框
 
-- Files
+- 涉及文件：
   - `src/components/MomentumPanel.tsx`
   - `memory-bank/architecture.md`
   - `memory-bank/progress.md`
-- Summary
-  - Removed the default settlement hint box that appeared in the momentum panel before any actual settlement result existed.
-  - The settlement area now renders only when `lastAdvantage` is available.
-- Verification
+- 本次改动：
+  - 移除势能面板在还没有真实结算结果时显示的默认提示框。
+  - 结算区域现在只在存在 `lastAdvantage` 时渲染。
+- 验证：
   - `cmd /c npm run build`
-- Related updates checked
-  - Kept the real `上次结算` block unchanged, so only the no-data placeholder was removed.
+- 关联修正检查：
+  - 保留真实的“上次结算”区块，只删除无数据占位提示。
 
-### Moved restart control into the hand toolbar
+### 将重新开始按钮移动到手牌工具栏
 
-- Files
+- 涉及文件：
   - `src/components/Board.tsx`
   - `src/style.css`
   - `memory-bank/architecture.md`
   - `memory-bank/progress.md`
-- Summary
-  - Moved the `重新开始` button out of the header log card and into the hand-zone toolbar, placing it to the left of `取消攻击选择`.
-  - Simplified the header log card again so it now renders only the scrollable log content.
-- Verification
+- 本次改动：
+  - 将 `重新开始` 按钮从标题栏日志卡移到手牌区工具栏，并放在 `取消攻击选择` 左侧。
+  - 再次简化标题栏日志卡，使其只渲染可滚动日志内容。
+- 验证：
   - `cmd /c npm run build`
-- Related updates checked
-  - Kept the hand toolbar order explicit in markup so the restart control stays left of cancel-attack on the current desktop layout.
+- 关联修正检查：
+  - 在标记结构中固定手牌工具栏顺序，确保桌面布局下重新开始按钮始终位于取消攻击按钮左侧。
 
-### Slimmed down the header log card
+### 压缩标题栏日志卡
 
-- Files
+- 涉及文件：
   - `src/components/Board.tsx`
   - `src/style.css`
   - `memory-bank/architecture.md`
   - `memory-bank/progress.md`
-- Summary
-  - Removed the header log title and left only a compact restart control above the log entries.
-  - Reduced the header log card padding, visible log height, button size, and log item density so the card sits flatter inside the header.
-- Verification
+- 本次改动：
+  - 移除标题栏日志标题，只在日志条目上方保留紧凑的重新开始控件。
+  - 缩小标题栏日志卡内边距、可见日志高度、按钮尺寸和日志条目密度，使其更平稳地放入标题栏。
+- 验证：
   - `cmd /c npm run build`
-- Related updates checked
-  - Kept the full log content and scroll behavior intact while only compressing the header log presentation.
+- 关联修正检查：
+  - 保留完整日志内容和滚动行为，只压缩标题栏中的展示形式。
 
-### Moved the battle log into the header right side
+### 将战斗日志移动到标题栏右侧
 
-- Files
+- 涉及文件：
   - `src/components/Board.tsx`
   - `src/style.css`
   - `memory-bank/architecture.md`
   - `memory-bank/progress.md`
-- Summary
-  - Moved the battle log out of the right sidebar and into the right side of the in-match header.
-  - Added a dedicated `hero-log-card` layout so the header now reads as left status, center match info, and right log.
-- Verification
+- 本次改动：
+  - 将战斗日志从右侧栏移到对局标题栏右侧。
+  - 新增 `hero-log-card` 布局，让标题栏形成左侧状态、中间对局信息、右侧日志的结构。
+- 验证：
   - `cmd /c npm run build`
-- Related updates checked
-  - Kept a narrow-screen fallback so the header log can wrap beneath the other header content instead of breaking the layout.
+- 关联修正检查：
+  - 保留窄屏回退规则，让标题栏日志在宽度不足时换到其他内容下方，而不是挤坏布局。
 
-### Removed extra explanatory copy from battle UI panels
+### 移除战斗 UI 面板中过多的解释文字
 
-- Files
+- 涉及文件：
   - `src/components/Board.tsx`
   - `src/components/MomentumPanel.tsx`
   - `src/components/PlayerHUD.tsx`
@@ -172,164 +227,164 @@
   - `src/style.css`
   - `memory-bank/architecture.md`
   - `memory-bank/progress.md`
-- Summary
-  - Removed the descriptive subtitle from the momentum panel header.
-  - Removed the explanatory text from jump-slot and god-draw-slot badges.
-  - Removed the separate slot-tip sidebar card so the right sidebar now stays focused on momentum and battle log content.
-- Verification
+- 本次改动：
+  - 移除势能面板标题中的描述副标题。
+  - 移除跳脸槽和神抽槽徽章中的额外解释文字。
+  - 移除独立的槽位提示侧栏卡，让右侧栏集中展示势能与战斗日志。
+- 验证：
   - `cmd /c npm run build`
-- Related updates checked
-  - Adjusted the desktop sidebar row sizing after removing the slot-tip card so the remaining panels still fill the area cleanly.
+- 关联修正检查：
+  - 移除槽位提示卡后同步调整桌面侧栏行高，让剩余面板仍能干净地填满区域。
 
-### Moved battle info into the header center area
+### 将对局信息移动到标题栏中部
 
-- Files
+- 涉及文件：
   - `src/components/Board.tsx`
   - `src/style.css`
   - `memory-bank/architecture.md`
   - `memory-bank/progress.md`
-- Summary
-  - Split the in-match header into a left title/status block and a centered battle-info strip so turn, current actor, phase, and attack state no longer sit at the far right.
-  - Added a desktop-only three-column hero grid and kept the smaller-screen fallback so the centered info strip collapses cleanly on narrower layouts.
-- Verification
+- 本次改动：
+  - 将对局标题栏拆成左侧标题/状态和中间对局信息条，让回合、行动方、阶段和攻击状态不再挤在最右侧。
+  - 添加桌面端三列标题栏网格，并保留小屏回退布局。
+- 验证：
   - `cmd /c npm run build`
-- Related updates checked
-  - Limited the change to the in-match header layout and kept the rest of the battlefield, sidebar, and mobile fallback structure unchanged.
+- 关联修正检查：
+  - 修改范围限定在对局标题栏，战场、侧栏和移动端回退结构保持不变。
 
-### Tightened the HUD resource and slot badges
+### 压缩玩家状态资源与槽位徽章
 
-- Files
+- 涉及文件：
   - `src/components/SlotMeter.tsx`
   - `src/style.css`
   - `memory-bank/architecture.md`
   - `memory-bank/progress.md`
-- Summary
-  - Reduced the desktop HUD HP and Mana label sizing and tightened the resource badge spacing so the label text stays fully contained within the badge.
-  - Added dedicated slot badge classes and compressed the slot card header, counter, and note text so jump-slot and god-draw-slot cards fit more cleanly inside player info panels.
-- Verification
+- 本次改动：
+  - 缩小桌面端玩家状态中的生命和法力标签，并压缩资源徽章间距，避免文字溢出。
+  - 增加专用槽位徽章类名，压缩槽位卡标题、计数和注记文字，让跳脸槽与神抽槽更稳定地放入玩家信息面板。
+- 验证：
   - `cmd /c npm run build`
-- Related updates checked
-  - Kept the adjustment scoped to the in-match HUD layout and slot meter component, without changing rules or other card panel structures.
+- 关联修正检查：
+  - 调整范围限定在对局玩家状态布局和槽位组件，没有修改规则或其他卡牌面板结构。
 
-### Rebalanced the desktop UI around information readability
+### 围绕信息可读性重排桌面 UI
 
-- Files
+- 涉及文件：
   - `src/style.css`
   - `memory-bank/architecture.md`
   - `memory-bank/progress.md`
-- Summary
-  - Changed battle rows to keep cards at readable fixed widths and use internal horizontal scrolling instead of shrinking cards until descriptions become cramped.
-  - Stacked the momentum panel vertically and turned the HUD passive description into a dedicated readable block so dense sidebar and HUD information can be read more naturally.
-- Verification
+- 本次改动：
+  - 战斗行改为保持卡牌可读宽度，并用内部横向滚动承载更多卡牌，避免把卡牌压到说明文字拥挤。
+  - 将势能面板改为纵向堆叠，并把角色被动说明做成独立可读区块，让侧栏和玩家状态信息更自然。
+- 验证：
   - `cmd /c npm run build`
-- Related updates checked
-  - Kept the smaller-screen fallback rules intact, so these readability-focused desktop adjustments stay scoped to the in-match desktop layout.
+- 关联修正检查：
+  - 保留小屏回退规则，使本次可读性调整只影响桌面对局布局。
 
-### Expanded the in-match UI to use more monitor width
+### 扩展对局 UI 的屏幕宽度利用
 
-- Files
+- 涉及文件：
   - `src/style.css`
   - `memory-bank/architecture.md`
   - `memory-bank/progress.md`
-- Summary
-  - Removed the fixed maximum width from `.game-shell` so the in-match screen can stretch closer to the full monitor width.
-  - Switched the sidebar, HUD columns, and desktop card widths to `clamp(...)` sizing so large screens use extra width more naturally.
-- Verification
+- 本次改动：
+  - 移除 `.game-shell` 的固定最大宽度，让对局画面能更接近占满显示器宽度。
+  - 将侧栏、玩家状态列和桌面卡牌宽度改为 `clamp(...)`，让大屏更自然地利用额外空间。
+- 验证：
   - `cmd /c npm run build`
-- Related updates checked
-  - Kept the smaller-screen fallback in the existing `@media (max-width: 1180px)` block so this wider desktop behavior does not leak into narrow layouts.
+- 关联修正检查：
+  - 保留现有 `@media (max-width: 1180px)` 小屏回退，避免宽屏行为影响窄屏布局。
 
-### Reworked the battle UI for desktop screens
+### 重做桌面端战斗 UI
 
-- Files
+- 涉及文件：
   - `src/components/Board.tsx`
   - `src/style.css`
   - `memory-bank/architecture.md`
   - `memory-bank/progress.md`
-- Summary
-  - Reorganized the game board into two horizontal battlefield halves with a dedicated compact hand zone so the main match view uses monitor width more effectively.
-  - Added `.game-shell` desktop-only layout rules that keep the battle screen inside the viewport and move overflow into internal panels like the battle log.
-- Verification
+- 本次改动：
+  - 将游戏棋盘重组为上下两个横向战场区，并加入专用紧凑手牌区，使主对局画面更有效使用显示器宽度。
+  - 增加 `.game-shell` 桌面专用布局规则，让战斗画面保持在视口内，并把溢出交给战斗日志等内部面板处理。
+- 验证：
   - `cmd /c npm run build`
-- Related updates checked
-  - Scoped the new layout rules to the in-match screen so setup and mulligan screens keep their previous responsive layout behavior.
+- 关联修正检查：
+  - 新布局规则只作用于对局画面，设置页和换牌页保持原有响应式行为。
 
-### Added SKILL sync rules for game design and game rule
+### 增加设计文档与规则文档同步要求
 
-- Files
+- 涉及文件：
   - `SKILL.md`
   - `memory-bank/architecture.md`
   - `memory-bank/progress.md`
-- Summary
-  - Added a rule that content updates must also review and update `design/game_design.md`.
-  - Added a rule that rule updates must also review and update `design/game_rule.md`.
-- Verification
-  - Document update only; no build or tests run.
-- Related updates checked
-  - Confirmed the repo currently maintains `design/game_design.md` and `design/game_rule.md` as the active design and rule documents.
+- 本次改动：
+  - 增加内容更新时必须检查并更新 `design/game_design.md` 的规则。
+  - 增加规则更新时必须检查并更新 `design/game_rule.md` 的规则。
+- 验证：
+  - 仅文档更新，未运行构建或测试。
+- 关联修正检查：
+  - 确认仓库当前使用 `design/game_design.md` 和 `design/game_rule.md` 作为有效设计与规则文档。
 
-### Added AGENT rule to force SKILL usage on content tasks
+### 增加内容任务必须使用 SKILL 的代理规则
 
-- Files
+- 涉及文件：
   - `AGENT.md`
   - `memory-bank/architecture.md`
   - `memory-bank/progress.md`
-- Summary
-  - Added an explicit agent rule requiring `SKILL.md` to be read before content-update, design-sync, rule-document, and catalog-maintenance tasks.
-  - Added a matching rule that minion changes must keep the minion catalog document synchronized.
-- Verification
-  - Document update only; no build or tests run.
-- Related updates checked
-  - Confirmed `SKILL.md` remains the repo's content-update workflow document and `design/minion_codex.md` remains the current minion catalog file.
+- 本次改动：
+  - 增加明确代理规则：在内容更新、设计同步、规则文档和图鉴维护任务前必须先阅读 `SKILL.md`。
+  - 增加对应规则：使魔改动必须同步维护使魔图鉴。
+- 验证：
+  - 仅文档更新，未运行构建或测试。
+- 关联修正检查：
+  - 确认 `SKILL.md` 仍是仓库内容更新流程文档，且使魔图鉴目标已迁移到 `design/minion.md`。
 
-### Updated SKILL minion-doc sync rule
+### 更新 SKILL 中的使魔图鉴同步规则
 
-- Files
+- 涉及文件：
   - `SKILL.md`
   - `memory-bank/progress.md`
-- Summary
-  - Added a rule that whenever minions are modified or new minions are added, the minion catalog document must also be updated.
-  - The rule explicitly treats `design/minion.md` as the default target and falls back to `design/minion_codex.md` when that is the file currently maintained in the repo.
-- Verification
-  - Document update only; no build or tests run.
-- Related updates checked
-  - Confirmed the current repo still uses `design/minion_codex.md` as the existing minion catalog file.
+- 本次改动：
+  - 增加规则：只要修改使魔或新增使魔，就必须同步更新使魔图鉴。
+  - 明确默认目标是 `design/minion.md`；如果仓库仍维护 `design/minion_codex.md`，才回退到该文件。
+- 验证：
+  - 仅文档更新，未运行构建或测试。
+- 关联修正检查：
+  - 当前仓库已使用 `design/minion.md` 作为使魔图鉴。
 
-### Modularized minion data files
+### 使魔数据文件模块化
 
-- Files
+- 涉及文件：
   - `src/data/cards/minions.ts`
   - `src/data/cards/minions/lowCost.ts`
   - `src/data/cards/minions/midCost.ts`
   - `src/data/cards/minions/highCost.ts`
   - `src/data/cards/minions/guardPackage.ts`
   - `memory-bank/architecture.md`
-- Summary
-  - Split minion definitions out of the single `minions.ts` file into grouped submodules.
-  - Kept `src/data/cards/minions.ts` as the stable aggregation export so upstream imports do not need to change.
-- Verification
+- 本次改动：
+  - 将使魔定义从单一 `minions.ts` 拆分到分组子模块。
+  - 保留 `src/data/cards/minions.ts` 作为稳定聚合出口，避免上层 import 路径联动修改。
+- 验证：
   - `cmd /c npm test`
-- Related updates checked
-  - Verified that `src/data/cards.ts` can continue importing `MINION_CARDS` from the same path without any changes in engine, UI, or tests.
+- 关联修正检查：
+  - 已验证 `src/data/cards.ts` 能继续从同一路径导入 `MINION_CARDS`，引擎、UI 和测试无需改 import。
 
-### Added the guard minion package and catalog
+### 增加护卫使魔包与图鉴
 
-- Files
+- 涉及文件：
   - `src/data/cards/minions.ts`
   - `src/engine/effects.ts`
   - `src/engine/rules.ts`
   - `tests/engine.test.js`
   - `design/minion_codex.md`
   - `memory-bank/architecture.md`
-- Summary
-  - Added seven new minions centered on guard mechanics.
-  - Added runtime support for `onAttacked`, token generation to hand, adjacent-guard spreading, low-hp self buffing, menace threat suppression, and magic-resistant targeting.
-  - Added a minion catalog markdown file under `design/`.
-- Verification
+- 本次改动：
+  - 新增 7 张围绕护卫机制设计的使魔。
+  - 增加 `onAttacked`、生成衍生物到手牌、相邻护卫扩散、低血自我强化、威慑压制威胁值和魔抗指定限制等运行时支持。
+  - 在 `design/` 下新增使魔图鉴文档。
+- 验证：
   - `cmd /c npm run build`
   - `cmd /c npm test`
-- Related updates checked
-  - Added engine tests for the new mechanics and kept the momentum calculation in sync with the new `menace` rule.
+- 关联修正检查：
+  - 已为新机制增加引擎测试，并同步势能计算中的 `menace` 规则。
 
 ## 用途
 

@@ -208,11 +208,9 @@ export function drawCards(game: ShinDoroGame, playerId: PlayerId, count: number,
   const player = game.getPlayer(playerId);
   for (let index = 0; index < count; index += 1) {
     if (!player.deck.length) {
-      if (!player.hand.length) {
-        game.state.winner = game.getOpponentId(playerId);
-        game.state.phase = "gameOver";
-        game.log(`${game.getCharacter(player.character).name} 牌库见底且无法再抽牌，败北。`, "alert");
-      }
+      game.state.winner = game.getOpponentId(playerId);
+      game.state.phase = "gameOver";
+      game.log(`${game.getCharacter(player.character).name} 牌库见底且需要抽牌，败北。`, "alert");
       return;
     }
 

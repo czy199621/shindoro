@@ -3,7 +3,20 @@ import { createPortal } from "react-dom";
 import { getCardDefinition } from "../../data/cards.js";
 import { getAdvantageBreakdown } from "../../engine/rules.js";
 import type { CardFxState, GameStore } from "../../store/useGameStore.js";
-import type { AdvantageBreakdown, Effect, EffectAction, GameState, LastAdvantage, PendingChoice } from "../../types.js";
+import type {
+  AdvantageBreakdown,
+  BuffTarget,
+  DestroyTarget,
+  DiscardTarget,
+  Effect,
+  EffectAction,
+  GamePhase,
+  GameState,
+  LastAdvantage,
+  PendingChoice,
+  RuntimeCard,
+  SlotType
+} from "../../types.js";
 import { HandCard, MinionCard, PersistentCard, type CardDetailInfo, type InspectPoint } from "./CardView.js";
 import { PlayerHUD } from "./PlayerHUDView.js";
 
@@ -19,7 +32,15 @@ const KEYWORD_LABELS: Record<string, string> = {
   rush: "冲锋",
   guard: "护卫",
   menace: "威慑",
-  magicRes: "魔抗"
+  magicRes: "魔抗",
+  stealth: "潜行",
+  doubleStrike: "连击",
+  lifesteal: "吸血",
+  deadly: "必杀",
+  regeneration: "回复",
+  slotSeal: "封槽",
+  sideboardFinisher: "大地",
+  ignoreGuard: "破卫"
 };
 
 const TRIGGER_LABELS: Record<string, string> = {
@@ -30,41 +51,143 @@ const TRIGGER_LABELS: Record<string, string> = {
   onAttacked: "被攻击时"
 };
 
+const PHASE_LABELS: Record<GamePhase, string> = {
+  setup: "准备",
+  mulligan: "换牌",
+  turnStart: "回合开始",
+  slotResolution: "槽位结算",
+  draw: "抽牌",
+  mainTurn: "主要行动",
+  combat: "战斗",
+  turnEnd: "回合结束",
+  gameOver: "对局结束"
+};
+
+const SLOT_LABELS: Record<SlotType, string> = {
+  jump: "跳跃槽",
+  godDraw: "神抽槽"
+};
+
+const DAMAGE_TARGET_LABELS: Record<string, string> = {
+  enemyHero: "敌方英雄",
+  selfHero: "我方英雄",
+  allEnemyMinions: "所有敌方随从",
+  allFriendlyMinions: "所有我方随从",
+  strongestEnemyMinion: "攻击最高的敌方随从",
+  weakestEnemyMinion: "生命最低的敌方随从",
+  triggeredMinion: "触发该效果的随从"
+};
+
+const PLAYER_TARGET_LABELS: Record<DiscardTarget | "self" | "opponent" | "all" | "enemy", string> = {
+  self: "自己",
+  opponent: "对手",
+  all: "双方",
+  enemy: "敌方"
+};
+
+const CONDITION_LABELS: Record<string, string> = {
+  enemyCastsSpell: "敌方施放法术",
+  enemySummonsMinion: "敌方召唤随从",
+  enemyManaEquals: "敌方法力达到指定值"
+};
+
+function getPhaseLabel(phase: GamePhase): string {
+  return PHASE_LABELS[phase] ?? phase;
+}
+
+function formatCardName(cardId: string): string {
+  try {
+    return getCardDefinition(cardId).name;
+  } catch {
+    return cardId;
+  }
+}
+
+function formatTarget(target: string): string {
+  return DAMAGE_TARGET_LABELS[target] ?? PLAYER_TARGET_LABELS[target as keyof typeof PLAYER_TARGET_LABELS] ?? target;
+}
+
+function formatSlot(slot: SlotType): string {
+  return SLOT_LABELS[slot] ?? slot;
+}
+
+function formatMode(mode?: string): string {
+  if (!mode) return "";
+  const modeLabel: Record<string, string> = {
+    last: "最后一张",
+    random: "随机",
+    highestCost: "费用最高"
+  };
+  return `（${modeLabel[mode] ?? mode}）`;
+}
+
+function formatBuffTarget(target: BuffTarget): string {
+  const labels: Record<BuffTarget, string> = {
+    allFriendlyMinions: "所有我方随从",
+    allFriendlyMinionsExceptSource: "除自己外的我方随从",
+    triggeredMinion: "触发该效果的随从"
+  };
+  return labels[target] ?? target;
+}
+
+function formatDestroyTarget(target: DestroyTarget): string {
+  const labels: Record<DestroyTarget, string> = {
+    strongestEnemyMinion: "攻击最高的敌方随从",
+    weakestEnemyMinion: "生命最低的敌方随从"
+  };
+  return labels[target] ?? target;
+}
+
 function formatAction(action: EffectAction): string {
   switch (action.type) {
     case "damage":
-      return `造成 ${action.amount} 点伤害：${action.target}`;
+      return `对${formatTarget(action.target)}造成 ${action.amount} 点伤害`;
     case "heal":
-      return `治疗 ${action.amount} 点生命：${action.target}`;
+      return `治疗${formatTarget(action.target)} ${action.amount} 点生命`;
     case "draw":
       return `抽 ${action.count} 张牌`;
     case "summon":
-      return `召唤 ${action.count ?? 1} 个 ${action.cardId}`;
+      return `召唤 ${action.count ?? 1} 个 ${formatCardName(action.cardId)}`;
     case "buff": {
       const atk = action.atk ? `攻 ${formatSigned(action.atk)}` : "";
       const hp = action.hp ? `血 ${formatSigned(action.hp)}` : "";
-      return `强化 ${action.target} ${[atk, hp].filter(Boolean).join(" / ")}`;
+      return `强化${formatBuffTarget(action.target)} ${[atk, hp].filter(Boolean).join(" / ")}`;
     }
     case "destroy":
-      return `消灭 ${action.target}`;
+      return `消灭${formatDestroyTarget(action.target)}`;
     case "addSlot":
-      return `${action.slot} 槽 ${formatSigned(action.amount)}`;
+      return `${formatSlot(action.slot)} ${formatSigned(action.amount)}`;
     case "discard":
-      return `${action.target} 弃 ${action.count} 张牌`;
+      return `${formatTarget(action.target)}弃掉 ${action.count} 张牌${formatMode(action.mode)}`;
+    case "discardWithEmptyHandDamage":
+      return `对手弃掉 ${action.count} 张牌${formatMode(action.mode)}；手牌不足时造成 ${action.damageIfOne}/${action.damageIfZero} 点伤害`;
     case "setTopDeck":
-      return `将 ${action.cardId} 置于牌库顶`;
+      return `将 ${formatCardName(action.cardId)} 置于牌库顶`;
     case "discountNextDraw":
       return `下一张抽到的牌费用 -${action.amount}`;
     case "addCardToHand":
-      return `加入 ${action.count ?? 1} 张 ${action.cardId} 到手牌`;
-    case "gainMana":
-      return `获得 ${action.amount} 点法力`;
+      return `加入 ${action.count ?? 1} 张 ${formatCardName(action.cardId)} 到手牌`;
+    case "gainMana": {
+      const later = action.amountIfTurnAtLeast
+        ? `；第 ${action.amountIfTurnAtLeast.turn} 回合后改为 ${action.amountIfTurnAtLeast.amount} 点`
+        : "";
+      return `获得 ${action.amount} 点法力${later}`;
+    }
+    case "reduceMana":
+      return `${formatTarget(action.target)}减少 ${action.amount} 点法力`;
     case "setIgnoreGuard":
       return action.enabled === false ? "取消无视护卫" : "本回合无视护卫";
     case "applyOpponentNextTurnManaPenalty":
       return `对手下回合法力 -${action.amount}`;
+    case "applyOpponentNextTurnManaMultiplier":
+      return `对手下回合法力变为 ${action.multiplier} 倍`;
     case "millDeck":
-      return `${action.target} 磨掉 ${action.count} 张牌`;
+      return `${formatTarget(action.target)}磨掉 ${action.count} 张牌`;
+    case "millDeckUntilRemaining": {
+      const limit = action.onlyIfAbove ? `，牌库高于 ${action.onlyIfAbove} 张时` : "";
+      const max = action.maxCount ? `，最多 ${action.maxCount} 张` : "";
+      return `${formatTarget(action.target)}把牌库磨到剩 ${action.remaining} 张${limit}${max}`;
+    }
     case "grantAdjacentGuard":
       return "相邻友方获得护卫";
     case "buffSelfIfHeroHpBelow":
@@ -72,14 +195,164 @@ function formatAction(action: EffectAction): string {
     case "setMillOnDamageTaken":
       return `受到伤害时磨掉 ${action.amount} 张牌`;
     case "exilePriorityEnemyMinionAndDamageHero":
-      return `除外优先敌方随从，并按 ${action.damageHeroBy} 伤害英雄`;
+      return action.damageHeroBy === "attackAndHealth" ? "除外关键敌方随从，并按攻血合计伤害英雄" : "除外关键敌方随从，并按生命值伤害英雄";
+    case "grantExtraTurn":
+      return action.loseIfNoWin
+        ? `获得额外回合；若额外回合未取胜则失败，法力为 ${action.extraTurnMana ?? 0}`
+        : "获得额外回合";
+    case "purgeAllMagicAndOtherMinions":
+      return action.healPerRemoved ? `清除所有魔法与其他随从，每清除 1 个治疗 ${action.healPerRemoved}` : "清除所有魔法与其他随从";
+    case "swapHeroHp":
+      return "交换双方英雄生命";
+    case "destroyAllMinions":
+      return "消灭双方所有随从";
+    case "destroyAllEnemyMinions":
+      return "消灭所有敌方随从";
+    case "destroyPersistents":
+      return `破坏${formatTarget(action.target)}持续物`;
+    case "destroyEnemyTraps":
+      return "破坏敌方所有盖伏陷阱";
   }
 }
 
 function formatEffect(effect: Effect): string {
   const trigger = TRIGGER_LABELS[effect.trigger] ?? effect.trigger;
-  const condition = effect.condition ? ` / 条件：${effect.condition.type}` : "";
+  const condition = effect.condition
+    ? ` / 条件：${CONDITION_LABELS[effect.condition.type] ?? effect.condition.type}${
+        effect.condition.mana !== undefined ? ` ${effect.condition.mana}` : ""
+      }`
+    : "";
   return `${trigger}${condition}：${formatAction(effect.action)}`;
+}
+
+function isPlayableFromHand(card: RuntimeCard, state: GameState, player: GameState["players"]["P1"]): boolean {
+  if (state.currentPlayer !== "P1" || state.phase !== "mainTurn" || state.winner || state.pendingChoice) return false;
+  if (player.mana < card.currentCost) return false;
+  if (card.type === "minion" && player.board.length >= 7) return false;
+
+  const minTurn = card.playRestrictions?.minTurn;
+  if (minTurn !== undefined && state.turn < minTurn) return false;
+
+  return true;
+}
+
+function getHandCardDisabledReason(
+  card: RuntimeCard,
+  state: GameState,
+  player: GameState["players"]["P1"],
+  isAttackAnimating: boolean
+): string | null {
+  if (state.winner) return "对局已结束";
+  if (isAttackAnimating) return "攻击结算中";
+  if (state.pendingChoice) return "请先完成弹窗选择";
+  if (state.currentPlayer !== "P1") return "等待 AI 行动";
+  if (state.phase !== "mainTurn") return `${getPhaseLabel(state.phase)}阶段暂不能出牌`;
+
+  const minTurn = card.playRestrictions?.minTurn;
+  if (minTurn !== undefined && state.turn < minTurn) return `第 ${minTurn} 回合后可用`;
+  if (card.type === "minion" && player.board.length >= 7) return "战场已满";
+  if (player.mana < card.currentCost) return `费用不足，还差 ${card.currentCost - player.mana}`;
+
+  return null;
+}
+
+function getActionHint(
+  state: GameState,
+  player: GameState["players"]["P1"],
+  selectedAttackerId: string | null,
+  isAttackAnimating: boolean
+): { title: string; detail: string; tone: "ready" | "wait" | "choice" | "done" } {
+  if (state.winner) {
+    return {
+      title: state.winner === "P1" ? "胜利达成" : "对局结束",
+      detail: "可以重新开始，再试一套角色、天赋或卡组节奏。",
+      tone: "done"
+    };
+  }
+
+  if (state.pendingChoice) {
+    return {
+      title: "先处理选择",
+      detail: "屏幕中央有一个待选择效果，确认后对局会继续。",
+      tone: "choice"
+    };
+  }
+
+  if (isAttackAnimating) {
+    return {
+      title: "正在结算攻击",
+      detail: "伤害会跟随动画完成，稍等一下即可继续操作。",
+      tone: "wait"
+    };
+  }
+
+  if (state.currentPlayer !== "P1") {
+    return {
+      title: "等待 AI 行动",
+      detail: "AI 正在思考并出牌，轮到你时手牌会恢复可操作状态。",
+      tone: "wait"
+    };
+  }
+
+  if (selectedAttackerId) {
+    return {
+      title: "选择攻击目标",
+      detail: "请选择一个合法目标完成攻击。",
+      tone: "choice"
+    };
+  }
+
+  const readyAttackers = player.board.filter((minion) => minion.canAttack).length;
+  const playableCards = player.hand.filter((card) => isPlayableFromHand(card, state, player)).length;
+
+  if (state.phase === "mainTurn") {
+    if (playableCards && readyAttackers) {
+      return {
+        title: "可以出牌或攻击",
+        detail: `你有 ${playableCards} 张手牌可打出，另有 ${readyAttackers} 个随从可以攻击。`,
+        tone: "ready"
+      };
+    }
+    if (playableCards) {
+      return {
+        title: "可以出牌",
+        detail: `当前有 ${playableCards} 张手牌费用足够，打出后再观察战场变化。`,
+        tone: "ready"
+      };
+    }
+    if (readyAttackers) {
+      return {
+        title: "可以攻击",
+        detail: `当前有 ${readyAttackers} 个随从可以行动，也可以直接结束回合保留节奏。`,
+        tone: "ready"
+      };
+    }
+    return {
+      title: "可以结束回合",
+      detail: "现在没有可用手牌或可攻击随从，结束回合会进入结算。",
+      tone: "wait"
+    };
+  }
+
+  if (state.phase === "combat") {
+    return readyAttackers
+      ? {
+          title: "战斗阶段",
+          detail: `还有 ${readyAttackers} 个随从可以攻击。`,
+          tone: "ready"
+        }
+      : {
+          title: "战斗已无可动随从",
+          detail: "可以结束回合，让槽位和回合效果继续结算。",
+          tone: "wait"
+        };
+  }
+
+  return {
+    title: getPhaseLabel(state.phase),
+    detail: "当前阶段会自动推进，稍等片刻就会回到可操作时机。",
+    tone: "wait"
+  };
 }
 
 function getEffectTone(kind: CardFxState["kind"]): "summon" | "persistent" | "spell" | "trap" {
@@ -317,8 +590,8 @@ function BattleLogPanel({ state }: { state: GameState }) {
   return (
     <section className="log-card battle-log-panel">
       <div className="flex-between battle-log-header">
-        <h2 className="section-title">Battle Log</h2>
-        <span className="small-note">Turn {state.turn}</span>
+        <h2 className="section-title">战斗日志</h2>
+        <span className="small-note">回合 {state.turn}</span>
       </div>
       <div className="log-list">
         {state.actionLog.map((item) => (
@@ -452,7 +725,8 @@ export function ReactBattleBoard({
   const cardFx = store.uiState.cardFx;
   const isAttackAnimating = Boolean(attackFx);
   const targetSet = isAttackAnimating ? new Set<string>() : store.buildTargetSet();
-  const canPlayCards = state.currentPlayer === "P1" && state.phase === "mainTurn" && !state.winner && !isAttackAnimating;
+  const canPlayCards =
+    state.currentPlayer === "P1" && state.phase === "mainTurn" && !state.winner && !state.pendingChoice && !isAttackAnimating;
   const canControlBattle =
     state.currentPlayer === "P1" && (state.phase === "mainTurn" || state.phase === "combat") && !state.winner && !isAttackAnimating;
   const canEndTurn = canControlBattle && !state.pendingChoice;
@@ -468,6 +742,8 @@ export function ReactBattleBoard({
   const enemyZoneMetaClass =
     cardFx && cardFx.ownerId === "P2" && (cardFx.kind === "placeTrap" || cardFx.kind === "trapTrigger") ? "zone-fx trap" : "";
   const attackStatus = isAttackAnimating ? "攻击演出中" : store.uiState.selectedAttackerId ? "已选择随从" : "未选择";
+  const phaseLabel = getPhaseLabel(state.phase);
+  const actionHint = getActionHint(state, player, store.uiState.selectedAttackerId, isAttackAnimating);
   const statusText = state.winner
     ? state.winner === "P1"
       ? "你已经赢得胜利。"
@@ -475,8 +751,8 @@ export function ReactBattleBoard({
     : isAttackAnimating
       ? "攻击特效播放中，伤害会在动画中结算。"
       : state.currentPlayer === "P1"
-        ? `当前由你行动，阶段：${state.phase}。`
-        : `当前由 AI 行动，阶段：${state.phase}。`;
+        ? `当前由你行动，阶段：${phaseLabel}。`
+        : `当前由 AI 行动，阶段：${phaseLabel}。`;
 
   const showCardDetail = useCallback((info: CardDetailInfo, point: InspectPoint): void => {
     setCardDetail({ info, point });
@@ -569,13 +845,18 @@ export function ReactBattleBoard({
           <div className="pill">
             <strong>阶段</strong>
             <br />
-            {state.phase}
+            {phaseLabel}
           </div>
           <div className="pill">
             <strong>攻击选择</strong>
             <br />
             {attackStatus}
           </div>
+        </div>
+        <div className={classNames("action-hint", actionHint.tone)} aria-live="polite">
+          <span className="action-hint-label">当前建议</span>
+          <strong>{actionHint.title}</strong>
+          <p>{actionHint.detail}</p>
         </div>
       </section>
 
@@ -612,7 +893,7 @@ export function ReactBattleBoard({
                         />
                       ))
                     ) : (
-                      <p className="empty-text">敌方没有持续物。</p>
+                      <p className="empty-text">敌方暂无持续物，当前不会有额外场地效果。</p>
                     )}
                   </div>
                   <div className="minion-row zone-lane">
@@ -631,7 +912,7 @@ export function ReactBattleBoard({
                         />
                       ))
                     ) : (
-                      <p className="empty-text">敌方战场没有随从。</p>
+                      <p className="empty-text">敌方暂无随从，可以留意是否能直接进攻英雄。</p>
                     )}
                   </div>
                 </div>
@@ -658,7 +939,7 @@ export function ReactBattleBoard({
                         />
                       ))
                     ) : (
-                      <p className="empty-text">你没有持续物。</p>
+                      <p className="empty-text">你暂无持续物；打出持续物后会在这里显示。</p>
                     )}
                   </div>
                   <div className={classNames("persistent-row zone-lane", playerTrapRowClass)}>
@@ -674,7 +955,7 @@ export function ReactBattleBoard({
                         />
                       ))
                     ) : (
-                      <p className="empty-text">你没有陷阱。</p>
+                      <p className="empty-text">你暂无盖伏陷阱；陷阱会在满足条件时自动触发。</p>
                     )}
                   </div>
                   <div className="minion-row zone-lane">
@@ -692,7 +973,7 @@ export function ReactBattleBoard({
                         />
                       ))
                     ) : (
-                      <p className="empty-text">你的战场没有随从。</p>
+                      <p className="empty-text">你的战场暂无随从；先打出随从建立进攻点。</p>
                     )}
                   </div>
                 </div>
@@ -729,18 +1010,22 @@ export function ReactBattleBoard({
               </div>
               <div className="hand-row">
                 {player.hand.length ? (
-                  player.hand.map((card) => (
-                    <HandCard
-                      key={card.runtimeId}
-                      card={card}
-                      disabled={!canPlayCards || card.currentCost > player.mana}
-                      onInspect={showCardDetail}
-                      onClearInspect={clearCardDetail}
-                      onPlay={playCard}
-                    />
-                  ))
+                  player.hand.map((card) => {
+                    const disabledReason = getHandCardDisabledReason(card, state, player, isAttackAnimating);
+                    return (
+                      <HandCard
+                        key={card.runtimeId}
+                        card={card}
+                        disabled={!canPlayCards || Boolean(disabledReason)}
+                        disabledReason={disabledReason ?? undefined}
+                        onInspect={showCardDetail}
+                        onClearInspect={clearCardDetail}
+                        onPlay={playCard}
+                      />
+                    );
+                  })
                 ) : (
-                  <p className="empty-text">你的手牌为空。</p>
+                  <p className="empty-text">你的手牌为空；进入抽牌阶段后会补充。</p>
                 )}
               </div>
             </section>

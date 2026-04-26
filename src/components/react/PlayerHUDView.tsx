@@ -4,11 +4,24 @@ function classNames(...values: Array<string | false | null | undefined>): string
   return values.filter(Boolean).join(" ");
 }
 
+function getSlotNote(current: number): string {
+  if (current >= 13) return "13 点已满，可发动强化效果";
+  if (current >= 10) return "10 点已就绪，可选择发动";
+  return `还差 ${10 - current} 点到 10 点`;
+}
+
+function getSlotStateClass(current: number): "full" | "ready" | "charging" {
+  if (current >= 13) return "full";
+  if (current >= 10) return "ready";
+  return "charging";
+}
+
 function SlotMeter({ label, current, colorClass }: { label: string; current: number; colorClass: string }) {
   const percentage = Math.min((current / 13) * 100, 100);
+  const slotState = getSlotStateClass(current);
 
   return (
-    <div className="slot-card">
+    <div className={classNames("slot-card", slotState)}>
       <div className="slot-card-header">
         <strong className="slot-card-label">{label}</strong>
         <span className="small-note slot-card-count">{current}/13</span>
@@ -16,6 +29,7 @@ function SlotMeter({ label, current, colorClass }: { label: string; current: num
       <div className="slot-bar" aria-hidden="true">
         <div className={classNames("slot-fill", colorClass)} style={{ width: `${percentage}%` }} />
       </div>
+      <p className="slot-card-note">{getSlotNote(current)}</p>
     </div>
   );
 }
@@ -79,8 +93,8 @@ export function PlayerHUD({
       </div>
 
       <div className="hud-resource-row">
-        <PrimaryResource label="HP" value={`${player.hp}/${player.maxHp}`} tone="hp" />
-        <PrimaryResource label="Mana" value={`${player.mana}/${player.maxMana}`} tone="mana" />
+        <PrimaryResource label="生命" value={`${player.hp}/${player.maxHp}`} tone="hp" />
+        <PrimaryResource label="法力" value={`${player.mana}/${player.maxMana}`} tone="mana" />
       </div>
 
       <div className="hud-stats">

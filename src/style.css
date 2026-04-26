@@ -101,6 +101,55 @@ button:disabled {
   text-align: center;
 }
 
+.action-hint {
+  padding: 12px 14px;
+  border-radius: 16px;
+  border: 1px solid rgba(52, 39, 24, 0.12);
+  background: rgba(255, 255, 255, 0.72);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.45);
+}
+
+.action-hint.ready {
+  border-color: rgba(45, 122, 84, 0.24);
+  background: linear-gradient(135deg, rgba(236, 249, 240, 0.94), rgba(247, 252, 246, 0.9));
+}
+
+.action-hint.choice {
+  border-color: rgba(56, 110, 143, 0.24);
+  background: linear-gradient(135deg, rgba(235, 246, 255, 0.94), rgba(248, 252, 255, 0.9));
+}
+
+.action-hint.wait {
+  border-color: rgba(198, 146, 41, 0.24);
+  background: linear-gradient(135deg, rgba(255, 247, 225, 0.94), rgba(255, 252, 246, 0.9));
+}
+
+.action-hint.done {
+  border-color: rgba(178, 58, 43, 0.24);
+  background: linear-gradient(135deg, rgba(255, 238, 235, 0.94), rgba(255, 250, 247, 0.9));
+}
+
+.action-hint-label {
+  display: block;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.action-hint strong {
+  display: block;
+  margin-top: 4px;
+  font-size: 17px;
+  line-height: 1.2;
+}
+
+.action-hint p {
+  margin: 6px 0 0;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.45;
+}
+
 .setup-grid {
   display: grid;
   grid-template-columns: 1.1fr 0.9fr;
@@ -566,6 +615,22 @@ button:disabled {
   line-height: 1.4;
 }
 
+.slot-card.ready {
+  border-color: rgba(45, 122, 84, 0.28);
+  background: rgba(241, 250, 243, 0.82);
+}
+
+.slot-card.full {
+  border-color: rgba(198, 146, 41, 0.34);
+  background: rgba(255, 247, 224, 0.86);
+}
+
+.slot-card.ready .slot-card-note,
+.slot-card.full .slot-card-note {
+  color: var(--ink);
+  font-weight: 800;
+}
+
 .zone {
   padding: 14px;
   border-radius: 22px;
@@ -664,6 +729,25 @@ button:disabled {
   cursor: not-allowed;
 }
 
+.card-play-state {
+  align-self: end;
+  display: inline-flex;
+  justify-content: center;
+  min-height: 24px;
+  padding: 5px 8px;
+  border-radius: 999px;
+  background: rgba(45, 122, 84, 0.14);
+  color: #236243;
+  font-size: 12px;
+  font-weight: 800;
+  line-height: 1.15;
+}
+
+.card-play-state.blocked {
+  background: rgba(109, 98, 88, 0.12);
+  color: var(--muted);
+}
+
 .card h4,
 .minion-card h4,
 .persistent-card h4 {
@@ -724,6 +808,34 @@ button:disabled {
   color: #7b5a12;
   background: rgba(198, 146, 41, 0.18);
   border-color: rgba(198, 146, 41, 0.26);
+}
+
+.keyword-badge.stealth,
+.keyword-badge.slotSeal {
+  color: #4f3b74;
+  background: rgba(108, 84, 150, 0.14);
+  border-color: rgba(108, 84, 150, 0.22);
+}
+
+.keyword-badge.lifesteal,
+.keyword-badge.regeneration {
+  color: #236243;
+  background: rgba(45, 122, 84, 0.14);
+  border-color: rgba(45, 122, 84, 0.22);
+}
+
+.keyword-badge.deadly,
+.keyword-badge.ignoreGuard,
+.keyword-badge.doubleStrike {
+  color: #8c2d20;
+  background: rgba(178, 58, 43, 0.15);
+  border-color: rgba(178, 58, 43, 0.23);
+}
+
+.keyword-badge.sideboardFinisher {
+  color: #72530e;
+  background: rgba(198, 146, 41, 0.18);
+  border-color: rgba(198, 146, 41, 0.28);
 }
 
 .card-detail-tooltip {
@@ -1157,6 +1269,10 @@ button:disabled {
 .empty-text {
   color: var(--muted);
   font-size: 14px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.58);
+  border: 1px dashed rgba(52, 39, 24, 0.14);
 }
 
 #app {
@@ -1230,6 +1346,12 @@ button:disabled {
   width: 100%;
   min-width: 320px;
   gap: 8px;
+}
+
+.game-shell .action-hint {
+  grid-column: 3;
+  align-self: stretch;
+  min-width: 0;
 }
 
 .game-shell .battle-hero-stats {
@@ -1447,6 +1569,12 @@ button:disabled {
 .game-shell .stat-badge {
   padding: 5px 6px;
   font-size: 12px;
+}
+
+.game-shell .card-play-state {
+  min-height: 22px;
+  padding: 4px 7px;
+  font-size: 11px;
 }
 
 .game-shell .hud {
@@ -1670,7 +1798,7 @@ button:disabled {
 
 .game-shell .hero {
   min-height: 86px;
-  grid-template-columns: minmax(280px, 1fr) minmax(500px, 680px);
+  grid-template-columns: minmax(280px, 1fr) minmax(500px, 680px) minmax(260px, 360px);
   padding: 12px 16px;
   border-radius: 18px;
   gap: 12px;
@@ -1708,6 +1836,21 @@ button:disabled {
   display: grid;
   align-content: center;
   border-radius: 12px;
+}
+
+.game-shell .action-hint {
+  padding: 10px 12px;
+}
+
+.game-shell .action-hint strong {
+  font-size: 15px;
+}
+
+.game-shell .action-hint p {
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
 }
 
 .game-shell .board-shell {
@@ -1794,7 +1937,7 @@ button:disabled {
 .game-shell .card {
   min-height: 158px;
   max-height: 188px;
-  grid-template-rows: auto auto auto minmax(0, 1fr) auto;
+  grid-template-rows: auto auto auto minmax(0, 1fr) auto auto;
 }
 
 .game-shell .minion-card {
@@ -2036,6 +2179,10 @@ button:disabled {
 
   .game-shell .battle-hero-stats {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .game-shell .action-hint {
+    width: 100%;
   }
 
   .game-shell .hero-log-card {

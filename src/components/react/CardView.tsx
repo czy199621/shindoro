@@ -1,5 +1,5 @@
 import type { FocusEvent, MouseEvent } from "react";
-import type { Effect, MinionInstance, PersistentInstance, RuntimeCard } from "../../types.js";
+import type { CardType, Effect, MinionInstance, PersistentInstance, RuntimeCard } from "../../types.js";
 
 export interface InspectPoint {
   x: number;
@@ -29,14 +29,37 @@ const TAG_LABELS: Record<string, string> = {
   rush: "冲锋",
   guard: "护卫",
   menace: "威慑",
-  magicRes: "魔抗"
+  magicRes: "魔抗",
+  stealth: "潜行",
+  doubleStrike: "连击",
+  lifesteal: "吸血",
+  deadly: "必杀",
+  regeneration: "回复",
+  slotSeal: "封槽",
+  sideboardFinisher: "大地",
+  ignoreGuard: "破卫"
 };
 
 const TAG_CLASSES: Record<string, string> = {
   rush: "rush",
   guard: "guard",
   menace: "menace",
-  magicRes: "magicRes"
+  magicRes: "magicRes",
+  stealth: "stealth",
+  doubleStrike: "doubleStrike",
+  lifesteal: "lifesteal",
+  deadly: "deadly",
+  regeneration: "regeneration",
+  slotSeal: "slotSeal",
+  sideboardFinisher: "sideboardFinisher",
+  ignoreGuard: "ignoreGuard"
+};
+
+const CARD_TYPE_LABELS: Record<CardType, string> = {
+  minion: "随从",
+  spell: "法术",
+  persistent: "持续物",
+  trap: "陷阱"
 };
 
 function classNames(...values: Array<string | false | null | undefined>): string {
@@ -103,6 +126,7 @@ function MinionStats({
 export function HandCard({
   card,
   disabled = false,
+  disabledReason,
   extraClass = "",
   onInspect,
   onClearInspect,
@@ -110,14 +134,16 @@ export function HandCard({
 }: {
   card: RuntimeCard;
   disabled?: boolean;
+  disabledReason?: string;
   extraClass?: string;
   onInspect?: CardInspectHandler;
   onClearInspect?: () => void;
   onPlay?: (runtimeId: string) => void;
 }) {
+  const playStateText = disabled ? disabledReason ?? "当前无法打出" : "可以打出";
   const detailInfo: CardDetailInfo = {
     name: card.name,
-    type: card.type,
+    type: CARD_TYPE_LABELS[card.type] ?? card.type,
     description: card.description,
     tags: card.tags,
     effects: card.effects,
@@ -128,7 +154,7 @@ export function HandCard({
     health: card.health,
     threat: card.threat,
     flavor: card.flavor,
-    status: disabled ? "当前无法打出" : "可以打出"
+    status: playStateText
   };
 
   return (
@@ -151,9 +177,10 @@ export function HandCard({
     >
       <span className="card-cost">{card.currentCost}</span>
       <h4>{card.name}</h4>
-      <p className="card-meta">{card.type}</p>
+      <p className="card-meta">{CARD_TYPE_LABELS[card.type] ?? card.type}</p>
       <KeywordTags tags={card.tags} />
       <p>{card.description}</p>
+      <span className={classNames("card-play-state", disabled ? "blocked" : "ready")}>{playStateText}</span>
       {card.type === "minion" ? <MinionStats attack={card.attack} health={card.health} threat={card.threat} /> : null}
     </button>
   );
@@ -186,9 +213,10 @@ export function MinionCard({
 }) {
   const isPlayer = ownership === "player";
   const isSelected = selectedAttackerId === minion.instanceId;
+  const statusText = targetable ? "可被攻击" : isSelected ? "已选择" : minion.canAttack && isPlayer ? "可以攻击" : "暂不能攻击";
   const detailInfo: CardDetailInfo = {
     name: minion.name,
-    type: "minion",
+    type: "随从",
     description: minion.description,
     tags: minion.tags,
     effects: minion.effects,
@@ -196,7 +224,7 @@ export function MinionCard({
     health: minion.health,
     maxHealth: minion.maxHealth,
     threat: minion.threat,
-    status: minion.canAttack && isPlayer ? "可以攻击" : "暂不能攻击"
+    status: statusText
   };
 
   return (
@@ -223,7 +251,7 @@ export function MinionCard({
       <KeywordTags tags={minion.tags} />
       <p className="minion-meta">{minion.description}</p>
       <MinionStats attack={minion.attack} health={minion.health} threat={minion.threat} maxHealth={minion.maxHealth} />
-      <p className="small-note">{minion.canAttack && isPlayer ? "可以攻击" : "暂不能攻击"}</p>
+      <p className="small-note">{statusText}</p>
     </button>
   );
 }
@@ -245,7 +273,7 @@ export function PersistentCard({
 }) {
   const detailInfo: CardDetailInfo = {
     name: card.name,
-    type: card.type,
+    type: CARD_TYPE_LABELS[card.type] ?? card.type,
     description: card.description,
     effects: card.effects,
     threat: card.threat,

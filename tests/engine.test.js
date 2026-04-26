@@ -593,6 +593,24 @@ test("overflow talents convert burned cards into opponent discard and mill", () 
   assert.equal(state.players.P2.deck.length, 2);
 });
 
+test("drawing from an empty deck loses even when hand still has cards", () => {
+  const game = new ShinDoroGame({ rng: () => 0.42 });
+  game.setupMatch({
+    playerCharacterId: "character_a",
+    aiCharacterId: "character_b",
+    playerTalentIds: []
+  });
+
+  const state = game.getState();
+  state.players.P1.deck = [];
+  state.players.P1.hand = [createRuntimeCard(getCardDefinition("burn"))];
+
+  game.drawCards("P1", 1, "测试");
+
+  assert.equal(state.winner, "P2");
+  assert.equal(state.phase, "gameOver");
+});
+
 test("grace surge increases healing received by one", () => {
   const game = new ShinDoroGame({ rng: () => 0.42 });
   game.setupMatch({

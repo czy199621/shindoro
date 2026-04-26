@@ -1,65 +1,65 @@
-# Architecture
+# 架构
 
-## 2026-04-24 Desktop Battle Layout
+## 2026-04-24 桌面战斗布局
 
 - `src/components/Board.tsx`
-  - The battle screen now uses two horizontal battlefield halves plus a compact hand zone, so desktop screens can spend width on the board instead of stacking every section vertically.
-  - The in-match header now separates the left-side title/status copy from a centered battle-info strip, so turn and phase information sits in the visual middle of wide desktop headers.
-  - The battle log now lives in the right side of the in-match header, while the right sidebar focuses on the momentum panel only.
-  - The header log card is intentionally minimal and now shows only the latest log entries; the restart control has moved into the hand-zone toolbar.
+  - 战斗画面改为上下两个战场区加紧凑手牌区，桌面端可以把更多宽度留给棋盘，而不是把所有内容纵向堆叠。
+  - 对局标题栏把左侧标题/状态与中间战斗信息分开，让回合和阶段信息位于宽屏视觉中心。
+  - 战斗日志放到对局标题栏右侧，右侧边栏主要用于展示势能面板。
+  - 标题栏日志卡片保持轻量，只显示最新日志；重新开始按钮移动到手牌区工具栏。
 - `src/style.css`
-  - Added `.game-shell`-scoped desktop layout rules that keep the battle UI inside the viewport and push overflow into internal panels such as the battle log instead of the page itself.
-  - The in-match layout no longer caps desktop width at a fixed maximum and now uses viewport-aware `clamp(...)` sizing for the sidebar, HUD columns, and card widths.
-  - Rows that hold cards now prefer fixed readable card widths with internal horizontal scrolling instead of squeezing cards to fit, and the momentum panel now stacks player and AI breakdowns vertically for readability inside the sidebar.
-  - Hero passive text in the HUD is now treated as its own readable info block instead of being squeezed into a narrow corner.
-  - HP and Mana resource badges are now compacted further so their labels stay fully inside the badge, and slot badges use a dedicated compact header/note layout to fit more cleanly inside player HUD panels.
+  - 增加 `.game-shell` 范围内的桌面布局规则，让战斗 UI 保持在视口内，把溢出交给战斗日志等内部面板处理。
+  - 对局布局不再用固定最大宽度限制桌面端，而是用 `clamp(...)` 根据视口调整侧栏、玩家状态列与卡牌宽度。
+  - 卡牌行优先保持固定可读宽度，并在内部横向滚动，避免为了塞满一行把卡牌压得过窄。
+  - 角色被动说明在玩家状态区中独立展示，不再挤在狭小角落。
+  - 生命和费用徽章进一步压缩，槽位徽章使用专门的标题、标签、计数和注记结构，保证文字不溢出。
 - `src/components/SlotMeter.tsx`
-  - Slot meter cards now expose dedicated header, label, count, and note classes so the HUD can tune slot badge density without affecting unrelated panels.
-  - Slot meter cards currently render only the slot name, progress bar, and counter, without extra explanatory copy.
+  - 槽位卡片暴露独立的标题、标签、计数和注记类名，方便玩家状态区单独调节密度。
+  - 当前 React 战斗面板会显示槽位短注记，例如还差几点到 10 点、10 点就绪、13 点已满。
 - `src/components/MomentumPanel.tsx`
-  - The momentum panel header now shows just the title and current V badge, without the earlier descriptive subtitle.
-  - When there is no previous settlement result yet, the panel now omits the old default settlement hint box instead of showing placeholder copy.
+  - 势能面板标题只显示名称和当前 `V` 值，不再显示旧的描述副标题。
+  - 还没有上次结算结果时，面板不再显示旧的默认提示框。
 
-## 2026-04-25 React Battle Board And Pixi Effects
+## 2026-04-25 React 战斗面板与 Pixi 特效
 
-- Battle screen rendering
-  - `src/components/react/ReactBattleBoard.tsx` is now the active renderer for `state.screen === "game"`.
-  - Setup and mulligan still use the legacy string-template compatibility path in `src/App.tsx`.
-  - The battle screen is composed from real React components for cards, HUDs, board zones, controls, modals, battle log, and momentum display.
-- React component ownership
-  - `src/components/react/CardView.tsx` owns hand cards, board minions, persistent cards, traps, keyword badges, stat badges, and card inspection data.
-  - `src/components/react/PlayerHUDView.tsx` owns hero/player HUD display including HP, mana, hand/deck counts, jump slot, and god-draw slot.
-  - `src/components/react/ReactBattleBoard.tsx` owns board composition, player actions, pending choice modal, game-over modal, effect banner, battle log, momentum panel, and the card-detail tooltip portal.
-- PixiJS boundary
-  - `src/game-view/pixi/PixiBattlefieldHost.tsx` receives `GameState`, `attackFx`, and `cardFx`.
-  - PixiJS is display-only and does not decide legal actions, damage, or turn flow.
-  - PixiJS owns non-interactive foreground battle effects: attack trails, hit bursts, floating damage numbers, summon particles, and spell/trap/persistent bursts.
-  - React remains responsible for readable UI state such as selected attackers, targetability, card text, buttons, and modals.
-- Pixi coordinate model
-  - React battle entities expose `data-pixi-entity-id`.
-  - Hero HUDs use `P1_hero` and `P2_hero`; minions, persistents, and traps use their `instanceId`.
-  - `PixiBattlefieldHost` resolves effect origins and targets from DOM element centers before falling back to estimated battlefield positions.
-  - Damage snapshots preserve the last resolved position so damage numbers and hit bursts can still appear when a destroyed minion has already left the DOM.
-- Layering model
-  - The old Pixi battlefield underlay was removed because it polluted the battle layout.
-  - `PixiBattlefieldHost` now creates only the fixed `pixi-battlefield-effects` canvas.
-  - The Pixi effects layer uses `pointer-events: none`; modal overlays and the card-detail tooltip sit above it through higher z-index layers.
-- Battle layout
-  - The battle header is a compact status strip.
-  - The main battle view uses stable viewport rows for enemy field, player field, and player hand.
-  - The action log lives in the right sidebar below the momentum panel.
-  - Cards, minions, persistents, HUDs, momentum, and log panels use tighter height constraints and internal overflow so long text does not stretch the board.
-- Card detail tooltip
-  - Hovering or focusing a hand card, board minion, persistent card, or trap shows the unified card-detail tooltip.
-  - Unplayable hand cards still expose hover/focus inspection via `aria-disabled` plus a guarded click handler.
-  - The tooltip shows name, type, cost, tags, stats, description, summarized effects, flavor text, and current status.
+- 战斗画面渲染：
+  - `src/components/react/ReactBattleBoard.tsx` 是 `state.screen === "game"` 时的实际战斗画面渲染器。
+  - 设置页和换牌页仍通过 `src/App.tsx` 使用旧字符串模板兼容路径。
+  - 战斗画面由真实 React 组件组合卡牌、玩家状态、战场区域、按钮、弹窗、战斗日志和势能展示。
+- React 组件职责：
+  - `src/components/react/CardView.tsx` 负责手牌、场上使魔、持续卡、盖伏卡、关键词徽章、属性徽章、可用状态和卡牌检视数据。
+  - `src/components/react/PlayerHUDView.tsx` 负责角色/玩家状态展示，包括生命、法力、手牌/牌库数量、跳脸槽、神抽槽和槽位就绪说明。
+  - `src/components/react/ReactBattleBoard.tsx` 负责战斗画面组合、玩家操作、当前建议、待处理选择弹窗、游戏结束弹窗、效果横幅、战斗日志、势能面板和卡牌详情提示。
+- PixiJS 边界：
+  - `src/game-view/pixi/PixiBattlefieldHost.tsx` 接收 `GameState`、`attackFx` 和 `cardFx`。
+  - PixiJS 只负责显示特效，不决定合法行动、伤害或回合流程。
+  - PixiJS 负责非交互前景战斗特效：攻击轨迹、命中特效、浮动伤害数字、召唤粒子、法术/盖伏/持续物爆发。
+  - React 仍负责可读 UI 状态，例如已选攻击者、可选目标、卡牌文字、按钮和弹窗。
+- Pixi 坐标模型：
+  - React 战斗实体暴露 `data-pixi-entity-id`。
+  - 角色状态区使用 `P1_hero` 和 `P2_hero`；使魔、持续物和盖伏使用各自的 `instanceId`。
+  - `PixiBattlefieldHost` 优先从 DOM 元素中心点解析特效起点和目标，失败时才回退到估算战场位置。
+  - 伤害快照会保留最后一次解析到的位置，因此被破坏使魔离开 DOM 后，伤害数字和命中特效仍能显示在正确位置附近。
+- 层级模型：
+  - 旧的 Pixi 战场底层被移除，因为它会污染战斗布局。
+  - `PixiBattlefieldHost` 现在只创建固定的 `pixi-battlefield-effects` 画布。
+  - Pixi 特效层使用 `pointer-events: none`；弹窗和卡牌详情提示通过更高层级显示在它上方。
+- 战斗布局：
+  - 战斗标题栏是紧凑状态条。
+  - 主战斗画面使用稳定的视口行，分别承载敌方场面、玩家场面和玩家手牌。
+  - 行动日志位于右侧边栏，在势能面板下方。
+  - 卡牌、使魔、持续物、玩家状态、势能和日志面板都使用更严格的高度限制和内部滚动，避免长文本撑开棋盘。
+- 卡牌详情提示：
+  - 鼠标悬停或键盘聚焦手牌、场上使魔、持续卡或盖伏卡时，会显示统一的卡牌详情提示。
+  - 当前不可打出的手牌也能通过 `aria-disabled` 和受保护点击处理保留悬停/聚焦检视。
+  - 提示内容包含名称、类型、费用、标签、属性、描述、效果摘要、风味文本和当前状态。
 
 ## 2026-04-25 公共备牌库终结者与大魔法
 
 - 公共备牌库
-  - `src/data/cards/minions/sideboardFinishers.ts` 维护 4 张公共 13 点神抽终结者。
+  - `src/data/cards/minions/sideboardFinishers.ts` 维护 5 张公共 13 点神抽终结者。
   - `src/data/cards/minions.ts` 继续作为使魔聚合入口，并导出公共终结者模块。
-  - `src/data/decks.ts` 中每名角色的 `sideboard` 当前统一接入 4 张公共终结者。
+  - `src/data/decks.ts` 中每名角色的 `sideboard` 当前统一接入 5 张公共终结者。
 - 大魔法
   - `src/data/cards/spells.ts` 新增 6 张大魔法：全场清场、单向清场、持续魔法拆除、触发魔法拆除和下回合费用减半。
 - 引擎动作
@@ -89,42 +89,77 @@
 - 测试
   - `tests/engine.test.js` 覆盖新角色数据、天赋价格、费用上限、爆牌联动、恢复加成和泉亚猫大招。
 
+## 2026-04-26 v1.2.1 核心魔法、特殊使魔与槽位上限
+
+- 公共备牌库
+  - `src/data/cards/minions/sideboardFinishers.ts` 当前维护 5 张公共终结者。
+  - `绝影刺客·瞬`加入公共备牌库，使用 `ignoreGuard` 表示攻击时无视护卫。
+  - `虚数之影·卡奥斯`的磨牌动作使用“最多磨 15 张，同时保留 7 张牌库底线”的限制。
+- 法术与盖伏
+  - `src/data/cards/spells.ts` 新增 `时空篡夺`、`爆裂炎枪`、`流星火雨`、`大魔力宝石`。
+  - `src/data/cards/traps.ts` 新增 `魔力干涸`，通过“对手当前费用正好为 5”触发。
+  - `src/engine/effects.ts` 支持出牌后和费用增加后检查费用型盖伏。
+- 槽位上限
+  - `src/engine/slotResolver.ts` 负责自然槽增长上限，默认跳脸槽最多 +3、神抽槽最多 +5。
+  - `src/data/talents/slotControl.ts` 增加 `跳脸上限突破`和`神抽上限突破`。
+  - `逆境神龛`在场时会让控制者的神抽自然增长上限额外 +1。
+- 费用与额外回合
+  - `src/engine/rules.ts` 统一判断卡牌能否在当前回合打出，供玩家、AI 和可出牌列表共用。
+  - `时空篡夺`通过额外回合费用覆盖，把额外回合的费用上限与当前费用强制设为 12。
+- 文档同步
+  - `design/game_rule.md`、`design/game_design.md`、`design/minion.md`已记录本次规则、实现和使魔图鉴变化。
+
+## 2026-04-26 对局 UI 亲和度优化
+
+- 顶部状态层
+  - `src/components/react/ReactBattleBoard.tsx` 新增“当前建议”状态，根据胜负、待选择、攻击动画、AI 回合、攻击选择、可出牌数和可攻击随从数生成中文提示。
+  - 回合阶段统一通过中文标签展示，避免玩家看到引擎内部阶段字段。
+- 手牌与卡牌详情
+  - `src/components/react/CardView.tsx` 为手牌卡增加可用状态标签；不能打出时显示具体原因。
+  - 卡牌详情补齐新版关键词、目标、条件和效果动作的中文说明，减少内部英文和卡牌 id 暴露。
+- 玩家状态区
+  - `src/components/react/PlayerHUDView.tsx` 将旧的生命和法力英文标签改为“生命 / 法力”。
+  - 跳脸槽和神抽槽显示“还差几点”“10 点就绪”“13 点已满”的短说明。
+- 样式层
+  - `src/style.css` 增加当前建议、手牌可用状态、槽位就绪状态、空区域提示和新版关键词徽章样式。
+  - 桌面端标题栏改为三列：标题状态、核心对局数字、当前建议。
+
 ## 2026-04-24 Design And Rule Sync
 
 - `SKILL.md`
-  - Now requires content updates to synchronize `design/game_design.md`.
-  - Now requires rule updates to synchronize `design/game_rule.md`.
+  - 现在要求内容更新时同步检查并更新 `design/game_design.md`。
+  - 现在要求规则更新时同步检查并更新 `design/game_rule.md`。
 
 ## 2026-04-24 Agent Skill Gate
 
 - `AGENT.md`
-  - Now explicitly requires agents to read `SKILL.md` before starting content-update, design-sync, rule-document, or catalog-maintenance tasks.
-  - Also requires minion changes to keep the minion catalog document in sync.
+  - 现在明确要求代理在开始内容更新、设计同步、规则文档或图鉴维护任务前先阅读 `SKILL.md`。
+  - 现在要求使魔改动必须同步维护使魔图鉴文档。
 
 ## 2026-04-24 Minion Modules
 
 - `src/data/cards/minions.ts`
-  - Now acts as a stable aggregation entry for minion data.
+  - 现在作为使魔数据的稳定聚合入口。
 - `src/data/cards/minions/lowCost.ts`
-  - Contains low-cost baseline minions.
+  - 维护低费基础使魔。
 - `src/data/cards/minions/midCost.ts`
-  - Contains mid-cost tempo and value minions.
+  - 维护中费节奏与资源型使魔。
 - `src/data/cards/minions/highCost.ts`
-  - Contains higher-cost finisher minions.
+  - 维护高费终结型使魔。
 - `src/data/cards/minions/guardPackage.ts`
-  - Contains the newer guard-focused minion package and generated token.
+  - 维护护卫体系使魔与衍生物。
 
 ## 2026-04-24 Update
 
 - `src/data/cards/minions.ts`
-  - Added the new guard package minions: `landmine_girl`, `day_off`, `weekend_overtime`, `dorm_matron`, `iron_rice_bowl`, `three_phase_plug`, `top_donor`.
+  - 新增护卫体系使魔：`landmine_girl`、`day_off`、`weekend_overtime`、`dorm_matron`、`iron_rice_bowl`、`three_phase_plug`、`top_donor`。
 - `src/engine/effects.ts`
-  - Added support for `onAttacked`, `addCardToHand`, `grantAdjacentGuard`, and `buffSelfIfHeroHpBelow`.
-  - Enemy magic targeting now respects `magicRes`.
+  - 新增对 `onAttacked`、`addCardToHand`、`grantAdjacentGuard` 和 `buffSelfIfHeroHpBelow` 的支持。
+  - 敌方法术指定现在会尊重 `magicRes`。
 - `src/engine/rules.ts`
-  - Board threat now respects enemy `menace` units during momentum calculation.
+  - 势能计算中的场面威胁值现在会读取敌方 `menace` 单位，并按规则压低威胁值。
 - `design/minion_codex.md`
-  - Added a minion catalog document for all current minions and the new guard package.
+  - 曾新增使魔图鉴文档，用于记录当时所有使魔和护卫体系；当前仓库实际维护目标已统一为 `design/minion.md`。
 
 ## 目的
 
@@ -136,7 +171,7 @@
 - 项目类型：TypeScript 卡牌对战原型
 - 规则基准：`design/game_rule.md` v1.2
 - 角色数量：7 名角色，编号 A-G
-- 卡组结构：`50` 张主卡组 + `4` 张公共备牌库
+- 卡组结构：`50` 张主卡组 + `5` 张公共备牌库
 - 天赋体系：先后手动态定价，支持座位限制
 - 关键阶段：`turnStart -> slotResolution -> draw -> mainTurn -> combat -> turnEnd`
 - 测试方式：测试直接运行 `dist/` 下的编译产物
@@ -244,6 +279,7 @@
 
 - `src/data/cards/minions.ts`
   - 全部使魔定义
+  - 公共备牌库终结者从 `src/data/cards/minions/sideboardFinishers.ts` 聚合进来，当前共 5 张。
 - `src/data/cards/spells.ts`
   - 全部法术定义
 - `src/data/cards/persistents.ts`
@@ -274,8 +310,11 @@
   - 阶段推进、回合开始/结束、Mulligan 与 AI 回合调度
 - `effects.ts`
   - 卡牌与能力效果执行
+  - 负责费用变动触发盖伏、出牌回合限制、额外回合费用覆盖、无视护卫攻击、抽牌判负和磨牌上限等具体行为。
+  - 抽牌判负口径为：只要需要抽牌时牌库为空就败北，不再检查手牌是否为空。
 - `slotResolver.ts`
   - 跳脸槽与神抽槽计算、角色大招解析
+  - 负责回合结束的自然槽增长上限，默认跳脸最多 +3、神抽最多 +5，并读取天赋与 `逆境神龛`的上限加成。
 - `rules.ts`
   - 通用规则、优势值计算、运行时对象创建
 - `ai.ts`
@@ -318,9 +357,9 @@
 ## 运行链路
 
 1. `npm run build`
-   - 将 `src/` 编译到 `dist/`
-2. `src/main.ts`
-   - 调用应用挂载逻辑
+   - 类型检查并通过 Vite 生成可部署的网站产物到 `dist/`
+2. `src/main.tsx`
+   - 使用 React `createRoot()` 挂载应用
 3. `src/App.tsx`
    - 读取 `useGameStore` 状态并渲染界面
 4. `useGameStore.ts`
@@ -331,10 +370,10 @@
 ## 测试与构建
 
 - `npm run build`
-  - 只负责编译
+  - 负责类型检查和 Vite 生产构建，输出到 `dist/`
 - `npm test`
-  - 会先重新构建，再跑 `tests/engine.test.js`
-- 因为测试依赖 `dist/`，只改 `src/` 后如果不构建，测试不会看到最新代码
+  - 会先把规则层编译到 `.test-dist/`，再跑 `tests/engine.test.js`
+- 因为测试依赖 `.test-dist/`，只改 `src/` 后应运行 `npm test` 让测试看到最新规则代码。
 
 ## 修改约定
 

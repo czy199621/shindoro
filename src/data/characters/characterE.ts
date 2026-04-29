@@ -1,4 +1,5 @@
 import type { CharacterDefinition, PassiveAbility } from "../../types.js";
+import { createCharacterArt } from "../characterArt.js";
 
 export const CHARACTER_E_PASSIVE: PassiveAbility = {
   key: "gainGodDrawOnBigDamage",
@@ -33,6 +34,7 @@ export const CHARACTER_E: CharacterDefinition = {
   baseHp: 20,
   talentPoints: 4,
   description: "越挨打越容易攒出反击资源，擅长穿过护卫直接施压。",
+  art: createCharacterArt("character_e", "ggy角色卡图"),
   passive: CHARACTER_E_PASSIVE,
   slotAbilities: CHARACTER_E_SLOT_ABILITIES
 };

@@ -1,4 +1,5 @@
 import type { CharacterDefinition, PassiveAbility } from "../../types.js";
+import { createCharacterArt } from "../characterArt.js";
 
 export const CHARACTER_C_PASSIVE: PassiveAbility = {
   key: "loseOneSlotAtTurnStart",
@@ -26,6 +27,7 @@ export const CHARACTER_C: CharacterDefinition = {
   baseHp: 20,
   talentPoints: 7,
   description: "依赖场面站住后打出超高面板压制，但槽位增长会被自身拖慢。",
+  art: createCharacterArt("character_c", "大奶角色卡图"),
   passive: CHARACTER_C_PASSIVE,
   slotAbilities: CHARACTER_C_SLOT_ABILITIES
 };

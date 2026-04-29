@@ -1,17 +1,60 @@
-import { Suspense, lazy, useCallback, useEffect, useRef, useState, type MouseEvent as ReactMouseEvent } from "react";
+﻿import { Suspense, lazy, useCallback, useEffect, useRef, useState, type MouseEvent as ReactMouseEvent } from "react";
 import { CHARACTERS } from "./data/characters.js";
+import { getCharacterArt, toCssUrl } from "./data/characterArt.js";
 import { TALENTS } from "./data/talents.js";
-import { renderMulliganCard } from "./components/Card.js";
 import { ReactBattleBoard } from "./components/react/ReactBattleBoard.js";
 import { escapeHtml } from "./components/html.js";
 import { createGameStore, type GameStore } from "./store/useGameStore.js";
-import type { GameState } from "./types.js";
+import type { CharacterDefinition } from "./types.js";
 
 const PixiBattlefieldHost = lazy(() =>
   import("./game-view/pixi/PixiBattlefieldHost.js").then((module) => ({
     default: module.PixiBattlefieldHost
   }))
 );
+
+function renderCharacterCardArt(character: CharacterDefinition): string {
+  const art = getCharacterArt(character);
+  const style = `--character-card-art: ${toCssUrl(art.card)};`;
+
+  return `
+    <span class="character-card-art" role="img" aria-label="${escapeHtml(art.alt)}" style="${escapeHtml(style)}">
+      <span class="character-card-art-shine" aria-hidden="true"></span>
+    </span>
+  `;
+}
+
+function renderCharacterOption({
+  character,
+  selected,
+  action,
+  mode
+}: {
+  character: CharacterDefinition;
+  selected: boolean;
+  action: "select-player-character" | "select-ai-character";
+  mode: "player" | "ai";
+}): string {
+  const playerDetails =
+    mode === "player"
+      ? `
+        <p><strong>天赋点：</strong>${character.talentPoints}</p>
+        <p><strong>被动：</strong>${escapeHtml(character.passive.description)}</p>
+      `
+      : `<p><strong>被动：</strong>${escapeHtml(character.passive.description)}</p>`;
+
+  return `
+    <button class="option-card character-option-card ${selected ? "selected" : ""}" data-action="${action}" data-character-id="${escapeHtml(character.id)}">
+      ${renderCharacterCardArt(character)}
+      <div class="character-option-copy">
+        <h3>${escapeHtml(character.name)}</h3>
+        <p>${escapeHtml(character.title)}</p>
+        ${mode === "player" ? `<p>${escapeHtml(character.description)}</p>` : ""}
+        ${playerDetails}
+      </div>
+    </button>
+  `;
+}
 
 function renderSetupScreen(store: GameStore): string {
   const playerCharacter = store.getSelectedCharacter();
@@ -24,6 +67,7 @@ function renderSetupScreen(store: GameStore): string {
     <div class="app-shell">
       <section class="hero">
         <div>
+          <div class="moe-mode-badge">Moe Arcana</div>
           <h1>神どろ Prototype v1.2</h1>
           <p>
             当前实装已经切到 v1.2 规则骨架：6 名角色、50 张主卡组、备牌库和先后手动态天赋价格都在这里完成配置。
@@ -36,6 +80,11 @@ function renderSetupScreen(store: GameStore): string {
           <div class="pill"><strong>当前目标</strong><br />v1.2 规则骨架</div>
           <div class="pill"><strong>实现方式</strong><br />TypeScript + 原生 DOM</div>
         </div>
+        <div class="moe-ribbon" aria-hidden="true">
+          <span>Kira</span>
+          <span>Moe</span>
+          <span>Magic</span>
+        </div>
       </section>
 
       <div class="setup-grid">
@@ -46,15 +95,13 @@ function renderSetupScreen(store: GameStore): string {
           </div>
           <div class="character-grid">
             ${CHARACTERS.map(
-              (character) => `
-                <button class="option-card ${store.uiState.setup.playerCharacterId === character.id ? "selected" : ""}" data-action="select-player-character" data-character-id="${escapeHtml(character.id)}">
-                  <h3>${escapeHtml(character.name)}</h3>
-                  <p>${escapeHtml(character.title)}</p>
-                  <p>${escapeHtml(character.description)}</p>
-                  <p><strong>天赋点：</strong>${character.talentPoints}</p>
-                  <p><strong>被动：</strong>${escapeHtml(character.passive.description)}</p>
-                </button>
-              `
+              (character) =>
+                renderCharacterOption({
+                  character,
+                  selected: store.uiState.setup.playerCharacterId === character.id,
+                  action: "select-player-character",
+                  mode: "player"
+                })
             ).join("")}
           </div>
 
@@ -64,13 +111,13 @@ function renderSetupScreen(store: GameStore): string {
           </div>
           <div class="character-grid">
             ${CHARACTERS.map(
-              (character) => `
-                <button class="option-card ${store.uiState.setup.aiCharacterId === character.id ? "selected" : ""}" data-action="select-ai-character" data-character-id="${escapeHtml(character.id)}">
-                  <h3>${escapeHtml(character.name)}</h3>
-                  <p>${escapeHtml(character.title)}</p>
-                  <p><strong>被动：</strong>${escapeHtml(character.passive.description)}</p>
-                </button>
-              `
+              (character) =>
+                renderCharacterOption({
+                  character,
+                  selected: store.uiState.setup.aiCharacterId === character.id,
+                  action: "select-ai-character",
+                  mode: "ai"
+                })
             ).join("")}
           </div>
         </section>
@@ -117,42 +164,6 @@ function renderSetupScreen(store: GameStore): string {
   `;
 }
 
-function renderMulliganScreen(store: GameStore, state: GameState): string {
-  const player = state.players.P1;
-  return `
-    <div class="app-shell">
-      <section class="hero">
-        <div>
-          <h1>起手换牌</h1>
-          <p>
-            选择你想换掉的起手牌。AI 会自动完成自己的 Mulligan，确认后就会进入你的第一个回合。
-          </p>
-        </div>
-        <div class="hero-stats">
-          <div class="pill"><strong>玩家角色</strong><br />${escapeHtml(store.getCharacter(player.character).name)}</div>
-          <div class="pill"><strong>生命值</strong><br />${player.hp}/${player.maxHp}</div>
-          <div class="pill"><strong>手牌上限</strong><br />${player.handLimit}</div>
-          <div class="pill"><strong>当前手牌</strong><br />${player.hand.length}</div>
-        </div>
-      </section>
-
-      <section class="setup-panel" style="margin-top:18px;">
-        <div class="flex-between">
-          <h2>选择要换掉的牌</h2>
-          <span class="small-note">已标记 ${store.uiState.mulliganSelection.size} 张</span>
-        </div>
-        <div class="mulligan-grid">
-          ${player.hand.map((card) => renderMulliganCard(card, store.uiState.mulliganSelection.has(card.runtimeId))).join("")}
-        </div>
-        <div class="setup-toolbar">
-          <button class="ghost-btn" data-action="clear-mulligan">清空选择</button>
-          <button class="primary-btn" data-action="confirm-mulligan">确认换牌并开战</button>
-        </div>
-      </section>
-    </div>
-  `;
-}
-
 function onSetupAction(store: GameStore, target: HTMLElement): boolean {
   const action = target.dataset.action ?? "";
 
@@ -192,96 +203,6 @@ function onSetupAction(store: GameStore, target: HTMLElement): boolean {
   return false;
 }
 
-function onMulliganAction(store: GameStore, target: HTMLElement): boolean {
-  const action = target.dataset.action ?? "";
-
-  if (action === "toggle-mulligan") {
-    const runtimeId = target.dataset.runtimeId;
-    if (!runtimeId) return true;
-    store.toggleMulliganCard(runtimeId);
-    return true;
-  }
-
-  if (action === "clear-mulligan") {
-    store.clearMulliganSelection();
-    return true;
-  }
-
-  if (action === "confirm-mulligan") {
-    store.confirmMulligan();
-    return true;
-  }
-
-  return false;
-}
-
-function onBattleAction(store: GameStore, target: HTMLElement, onChange: () => void): boolean {
-  const state = store.getState();
-  const action = target.dataset.action ?? "";
-
-  if (action === "restart") {
-    store.restart();
-    return true;
-  }
-
-  if (store.uiState.attackFx) {
-    return false;
-  }
-
-  if (state.pendingChoice) {
-    if (action === "pending-use-jump") {
-      store.resolvePendingChoice({ action: "use" });
-      return true;
-    }
-    if (action === "pending-skip") {
-      store.resolvePendingChoice({ action: "skip" });
-      return true;
-    }
-    if (action === "pending-pick-card") {
-      store.resolvePendingChoice({ action: "use", cardId: target.dataset.cardId ?? null });
-      return true;
-    }
-  }
-
-  if (action === "cancel-attacker") {
-    store.cancelAttacker();
-    return true;
-  }
-
-  if (action === "play-card") {
-    const runtimeId = target.dataset.runtimeId;
-    if (!runtimeId) return true;
-    store.playCard(runtimeId);
-    return true;
-  }
-
-  if (action === "select-attacker") {
-    const minionId = target.dataset.minionId;
-    if (!minionId) return true;
-    store.toggleAttacker(minionId);
-    return true;
-  }
-
-  if (action === "attack-target") {
-    const minionId = target.dataset.minionId;
-    if (!minionId) return true;
-    return store.attackMinion(minionId, onChange);
-  }
-
-  if (action === "attack-hero") {
-    const heroId = target.dataset.heroId;
-    if (!heroId) return true;
-    return store.attackHero(heroId, onChange);
-  }
-
-  if (action === "end-turn") {
-    store.endTurn();
-    return true;
-  }
-
-  return false;
-}
-
 export function GameApp() {
   const storeRef = useRef<GameStore | null>(null);
   const [, setRenderVersion] = useState(0);
@@ -296,8 +217,7 @@ export function GameApp() {
   }, []);
 
   const state = store.getState();
-  const markup =
-    state.screen === "setup" ? renderSetupScreen(store) : state.screen === "mulligan" ? renderMulliganScreen(store, state) : "";
+  const markup = state.screen === "setup" ? renderSetupScreen(store) : "";
 
   useEffect(() => {
     store.scheduleAiTurn(forceRender);
@@ -314,13 +234,7 @@ export function GameApp() {
       const target = (event.target as Element | null)?.closest<HTMLElement>("[data-action]");
       if (!target || !event.currentTarget.contains(target)) return;
 
-      const currentState = store.getState();
-      const handled =
-        currentState.screen === "setup"
-          ? onSetupAction(store, target)
-          : currentState.screen === "mulligan"
-            ? onMulliganAction(store, target)
-            : onBattleAction(store, target, forceRender);
+      const handled = onSetupAction(store, target);
 
       if (handled) {
         forceRender();
@@ -329,7 +243,7 @@ export function GameApp() {
     [forceRender, store]
   );
 
-  if (state.screen === "game") {
+  if (state.screen === "game" || state.screen === "mulligan") {
     return (
       <>
         <Suspense fallback={null}>
@@ -344,3 +258,4 @@ export function GameApp() {
     <div className="legacy-app-root" onClick={handleClick} dangerouslySetInnerHTML={{ __html: markup }} />
   );
 }
+

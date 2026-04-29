@@ -12,9 +12,20 @@ import type { ShinDoroGame } from "./gameState.js";
 const PLAYER_ID: PlayerId = "P1";
 const AI_ID: PlayerId = "P2";
 
+type TurnStartReducibleSlot = "jumpSlot" | "godDrawSlot";
+
 function spendBurstSlot(player: PlayerState, slot: "jumpSlot" | "godDrawSlot", amount: number): void {
   const preserved = Math.max(0, player.temporaryFlags.preserveBurstSlotAmount);
   player[slot] = Math.max(player[slot] - amount, preserved);
+}
+
+function getTurnStartSlotToReduce(player: PlayerState): TurnStartReducibleSlot | null {
+  const jumpCanReduce = player.jumpSlot > 0 && player.jumpSlot < 10;
+  const godDrawCanReduce = player.godDrawSlot > 0 && player.godDrawSlot < 10;
+
+  if (!jumpCanReduce && !godDrawCanReduce) return null;
+  if (jumpCanReduce && (!godDrawCanReduce || player.jumpSlot >= player.godDrawSlot)) return "jumpSlot";
+  return "godDrawSlot";
 }
 
 function resetTurnScopedFlags(player: PlayerState): void {
@@ -28,12 +39,8 @@ function applyTurnStartPassives(game: ShinDoroGame, playerId: PlayerId): void {
   const character = game.getCharacter(player.character);
 
   if (character.passive.key === "loseOneSlotAtTurnStart") {
-    const slotToReduce =
-      player.jumpSlot >= player.godDrawSlot && player.jumpSlot > 0
-        ? "jumpSlot"
-        : player.godDrawSlot > 0
-          ? "godDrawSlot"
-          : null;
+    // 已经达到 10/13 点的槽位要先保留给大招判断，否则大奶会在发动前把自己的大招扣没。
+    const slotToReduce = getTurnStartSlotToReduce(player);
     if (slotToReduce) {
       player[slotToReduce] -= 1;
       game.log(`${character.name} 的被动使 ${slotToReduce === "jumpSlot" ? "跳脸槽" : "神抽槽"} -1。`);

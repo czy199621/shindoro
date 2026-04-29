@@ -1,4 +1,6 @@
-import type { CharacterDefinition, PlayerState } from "../../types.js";
+import { useEffect, useState, type CSSProperties } from "react";
+import { getCharacterArt, toCssUrl } from "../../data/characterArt.js";
+import type { AdvantageBreakdown, CharacterDefinition, PlayerState } from "../../types.js";
 
 function classNames(...values: Array<string | false | null | undefined>): string {
   return values.filter(Boolean).join(" ");
@@ -57,11 +59,33 @@ function HudStat({ label, value }: { label: string; value: string }) {
   );
 }
 
+function formatSigned(value: number): string {
+  return `${value >= 0 ? "+" : ""}${value}`;
+}
+
+function MomentumSummary({ breakdown }: { breakdown: AdvantageBreakdown }) {
+  return (
+    <div className="hud-momentum" aria-label={`当前势能 ${formatSigned(breakdown.total)}`}>
+      <div className="hud-momentum-head">
+        <span className="hud-resource-label">势能</span>
+        <strong className="hud-momentum-total">{formatSigned(breakdown.total)}</strong>
+      </div>
+      <div className="hud-momentum-grid">
+        <span>手 {formatSigned(breakdown.handScore)}</span>
+        <span>血 {formatSigned(breakdown.hpScore)}</span>
+        <span>威 {formatSigned(breakdown.threatScore)}</span>
+        <span>特 {formatSigned(breakdown.specialScore)}</span>
+      </div>
+    </div>
+  );
+}
+
 export function PlayerHUD({
   player,
   character,
   ownership,
   targetableHero,
+  momentumBreakdown,
   impactTarget = false,
   pixiEntityId,
   onAttackHero
@@ -70,10 +94,18 @@ export function PlayerHUD({
   character: CharacterDefinition;
   ownership: "player" | "enemy";
   targetableHero: boolean;
+  momentumBreakdown?: AdvantageBreakdown;
   impactTarget?: boolean;
   pixiEntityId?: string;
   onAttackHero?: () => void;
 }) {
+  const art = getCharacterArt(character);
+  const [showAvatarArt, setShowAvatarArt] = useState(true);
+
+  useEffect(() => {
+    setShowAvatarArt(true);
+  }, [art.avatar]);
+
   return (
     <button
       type="button"
@@ -85,9 +117,22 @@ export function PlayerHUD({
       }}
     >
       <div className="hud-header">
-        <div>
-          <div className="hud-title">{character.name}</div>
-          <div className="small-note">{character.title ?? character.passive.name}</div>
+        <div className="hud-identity">
+          <span
+            className={classNames("hud-avatar", ownership, showAvatarArt && "with-art")}
+            aria-hidden="true"
+            style={{ "--character-avatar-art": toCssUrl(art.avatar) } as CSSProperties}
+          >
+            {showAvatarArt ? (
+              <img className="hud-avatar-img" src={art.avatar} alt="" onError={() => setShowAvatarArt(false)} />
+            ) : (
+              <span className="hud-avatar-face" />
+            )}
+          </span>
+          <div>
+            <div className="hud-title">{character.name}</div>
+            <div className="small-note">{character.title ?? character.passive.name}</div>
+          </div>
         </div>
         <div className="hud-passive small-note">{character.passive.description}</div>
       </div>
@@ -101,6 +146,8 @@ export function PlayerHUD({
         <HudStat label="手牌" value={`${player.hand.length}`} />
         <HudStat label="牌库" value={`${player.deck.length}`} />
       </div>
+
+      {momentumBreakdown ? <MomentumSummary breakdown={momentumBreakdown} /> : null}
 
       <div className="slot-metrics">
         <SlotMeter label="跳跃槽" current={player.jumpSlot} colorClass="jump" />

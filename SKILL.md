@@ -114,7 +114,7 @@ description: 用于处理“内容更新”类任务，包括文案、规则、�
 ## 落地修改时的默认要求
 
 - 改代码前先看 `memory-bank/architecture.md` 和 `memory-bank/progress.md`。
-- 改代码后把重要变化追加到 `memory-bank/progress.md`；如果本次修改只涉及 `.md` 文档文件，则不需要写入 `memory-bank/progress.md`。
+- 改代码后把重要变化追加到 `memory-bank/progress.md`；如果本次修改只涉及 `.md` 文档文件，则不需要写入 `memory-bank/progress.md`。W
 - 所有 `.md` 文档文件必须使用中文书写。
 - 改修结束后，必须为每一处改修写上中文注释或说明；说明要让外行也能看懂，避免只写函数名、字段名或技术术语。
 - 每次改修收尾时必须做文档同步检查，不能忘记更新相关文档；如果确认不需要改文档，也要在最终说明里写明已经检查过且无需更新。

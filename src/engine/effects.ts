@@ -5,6 +5,7 @@ import {
   createMinionInstance,
   createPersistentInstance,
   createRuntimeCard,
+  MAX_MINION_SLOTS,
   removeFirstMatching
 } from "./rules.js";
 import type { ShinDoroGame } from "./gameState.js";
@@ -278,8 +279,8 @@ export function summonMinion(
   { triggerOnPlay = false, canTriggerTrap = false }: { triggerOnPlay?: boolean; canTriggerTrap?: boolean } = {}
 ) {
   const player = game.getPlayer(playerId);
-  if (player.board.length >= 7) {
-    game.log(`${card.name} 因场地已满而无法召唤。`);
+  if (player.board.length >= MAX_MINION_SLOTS) {
+    game.log(`${card.name} 因随从区已满而无法召唤。`);
     return null;
   }
 

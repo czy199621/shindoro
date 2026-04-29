@@ -1,4 +1,4 @@
-import type { FocusEvent, MouseEvent } from "react";
+import type { CSSProperties, FocusEvent, MouseEvent } from "react";
 import type { CardType, Effect, MinionInstance, PersistentInstance, RuntimeCard } from "../../types.js";
 
 export interface InspectPoint {
@@ -24,36 +24,6 @@ export interface CardDetailInfo {
 }
 
 export type CardInspectHandler = (info: CardDetailInfo, point: InspectPoint) => void;
-
-const TAG_LABELS: Record<string, string> = {
-  rush: "冲锋",
-  guard: "护卫",
-  menace: "威慑",
-  magicRes: "魔抗",
-  stealth: "潜行",
-  doubleStrike: "连击",
-  lifesteal: "吸血",
-  deadly: "必杀",
-  regeneration: "回复",
-  slotSeal: "封槽",
-  sideboardFinisher: "大地",
-  ignoreGuard: "破卫"
-};
-
-const TAG_CLASSES: Record<string, string> = {
-  rush: "rush",
-  guard: "guard",
-  menace: "menace",
-  magicRes: "magicRes",
-  stealth: "stealth",
-  doubleStrike: "doubleStrike",
-  lifesteal: "lifesteal",
-  deadly: "deadly",
-  regeneration: "regeneration",
-  slotSeal: "slotSeal",
-  sideboardFinisher: "sideboardFinisher",
-  ignoreGuard: "ignoreGuard"
-};
 
 const CARD_TYPE_LABELS: Record<CardType, string> = {
   minion: "随从",
@@ -84,21 +54,37 @@ function resolveThreat(attack: number | undefined, health: number | undefined, t
   return Math.floor(attack + health / 2);
 }
 
-function KeywordTags({ tags }: { tags?: string[] }) {
-  if (!tags?.length) return null;
+function shouldShowCardStats(cardType: CardType): boolean {
+  return cardType === "minion";
+}
 
+function CardArt({ tone, art }: { tone: CardType | "unit" | "persistent-unit"; art?: string }) {
   return (
-    <div className="keyword-row" aria-label="词条">
-      {tags.map((tag) => (
-        <span key={tag} className={classNames("keyword-badge", TAG_CLASSES[tag])}>
-          {TAG_LABELS[tag] ?? tag}
-        </span>
-      ))}
-    </div>
+    <span
+      className={classNames("card-art", tone, art && "has-card-art")}
+      style={art ? ({ "--card-art-image": `url(${art})` } as CSSProperties) : undefined}
+      aria-hidden="true"
+    >
+      <span className="card-art-glass" />
+      <span className="card-art-spark one" />
+      <span className="card-art-spark two" />
+    </span>
   );
 }
 
-function MinionStats({
+function CardFrameLayers() {
+  return (
+    <span className="card-frame-layers" aria-hidden="true">
+      <span className="card-frame-layer card-frame-base" />
+      <span className="card-frame-layer card-frame-art-window" />
+      <span className="card-frame-layer card-frame-title-plate" />
+      <span className="card-frame-layer card-frame-text-box" />
+      <span className="card-frame-layer card-frame-ornaments" />
+    </span>
+  );
+}
+
+function CardStats({
   attack,
   health,
   threat,
@@ -109,16 +95,24 @@ function MinionStats({
   threat?: number;
   maxHealth?: number;
 }) {
-  if (attack === undefined || health === undefined) return null;
-
-  const hpText = maxHealth === undefined ? `${health}` : `${health}/${maxHealth}`;
+  const attackText = attack === undefined ? "-" : `${attack}`;
+  const defenseText = health === undefined ? "-" : maxHealth === undefined ? `${health}` : `${health}/${maxHealth}`;
   const threatText = resolveThreat(attack, health, threat);
 
   return (
     <div className="stats-line">
-      <span className="stat-badge attack">攻 {attack}</span>
-      <span className="stat-badge health">血 {hpText}</span>
-      <span className="stat-badge threat">威 {threatText ?? "-"}</span>
+      <span className="stat-badge attack" aria-label={`攻击 ${attackText}`}>
+        <span className="stat-icon stat-icon-sword" aria-hidden="true" />
+        <span className="stat-value">{attackText}</span>
+      </span>
+      <span className="stat-badge health" aria-label={`防御 ${defenseText}`}>
+        <span className="stat-icon stat-icon-shield" aria-hidden="true" />
+        <span className="stat-value">{defenseText}</span>
+      </span>
+      <span className="stat-badge threat" aria-label={`威胁 ${threatText ?? "-"}`}>
+        <span className="stat-icon stat-icon-lightning" aria-hidden="true" />
+        <span className="stat-value">{threatText ?? "-"}</span>
+      </span>
     </div>
   );
 }
@@ -128,16 +122,26 @@ export function HandCard({
   disabled = false,
   disabledReason,
   extraClass = "",
+  selected = false,
+  selectionLabel = "已选择",
   onInspect,
   onClearInspect,
-  onPlay
+  onSelect,
+  onPlay,
+  fanIndex = 0,
+  fanCount = 1
 }: {
   card: RuntimeCard;
   disabled?: boolean;
   disabledReason?: string;
   extraClass?: string;
+  selected?: boolean;
+  selectionLabel?: string;
+  fanIndex?: number;
+  fanCount?: number;
   onInspect?: CardInspectHandler;
   onClearInspect?: () => void;
+  onSelect?: (runtimeId: string) => void;
   onPlay?: (runtimeId: string) => void;
 }) {
   const playStateText = disabled ? disabledReason ?? "当前无法打出" : "可以打出";
@@ -160,14 +164,26 @@ export function HandCard({
   return (
     <button
       type="button"
-      className={classNames("card", card.type, disabled && "disabled", extraClass)}
+      className={classNames("card", "framed-card", card.type, disabled && "disabled", extraClass)}
       aria-disabled={disabled}
+      aria-pressed={selected || undefined}
+      style={
+        {
+          "--fan-index": fanIndex,
+          "--fan-count": Math.max(fanCount, 1)
+        } as CSSProperties
+      }
       onMouseEnter={(event) => onInspect?.(detailInfo, getInspectPoint(event))}
       onMouseMove={(event) => onInspect?.(detailInfo, getInspectPoint(event))}
       onMouseLeave={onClearInspect}
       onFocus={(event) => onInspect?.(detailInfo, getInspectPoint(event))}
       onBlur={onClearInspect}
       onClick={(event) => {
+        if (onSelect) {
+          event.preventDefault();
+          onSelect(card.runtimeId);
+          return;
+        }
         if (disabled) {
           event.preventDefault();
           return;
@@ -175,13 +191,11 @@ export function HandCard({
         onPlay?.(card.runtimeId);
       }}
     >
+      <CardFrameLayers />
       <span className="card-cost">{card.currentCost}</span>
-      <h4>{card.name}</h4>
-      <p className="card-meta">{CARD_TYPE_LABELS[card.type] ?? card.type}</p>
-      <KeywordTags tags={card.tags} />
-      <p>{card.description}</p>
-      <span className={classNames("card-play-state", disabled ? "blocked" : "ready")}>{playStateText}</span>
-      {card.type === "minion" ? <MinionStats attack={card.attack} health={card.health} threat={card.threat} /> : null}
+      <CardArt tone={card.type} art={card.art} />
+      {selected ? <span className="card-selection-mark">{selectionLabel}</span> : null}
+      {shouldShowCardStats(card.type) && <CardStats attack={card.attack} health={card.health} threat={card.threat} />}
     </button>
   );
 }
@@ -233,6 +247,7 @@ export function MinionCard({
       data-pixi-entity-id={pixiEntityId}
       className={classNames(
         "minion-card",
+        "framed-card",
         minion.canAttack && isPlayer && "ready",
         isSelected && "selected",
         targetable && "targetable",
@@ -247,11 +262,9 @@ export function MinionCard({
       onBlur={onClearInspect}
       onClick={() => onClick?.(minion.instanceId)}
     >
-      <h4>{minion.name}</h4>
-      <KeywordTags tags={minion.tags} />
-      <p className="minion-meta">{minion.description}</p>
-      <MinionStats attack={minion.attack} health={minion.health} threat={minion.threat} maxHealth={minion.maxHealth} />
-      <p className="small-note">{statusText}</p>
+      <CardFrameLayers />
+      <CardArt tone="unit" art={minion.art} />
+      <CardStats attack={minion.attack} health={minion.health} threat={minion.threat} maxHealth={minion.maxHealth} />
     </button>
   );
 }
@@ -282,7 +295,7 @@ export function PersistentCard({
 
   return (
     <div
-      className={classNames("persistent-card", cardTone, placing && "placing")}
+      className={classNames("persistent-card", "framed-card", cardTone, placing && "placing")}
       data-pixi-entity-id={pixiEntityId}
       tabIndex={0}
       onMouseEnter={(event) => onInspect?.(detailInfo, getInspectPoint(event))}
@@ -291,9 +304,8 @@ export function PersistentCard({
       onFocus={(event) => onInspect?.(detailInfo, getInspectPoint(event))}
       onBlur={onClearInspect}
     >
-      <h4>{card.name}</h4>
-      <p className="persistent-meta">威胁 {card.threat ?? 0}</p>
-      <p>{card.description}</p>
+      <CardFrameLayers />
+      <CardArt tone={cardTone === "trap" ? "trap" : "persistent-unit"} art={card.art} />
     </div>
   );
 }

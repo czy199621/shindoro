@@ -1,4 +1,5 @@
 import type { CharacterDefinition, PassiveAbility } from "../../types.js";
+import { createCharacterArt } from "../characterArt.js";
 
 export const CHARACTER_G_PASSIVE: PassiveAbility = {
   key: "handDestructionMastery",
@@ -44,6 +45,7 @@ export const CHARACTER_G: CharacterDefinition = {
   baseHp: 20,
   talentPoints: 4,
   description: "擅长手牌破坏、爆牌联动与极限控制，把对手的资源空洞转化为真实伤害。",
+  art: createCharacterArt("character_g", "泉亚猫角色卡图"),
   passive: CHARACTER_G_PASSIVE,
   slotAbilities: CHARACTER_G_SLOT_ABILITIES
 };

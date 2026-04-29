@@ -265,6 +265,8 @@ export interface CardDefinition {
   name: string;
   cost: number;
   type: CardType;
+  /** Card illustration shown inside the bitmap card frame. Recommended: JPG, landscape crop-safe. */
+  art?: string;
   attack?: number;
   health?: number;
   threat?: number;
@@ -289,6 +291,7 @@ export interface MinionInstance {
   ownerId: PlayerId;
   sourceCardId: string;
   name: string;
+  art?: string;
   attack: number;
   health: number;
   maxHealth: number;
@@ -306,6 +309,7 @@ export interface PersistentInstance {
   ownerId: PlayerId;
   sourceCardId: string;
   name: string;
+  art?: string;
   threat: number;
   description: string;
   effects: Effect[];
@@ -324,6 +328,17 @@ export interface SlotAbility {
   effects: EffectAction[];
 }
 
+export interface CharacterArt {
+  /** Portrait used on setup character cards. Recommended: JPG, 4:3 or 3:4 crop-safe. */
+  card?: string;
+  /** Small portrait used in the in-battle player HUD. Recommended: square JPG. */
+  avatar?: string;
+  /** Reserved wide artwork slot for future hero banners. */
+  banner?: string;
+  /** Accessible label for the artwork. */
+  alt?: string;
+}
+
 export interface CharacterDefinition {
   id: string;
   name: string;
@@ -331,6 +346,7 @@ export interface CharacterDefinition {
   baseHp: number;
   talentPoints: number;
   description: string;
+  art?: CharacterArt;
   passive: PassiveAbility;
   slotAbilities: Record<SlotTier, SlotAbility>;
 }

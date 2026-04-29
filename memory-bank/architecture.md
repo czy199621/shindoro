@@ -1,11 +1,69 @@
 # 架构
 
+## 2026-04-29 卡牌底框资源
+- 战斗界面当前采用无 header 布局：`ReactBattleBoard` 与旧 `Board` 都不再渲染顶部 `game-hero`，`board-shell` 直接占满 `game-shell` 的主视口。
+- 战斗 HUD 采用 `board-shell` 角落定位：敌方 HUD 贴近棋盘左上并轻微压住内框，玩家 HUD 位于右下；手牌区是无 `zone` 底框的底部手牌带，并在右侧为玩家 HUD 预留空间。
+- 场上区域上限由 `src/engine/rules.ts` 的常量维护：随从 `MAX_MINION_SLOTS = 7`，持续物与陷阱共享后场 `MAX_BACKROW_SLOTS = 7`，并通过 `getBackrowSlotCount()` 统一计算占用；出牌、召唤、AI 和战场计数都应读取这些常量与 helper。
+- 战场区 UI 已按 Figma V2 落回代码：`ReactBattleBoard.tsx` 和旧 `Board.tsx` 都渲染固定槽位，随从行固定 7 格，后场行固定 7 格；玩家持续物与陷阱合并在后场行，敌方陷阱只显示盖伏占位，不泄露卡面信息。
+- 敌方手牌现在作为顶部伏牌手牌带显示，只展示卡背和数量；战斗主区域为敌方手牌 / 敌方战场 / 我方战场 / 我方手牌四行结构。因顶部手牌占用纵向空间，双方战场槽位必须保持同一套缩小尺寸，避免敌我战场密度不一致。
+- 最新战斗布局按标注图改为三列四行：左列保留敌方 HUD 与敌方后场，中央列依次是敌方手牌、敌方前场、我方前场、我方手牌，右列保留日志入口、我方后场与玩家 HUD。中央 `field-zone` 只展示前场随从槽，左右 `side-backrow-zone` 承载持续物 + 陷阱共享后场 7 格。
+- 中央随从槽是视觉映射，不改变规则数组：`player.board` 仍为紧凑顺序，UI 渲染时按 7 格中心优先顺序展示，依次为中央、左一、右一、左二、右二、最左、最右。
+- 左右 `side-backrow-zone` 采用紧凑 2x4 矩阵：第一格是阵营计数牌，剩余 7 格是共享后场槽；该结构用于降低后场高度，避免与角落 HUD 互相覆盖。
+- 右上 `battle-control-dock` 统一承载战斗日志入口和主要战斗操作按钮；“重新开始 / 取消攻击选择 / 结束回合”竖排放在日志按钮下方，不再出现在手牌区。
+- 最新操作区约束：右上 `battle-control-dock` 只保留“重新开始”和“取消攻击选择”；“结束回合”属于我方后场，固定显示在我方 `side-backrow-zone` 下方。
+- 敌方 `side-backrow-zone` 的左边缘应跟敌方 HUD 左边缘对齐，保持左侧战斗信息的统一视觉基准。
+- 为保证上述对齐，敌方 `side-backrow-zone` 直接渲染在 `.enemy-hud-corner` 内，位于敌方 HUD 下方；不要再依赖 `battle-main` 的 `enemySide` 网格列或桌面端绝对定位来对齐敌方后场。
+- 手牌区最后由 `.hand-zone` / `.hand-row` 兜底规则保证完整可见：底部手牌行高度必须匹配图片式卡框比例，右侧通过 HUD 安全区避开玩家面板，矮屏桌面端优先缩小手牌卡而不是裁掉卡面。
+- `EffectLayer` 与 `turn-seal` 必须保持为 `board-shell` 内的绝对定位浮层；召唤、放置、法术等 `cardFx` 出现时不能让这些节点成为 flex 普通子项，否则会挤压 `battle-layout`。
+- 当前战场外框为透明化处理：敌我 `field-zone` 不显示底框；空随从槽与空后场槽不显示边框、编号和标签，只有被卡牌占用后才显现槽位视觉。
+- 敌方手牌只显示放大的伏牌卡背，不显示“敌方手牌”标题和数量牌；尺寸应尽量接近我方手牌卡尺寸。
+- 势能信息由玩家 HUD 承载：`getAdvantageBreakdown()` 的总分与手/血/威/特分项传入 `PlayerHUD` / `renderPlayerHUD`，不再渲染常驻 `MomentumPanel` 侧栏。
+- 战斗日志由右侧 `details.battle-log-drawer` 折叠展示，默认收起；展开时作为悬浮层覆盖在战场右侧，不再占用固定侧栏宽度。
+- `public/card-frames/common/frame.png` 是当前第一版通用卡牌底框，尺寸为 `720 x 1040` 透明 PNG。
+- `public/card-frames/minion/frame.png`、`spell/frame.png`、`persistent/frame.png`、`trap/frame.png` 暂时复制同一张底框，保证所有卡牌类型都有一致的可见框架。
+- `frame.png` 只承载底框、美术窗、费用托座和属性托盘等静态视觉，不烘焙卡名、效果文本或数值；费用、攻、防、威胁仍由 UI 层渲染。
+- `src/style.css` 的末尾覆盖规则负责把卡牌背景透明化、铺满 `card-frame-base`，并把费用、卡图、三属性锚定到这张底框的预留位置。
+- 当前卡牌根节点统一带 `framed-card` 类，根节点本身直接使用 `frame.png` 作为背景图；旧的 `card-frame-layers` 保留为兼容结构但不再承担可见底框。
+- 卡牌正面的数值徽章使用图标加数字：剑表示攻击，盾表示防御，闪电表示威胁；图标目前在 `src/style.css` 中以 CSS 形状绘制。
+- 后续要做类型差异化时，直接替换对应 `public/card-frames/<type>/frame.png` 即可，不需要改组件结构。
+
+## 2026-04-28 原创二次元商业卡牌 UI 层
+
+- 视觉资产：
+  - `public/ui/moe-arcana-table.svg` 是战斗桌面的原创 SVG 背景，由 `src/style.css` 的 `.arcana-table-art` 引用。
+  - `public/ui/card-art-minion.svg`、`card-art-spell.svg`、`card-art-persistent.svg`、`card-art-trap.svg` 是当前卡牌插画占位资产。
+  - `public/card-frames/` 是图片式卡牌框架资源根目录，按 `common / minion / spell / persistent / trap` 分层存放卡框、卡图窗、标题牌、文本框、费用宝石和属性徽章图片。
+  - `public/characters/<character_id>/card.jpg` 和 `avatar.jpg` 是角色图片默认约定路径，由 `src/data/characterArt.ts` 生成并提供给设置页角色卡与对局 HUD。
+  - 这些资产只承担 UI 美术表现，不参与规则、数据或 AI 判定。
+- 卡牌框架图片层：
+  - `src/components/Card.tsx` 和 `src/components/react/CardView.tsx` 都会在卡牌根节点内渲染 `card-frame-layers`。
+  - `src/style.css` 通过 `--card-frame-*` 变量按卡牌类型选择图片资源；类型专属资源优先，缺省时可回退到 `public/card-frames/common/`。
+  - 当前 `public/card-frames/` 内放有透明 PNG 占位，后续设计正式卡框时直接替换同名文件即可。
+- 极简卡面口径：
+  - 卡牌正面只显示费用、攻、防、威胁；卡名、类型、关键词、简介、效果和状态提示不再显示在卡面上。
+  - React 卡牌的完整说明继续走统一悬停 / 聚焦详情；旧字符串模板卡牌通过 `title` / `aria-label` 保留基础悬停说明。
+  - 缺失的攻、防、威胁值显示为 `-`，确保法术、持续物和陷阱也能保持稳定卡面布局。
+- React 战斗界面：
+  - `src/components/react/ReactBattleBoard.tsx` 负责挂载 Moe Arcana 战斗桌图层、中央回合纹章、品牌锁定区、战斗状态、操作按钮和弹窗。
+  - `src/components/react/CardView.tsx` 现在包含 `CardArt` 插画窗，并通过 `fanIndex / fanCount` 给手牌提供扇形排列参数。
+  - `src/components/react/PlayerHUDView.tsx` 现在包含 `hud-avatar` 角色头像图片槽，角色状态仍只读取 `PlayerState` 和 `CharacterDefinition`。
+- 角色美术配置：
+  - `src/types.ts` 的 `CharacterDefinition.art` 支持 `card / avatar / banner / alt`。
+  - `src/data/characterArt.ts` 的 `createCharacterArt()` 用于给角色数据生成默认图片路径；`getCharacterArt()` 用于 UI 读取最终路径。
+  - 现有角色数据文件都已接入默认路径，后续新增角色时应同步配置 `art: createCharacterArt("<character_id>", "<角色名>角色卡图")`。
+- 样式边界：
+  - `src/style.css` 承担这次商业卡牌桌面视觉层，包括星光背景、桌面 SVG 叠层、玻璃战区、费用宝石、卡框高光、卡面扫光、手牌悬停放大、目标脉冲和 HUD 高光。
+  - `src/style.css` 同时承担当前 UI 的响应式边界护栏：战斗画面在 `.game-shell` 内裁切装饰层、约束卡牌宽度并使用内部横向滚动；设置页和换牌页约束标题、信息格、按钮行和选择卡，避免窄屏右侧越界。
+  - 战斗画面底部手牌区是保留高度区域，`.battle-main` 的第三行、`.hand-zone` 与 `.hand-row` 都需要优先保证手牌卡完整可见；矮屏时应压缩卡牌内容和顶部状态条，而不是裁掉手牌。
+  - 新增视觉层不改变 `GameState`、引擎规则或 store API；规则仍由 `src/engine/` 和 `src/store/useGameStore.ts` 驱动。
+  - `dist/` 是 Vite 构建产物，源码 UI 改动后需要通过 `npm.cmd run build` 同步。
+
 ## 2026-04-24 桌面战斗布局
 
 - `src/components/Board.tsx`
   - 战斗画面改为上下两个战场区加紧凑手牌区，桌面端可以把更多宽度留给棋盘，而不是把所有内容纵向堆叠。
   - 对局标题栏把左侧标题/状态与中间战斗信息分开，让回合和阶段信息位于宽屏视觉中心。
-  - 战斗日志放到对局标题栏右侧，右侧边栏主要用于展示势能面板。
+  - 当前战斗日志已从固定右侧栏改为右侧折叠抽屉；势能信息并入玩家 HUD。
   - 标题栏日志卡片保持轻量，只显示最新日志；重新开始按钮移动到手牌区工具栏。
 - `src/style.css`
   - 增加 `.game-shell` 范围内的桌面布局规则，让战斗 UI 保持在视口内，把溢出交给战斗日志等内部面板处理。
@@ -17,19 +75,18 @@
   - 槽位卡片暴露独立的标题、标签、计数和注记类名，方便玩家状态区单独调节密度。
   - 当前 React 战斗面板会显示槽位短注记，例如还差几点到 10 点、10 点就绪、13 点已满。
 - `src/components/MomentumPanel.tsx`
-  - 势能面板标题只显示名称和当前 `V` 值，不再显示旧的描述副标题。
-  - 还没有上次结算结果时，面板不再显示旧的默认提示框。
+  - 已移除。势能展示改由 `PlayerHUD.tsx` 与 `PlayerHUDView.tsx` 承担。
 
 ## 2026-04-25 React 战斗面板与 Pixi 特效
 
 - 战斗画面渲染：
   - `src/components/react/ReactBattleBoard.tsx` 是 `state.screen === "game"` 时的实际战斗画面渲染器。
   - 设置页和换牌页仍通过 `src/App.tsx` 使用旧字符串模板兼容路径。
-  - 战斗画面由真实 React 组件组合卡牌、玩家状态、战场区域、按钮、弹窗、战斗日志和势能展示。
+  - 战斗画面由真实 React 组件组合卡牌、玩家状态、战场区域、按钮、弹窗、折叠战斗日志和 HUD 内势能展示。
 - React 组件职责：
   - `src/components/react/CardView.tsx` 负责手牌、场上使魔、持续卡、盖伏卡、关键词徽章、属性徽章、可用状态和卡牌检视数据。
-  - `src/components/react/PlayerHUDView.tsx` 负责角色/玩家状态展示，包括生命、法力、手牌/牌库数量、跳脸槽、神抽槽和槽位就绪说明。
-  - `src/components/react/ReactBattleBoard.tsx` 负责战斗画面组合、玩家操作、当前建议、待处理选择弹窗、游戏结束弹窗、效果横幅、战斗日志、势能面板和卡牌详情提示。
+  - `src/components/react/PlayerHUDView.tsx` 负责角色/玩家状态展示，包括生命、法力、手牌/牌库数量、势能摘要、跳脸槽、神抽槽和槽位就绪说明。
+  - `src/components/react/ReactBattleBoard.tsx` 负责战斗画面组合、玩家操作、待处理选择弹窗、游戏结束弹窗、效果横幅、折叠战斗日志和卡牌详情提示。
 - PixiJS 边界：
   - `src/game-view/pixi/PixiBattlefieldHost.tsx` 接收 `GameState`、`attackFx` 和 `cardFx`。
   - PixiJS 只负责显示特效，不决定合法行动、伤害或回合流程。
@@ -45,10 +102,10 @@
   - `PixiBattlefieldHost` 现在只创建固定的 `pixi-battlefield-effects` 画布。
   - Pixi 特效层使用 `pointer-events: none`；弹窗和卡牌详情提示通过更高层级显示在它上方。
 - 战斗布局：
-  - 战斗标题栏是紧凑状态条。
+  - 战斗界面没有顶部 header，棋盘直接占满主视口。
   - 主战斗画面使用稳定的视口行，分别承载敌方场面、玩家场面和玩家手牌。
-  - 行动日志位于右侧边栏，在势能面板下方。
-  - 卡牌、使魔、持续物、玩家状态、势能和日志面板都使用更严格的高度限制和内部滚动，避免长文本撑开棋盘。
+  - 行动日志默认收起为右侧抽屉入口，展开时覆盖在战场右侧查看。
+  - 卡牌、使魔、持续物、玩家状态、HUD 势能和日志抽屉都使用更严格的高度限制和内部滚动，避免长文本撑开棋盘。
 - 卡牌详情提示：
   - 鼠标悬停或键盘聚焦手牌、场上使魔、持续卡或盖伏卡时，会显示统一的卡牌详情提示。
   - 当前不可打出的手牌也能通过 `aria-disabled` 和受保护点击处理保留悬停/聚焦检视。
@@ -308,6 +365,7 @@
   - 负责游戏状态创建、角色/天赋应用与对外 API
 - `phases.ts`
   - 阶段推进、回合开始/结束、Mulligan 与 AI 回合调度
+  - 大奶的槽位耗散只扣 1 到 9 点的未就绪槽位；10 / 13 点已就绪槽位会先进入大招处理，避免在宣告前被自身被动扣掉。
 - `effects.ts`
   - 卡牌与能力效果执行
   - 负责费用变动触发盖伏、出牌回合限制、额外回合费用覆盖、无视护卫攻击、抽牌判负和磨牌上限等具体行为。
@@ -324,17 +382,14 @@
 
 - `Board.tsx`
   - 棋盘与战场区展示
-  - 组装实时势能面板、战斗日志与主要对局侧边栏
+  - 组装主要对局战场、HUD 内势能摘要与右侧折叠日志抽屉
 - `Card.tsx`
   - 单卡渲染
   - 使魔统一展示攻击力、血量与威胁值三项属性
 - `EffectLayer.tsx`
   - 渲染法术、陷阱、召唤、放置等卡牌演出的中央效果横幅
-- `MomentumPanel.tsx`
-  - 实时展示双方的手牌分、血量分、威胁值分、特殊扣分与总势能分
-  - 同时显示上一次回合结束后的势能结算结果
 - `PlayerHUD.tsx`
-  - 玩家面板、生命、法力、手牌等摘要信息
+  - 玩家面板、生命、法力、手牌、牌库与势能摘要信息
 - `ResolutionPanel.tsx`
   - 槽位与额外选择的提示面板
 - `SlotMeter.tsx`
@@ -437,3 +492,45 @@
 - 下一步建议将 `Card.tsx`、`Board.tsx`、`PlayerHUD.tsx` 等从字符串模板逐步拆成真正 React 组件。
 - 后续再将战场、手牌、攻击轨迹、伤害数字等表现逐步交给 PixiJS。
 - 引擎层继续保持纯 TypeScript，不让 UI 直接修改规则状态。
+
+## 2026-04-29 Card JPG Art Pipeline
+
+- Card definitions now support an optional `art` string. `src/data/cardArt.ts` resolves the default image path as `/cards/<card-id>.jpg`.
+- `src/data/cards.ts` exports card lists and `CARD_LIBRARY` with art paths attached, so `getCardDefinition()` returns cards that already know their illustration path.
+- Runtime hand cards inherit `art` through `createRuntimeCard()`. Board instances inherit it through `createMinionInstance()` and `createPersistentInstance()`.
+- React card rendering passes `art` into `.card-art.has-card-art` using `--card-art-image`.
+- Static card art files live in `public/cards/`; Vite copies them to `dist/cards/` during build.
+- `scripts/generate-card-art.ps1` generates simple effect-readable anime-style JPG defaults from the TypeScript card data. Replace any generated JPG with a polished hand-made image using the same card id filename.
+
+## 2026-04-29 Non-Minion Card Frames
+
+- Spell, persistent, and trap cards use separate bitmap frame assets in `public/card-frames/<type>/frame.png`.
+- `scripts/generate-card-frames.ps1` regenerates these non-minion frames. They remain PNG rather than JPG so rounded transparent corners are preserved.
+- Non-minion hand cards no longer render the attack / defense / threat row. Board persistent/trap cards also omit the stat row.
+- CSS gives non-minion framed cards a larger illustration window because there is no bottom stat strip.
+- Non-minion frame URLs include a version query in the final CSS override to avoid stale browser caches after regenerating `frame.png`.
+
+## 2026-04-29 In-Battle Mulligan Flow
+
+- `setupMatch()` still enters `screen: "mulligan"` and the engine keeps `completePlayerMulligan()` as the transition into the first real turn.
+- During `mulligan`, `App.tsx` now renders the battle scene instead of the old standalone mulligan screen, so the player sees the main board immediately.
+- `ReactBattleBoard` now handles mulligan directly in the bottom hand zone. The player clicks hand cards to mark them, then clicks the always-available `更换手牌` button.
+- Selecting zero cards and clicking `更换手牌` keeps the current opening hand and starts the game.
+- `useGameStore` only tracks `uiState.mulliganSelection`; the old `"ask" | "select"` mulligan mode has been removed.
+- Battle hand cards are forced opaque in CSS even when they are disabled during non-main-turn states.
+- Mulligan card selection uses `HandCard.onSelect`, separate from normal card play, so selecting opening cards is not blocked by playability checks.
+- The old standalone mulligan framework has been removed from active source and build output: no `renderMulliganScreen`, no `renderMulliganCard`, no `onMulliganAction`, no `toggle-mulligan`, and no `.mulligan-grid` CSS remain.
+- The old overlay mulligan framework has also been removed from active source and build output: no `MulliganOverlay`, `mulligan-overlay`, `mulligan-modal`, or `mulligan-card-row` remain.
+
+## 2026-04-29 Global Code Audit And Legacy Renderer Cleanup
+
+- Active runtime entry is `src/main.tsx` -> `src/App.tsx`.
+- `src/App.tsx` still owns the setup screen through the legacy HTML template path, but `screen: "mulligan"` and `screen: "game"` both render through `src/components/react/ReactBattleBoard.tsx`.
+- The active battle UI component set is `ReactBattleBoard.tsx`, `CardView.tsx`, and `PlayerHUDView.tsx`, with visual effects delegated to `src/game-view/pixi/PixiBattlefieldHost.tsx`.
+- The old string-rendered battle stack has been removed from source: `src/components/Board.tsx`, `Card.tsx`, `EffectLayer.tsx`, `PlayerHUD.tsx`, `ResolutionPanel.tsx`, `SlotMeter.tsx`, and the already-removed `MomentumPanel.tsx`.
+- The old `data-action` battle click protocol in `App.tsx` was removed. Legacy click handling now only routes setup-screen actions through `onSetupAction()`.
+- A local import graph check found no source files unreachable from `src/main.tsx` after this cleanup.
+- `npm.cmd run typecheck -- --noUnusedLocals --noUnusedParameters`, `npm.cmd run build`, and `npm.cmd run test` all pass after the cleanup.
+- Known technical debt: `src/style.css` is still very large and contains many late UI overrides from iterative layout work. It should be split into focused files or layers before the next major UI pass.
+- Known technical debt: `ReactBattleBoard.tsx` is large but still cohesive as the current battle surface. Good future split points are hand/mulligan hand, side backrow lanes, battlefield lanes, and battle log/control dock.
+- Known technical debt: setup remains the last legacy string-template island. It is active, not dead, but can later be migrated to React to remove `dangerouslySetInnerHTML` from `App.tsx`.

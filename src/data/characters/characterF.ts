@@ -1,4 +1,5 @@
 import type { CharacterDefinition, PassiveAbility } from "../../types.js";
+import { createCharacterArt } from "../characterArt.js";
 
 export const CHARACTER_F_PASSIVE: PassiveAbility = {
   key: "healOnDrawPhase",
@@ -29,6 +30,7 @@ export const CHARACTER_F: CharacterDefinition = {
   baseHp: 20,
   talentPoints: 4,
   description: "通过磨牌和反伤联动拖垮对手的牌库资源。",
+  art: createCharacterArt("character_f", "寒尘角色卡图"),
   passive: CHARACTER_F_PASSIVE,
   slotAbilities: CHARACTER_F_SLOT_ABILITIES
 };

@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="360" height="220" viewBox="0 0 360 220" role="img" aria-label="Original cute persistent card art">
+  <defs>
+    <linearGradient id="bg" x1="0" x2="1" y1="0" y2="1">
+      <stop offset="0" stop-color="#fff9dd"/>
+      <stop offset="0.5" stop-color="#fff3b4"/>
+      <stop offset="1" stop-color="#dff9e9"/>
+    </linearGradient>
+    <linearGradient id="shrine" x1="0" x2="1" y1="0" y2="1">
+      <stop offset="0" stop-color="#ffffff"/>
+      <stop offset="0.5" stop-color="#ffd9ec"/>
+      <stop offset="1" stop-color="#8ee8bd"/>
+    </linearGradient>
+  </defs>
+  <rect width="360" height="220" rx="34" fill="url(#bg)"/>
+  <circle cx="70" cy="58" r="42" fill="#ffffff" opacity="0.42"/>
+  <circle cx="292" cy="162" r="56" fill="#f47faa" opacity="0.18"/>
+  <path d="M58 182h244" stroke="#ffffff" stroke-width="12" stroke-linecap="round" opacity="0.5"/>
+  <g transform="translate(180 116)">
+    <path d="M0-86l84 52v106H-84V-34z" fill="url(#shrine)" stroke="#fff" stroke-width="7" stroke-linejoin="round"/>
+    <path d="M-54-25h108M-42 4h84M-58 73h116" stroke="#9d6f33" stroke-width="8" stroke-linecap="round" opacity="0.38"/>
+    <circle cx="0" cy="-22" r="25" fill="#fff3a8" stroke="#ffffff" stroke-width="6"/>
+    <path d="M0-42l7 14 16 2-12 11 3 16-14-8-14 8 3-16-12-11 16-2z" fill="#f47faa"/>
+  </g>
+  <g fill="#ffffff" opacity="0.88">
+    <path d="M292 42l6 13 14 2-10 10 3 14-13-7-13 7 3-14-10-10 14-2z"/>
+    <path d="M72 140l5 10 11 2-8 8 2 11-10-5-10 5 2-11-8-8 11-2z"/>
+  </g>
+</svg>

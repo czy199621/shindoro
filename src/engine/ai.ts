@@ -13,7 +13,15 @@ import type {
   RuntimeCard,
   TalentSeat
 } from "../types.js";
-import { boardAttack, boardThreat, canPlayCardForPlayer } from "./rules.js";
+import {
+  boardAttack,
+  boardThreat,
+  canPlayCardForPlayer,
+  getBackrowSlotCount,
+  hasBattlefieldSlotForCard,
+  MAX_BACKROW_SLOTS,
+  MAX_MINION_SLOTS
+} from "./rules.js";
 
 interface AiProfile {
   talentPriority: string[];
@@ -474,7 +482,7 @@ function scoreEffectAction(state: GameState, playerId: PlayerId, card: RuntimeCa
           handCard.runtimeId !== card.runtimeId &&
           handCard.currentCost > me.mana &&
           handCard.currentCost <= me.mana + amount &&
-          (handCard.type !== "minion" || me.board.length < 7)
+          hasBattlefieldSlotForCard(handCard, me)
       );
       return enabled ? 5.2 : 0.8;
     }
@@ -526,7 +534,7 @@ function evaluateCardState(state: GameState, playerId: PlayerId, card: RuntimeCa
     if (card.tags?.includes("rush")) score += profile.rush;
     if (card.tags?.includes("guard")) score += profile.guard;
     if (card.tags?.includes("menace") || card.tags?.includes("magicRes")) score += profile.defensiveTag;
-    if (me.board.length >= 6) score -= 7;
+    if (me.board.length >= MAX_MINION_SLOTS) score -= 7;
   }
 
   if (card.type === "persistent") {
@@ -534,12 +542,14 @@ function evaluateCardState(state: GameState, playerId: PlayerId, card: RuntimeCa
     if (card.id === "sage_archive") score += profile.draw * 1.3;
     if (card.id === "underdog_shrine" && me.hp <= opp.hp) score += profile.godDrawSlot * 1.5;
     if (card.id === "war_banner" && me.board.length >= 2) score += profile.buff * me.board.length;
+    if (getBackrowSlotCount(me) >= MAX_BACKROW_SLOTS) score -= 6;
   }
 
   if (card.type === "trap") {
     score += profile.trap;
     if (card.id === "mirror_wall" && opp.hand.some((item) => item.type === "spell")) score += 2.2;
     if (card.id === "ambush_sigil" && opp.hand.some((item) => item.type === "minion")) score += 1.6;
+    if (getBackrowSlotCount(me) >= MAX_BACKROW_SLOTS) score -= 6;
   }
 
   if (REMOVAL_IDS.has(card.id) && opp.board.length) score += profile.removal;

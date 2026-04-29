@@ -12,6 +12,23 @@
   --green: #2d7a54;
   --blue: #386e8f;
   --shadow: 0 18px 40px rgba(62, 43, 18, 0.14);
+  --moe-pink: #f47faa;
+  --moe-rose: #ffd9e9;
+  --moe-lilac: #b59cff;
+  --moe-cyan: #76d8f5;
+  --moe-mint: #8ee8bd;
+  --moe-ink: #37243a;
+  --moe-line: rgba(168, 87, 130, 0.22);
+  --moe-glow: 0 0 24px rgba(244, 127, 170, 0.28), 0 0 42px rgba(118, 216, 245, 0.18);
+  --card-frame-base: none;
+  --card-frame-art-window: none;
+  --card-frame-title-plate: url("/card-frames/common/title-plate.png");
+  --card-frame-text-box: url("/card-frames/common/text-box.png");
+  --card-frame-ornaments: none;
+  --card-frame-cost-gem: url("/card-frames/common/cost-gem.png");
+  --card-frame-stat-attack: url("/card-frames/common/stat-attack.png");
+  --card-frame-stat-health: url("/card-frames/common/stat-health.png");
+  --card-frame-stat-threat: url("/card-frames/common/stat-threat.png");
 }
 
 * {
@@ -23,10 +40,30 @@ body {
   min-height: 100vh;
   color: var(--ink);
   background:
+    radial-gradient(circle at 12% 14%, rgba(255, 184, 215, 0.36), transparent 25%),
+    radial-gradient(circle at 86% 10%, rgba(118, 216, 245, 0.28), transparent 24%),
+    radial-gradient(circle at 72% 88%, rgba(142, 232, 189, 0.24), transparent 28%),
     radial-gradient(circle at top, rgba(198, 146, 41, 0.2), transparent 36%),
     radial-gradient(circle at bottom left, rgba(178, 58, 43, 0.16), transparent 28%),
-    linear-gradient(160deg, #efe6d7 0%, #f8f4ec 50%, #f0e6d2 100%);
+    linear-gradient(160deg, #fff1f7 0%, #f8fbff 42%, #fff7e8 100%);
   font-family: "Segoe UI", "Microsoft YaHei UI", sans-serif;
+  overflow-x: hidden;
+}
+
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background-image:
+    radial-gradient(circle, rgba(255, 255, 255, 0.85) 0 1px, transparent 1.6px),
+    radial-gradient(circle, rgba(244, 127, 170, 0.52) 0 1px, transparent 1.8px),
+    radial-gradient(circle, rgba(118, 216, 245, 0.44) 0 1px, transparent 1.7px);
+  background-position: 0 0, 28px 42px, 74px 18px;
+  background-size: 96px 96px, 132px 132px, 156px 156px;
+  opacity: 0.72;
+  animation: moe-sparkle-drift 18s linear infinite;
 }
 
 button,
@@ -676,6 +713,10 @@ button:disabled {
   background: rgba(231, 223, 196, 0.5);
 }
 
+.field-count-badge.minion {
+  background: rgba(221, 237, 248, 0.56);
+}
+
 .field-count-badge.trap {
   background: rgba(233, 220, 237, 0.54);
 }
@@ -1221,17 +1262,6 @@ button:disabled {
   border: 1px solid rgba(36, 29, 23, 0.08);
   font-size: 14px;
   line-height: 1.45;
-}
-
-.mulligan-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-  gap: 14px;
-  margin-top: 16px;
-}
-
-.selected-for-mulligan {
-  box-shadow: 0 0 0 2px rgba(178, 58, 43, 0.36), var(--shadow);
 }
 
 .modal-backdrop {
@@ -2044,6 +2074,1289 @@ button:disabled {
   overflow: auto;
 }
 
+.hero {
+  position: relative;
+  overflow: hidden;
+  border-color: rgba(168, 87, 130, 0.22);
+  background:
+    linear-gradient(135deg, rgba(255, 252, 255, 0.96), rgba(255, 239, 248, 0.92) 48%, rgba(238, 250, 255, 0.92)),
+    var(--panel);
+  color: var(--moe-ink);
+  box-shadow: 0 18px 46px rgba(103, 52, 84, 0.13), var(--moe-glow);
+}
+
+.hero::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(circle at 18% 26%, rgba(255, 255, 255, 0.82) 0 2px, transparent 2.8px),
+    radial-gradient(circle at 36% 74%, rgba(244, 127, 170, 0.4) 0 2px, transparent 3px),
+    radial-gradient(circle at 79% 32%, rgba(118, 216, 245, 0.38) 0 2px, transparent 3px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.28), transparent 38%, rgba(255, 255, 255, 0.2));
+  opacity: 0.85;
+}
+
+.hero::after {
+  content: "";
+  position: absolute;
+  top: -72px;
+  right: -44px;
+  width: 210px;
+  height: 210px;
+  border-radius: 50%;
+  border: 28px solid rgba(255, 199, 221, 0.32);
+  box-shadow: inset 0 0 0 12px rgba(118, 216, 245, 0.12), 0 0 34px rgba(244, 127, 170, 0.18);
+  pointer-events: none;
+}
+
+.hero > * {
+  position: relative;
+  z-index: 1;
+}
+
+.moe-mode-badge {
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+  padding: 5px 10px;
+  margin-bottom: 8px;
+  border-radius: 999px;
+  border: 1px solid rgba(244, 127, 170, 0.24);
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.84), rgba(255, 221, 235, 0.68)),
+    rgba(255, 255, 255, 0.74);
+  color: #8d3a66;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0;
+  box-shadow: 0 8px 18px rgba(244, 127, 170, 0.14);
+}
+
+.moe-mode-badge::before {
+  content: "";
+  width: 8px;
+  height: 8px;
+  margin-right: 7px;
+  border-radius: 50%;
+  background: var(--moe-cyan);
+  box-shadow: 10px 0 0 var(--moe-pink), 20px 0 0 var(--moe-mint);
+}
+
+.moe-ribbon {
+  position: absolute;
+  top: 12px;
+  right: 16px;
+  z-index: 2;
+  display: flex;
+  gap: 6px;
+  pointer-events: none;
+}
+
+.moe-ribbon span {
+  display: inline-flex;
+  align-items: center;
+  min-height: 22px;
+  padding: 4px 8px;
+  border: 1px solid rgba(255, 255, 255, 0.62);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.58);
+  color: #8a3a68;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0;
+  box-shadow: 0 8px 20px rgba(103, 52, 84, 0.1);
+  backdrop-filter: blur(8px);
+}
+
+.moe-ribbon span:nth-child(2) {
+  color: #32677c;
+}
+
+.moe-ribbon span:nth-child(3) {
+  color: #55733a;
+}
+
+.setup-panel,
+.board-shell,
+.sidebar-card,
+.log-card,
+.modal-card,
+.toast {
+  border-color: var(--moe-line);
+  background:
+    linear-gradient(145deg, rgba(255, 252, 255, 0.94), rgba(255, 242, 249, 0.9) 52%, rgba(240, 251, 255, 0.88)),
+    var(--panel);
+  box-shadow: 0 20px 52px rgba(103, 52, 84, 0.12), 0 8px 22px rgba(50, 103, 124, 0.08);
+}
+
+.setup-panel,
+.board-shell,
+.zone,
+.sidebar-card,
+.log-card,
+.modal-card,
+.card,
+.minion-card,
+.persistent-card,
+.hud,
+.option-card,
+.pill,
+.action-hint {
+  border-color: var(--moe-line);
+}
+
+.option-card,
+.pill,
+.action-hint,
+.log-item,
+.empty-text,
+.momentum-row,
+.slot-card {
+  background: rgba(255, 255, 255, 0.72);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.56);
+}
+
+.option-card {
+  position: relative;
+  overflow: hidden;
+}
+
+.option-card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(circle at 18% 18%, rgba(255, 255, 255, 0.78) 0 2px, transparent 3px),
+    radial-gradient(circle at 82% 22%, rgba(244, 127, 170, 0.2), transparent 22%);
+  opacity: 0.8;
+}
+
+.option-card > * {
+  position: relative;
+  z-index: 1;
+}
+
+.option-card.selected {
+  border-color: rgba(244, 127, 170, 0.56);
+  box-shadow: 0 0 0 2px rgba(244, 127, 170, 0.16), 0 16px 32px rgba(244, 127, 170, 0.14);
+}
+
+.primary-btn,
+.secondary-btn,
+.danger-btn,
+.ghost-btn {
+  border-radius: 999px;
+  box-shadow: 0 10px 22px rgba(103, 52, 84, 0.14), inset 0 1px 0 rgba(255, 255, 255, 0.34);
+}
+
+.primary-btn {
+  background: linear-gradient(135deg, #f47faa, #bb5fd5 54%, #5ab9e7);
+}
+
+.secondary-btn {
+  color: #513055;
+  background: linear-gradient(135deg, #fff3b4, #ffd6e7 54%, #c9f5e0);
+}
+
+.danger-btn {
+  background: linear-gradient(135deg, #cc6277, #9151a9);
+}
+
+.ghost-btn {
+  color: var(--moe-ink);
+  background: rgba(255, 255, 255, 0.72);
+}
+
+.board-shell {
+  position: relative;
+  overflow: hidden;
+}
+
+.board-shell::before {
+  content: "";
+  position: absolute;
+  inset: 10px;
+  border-radius: inherit;
+  pointer-events: none;
+  background:
+    radial-gradient(ellipse at 50% 50%, rgba(255, 255, 255, 0.34), transparent 50%),
+    radial-gradient(circle at 30% 30%, rgba(244, 127, 170, 0.16), transparent 24%),
+    radial-gradient(circle at 72% 72%, rgba(118, 216, 245, 0.14), transparent 26%);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.42);
+}
+
+.board-shell > * {
+  position: relative;
+  z-index: 1;
+}
+
+.moe-table::before,
+.moe-table::after {
+  content: "";
+  position: absolute;
+  pointer-events: none;
+  z-index: 0;
+  border-radius: 50%;
+}
+
+.moe-table::before {
+  left: 5vw;
+  bottom: 10vh;
+  width: 230px;
+  height: 230px;
+  background: radial-gradient(circle, rgba(255, 217, 233, 0.38), transparent 66%);
+  animation: moe-orbit-glow 7s ease-in-out infinite;
+}
+
+.moe-table::after {
+  right: 4vw;
+  top: 18vh;
+  width: 190px;
+  height: 190px;
+  background: radial-gradient(circle, rgba(118, 216, 245, 0.28), transparent 68%);
+  animation: moe-orbit-glow 8s ease-in-out infinite reverse;
+}
+
+.moe-table > * {
+  position: relative;
+  z-index: 1;
+}
+
+.zone {
+  position: relative;
+  overflow: hidden;
+  background:
+    linear-gradient(145deg, rgba(255, 255, 255, 0.68), rgba(255, 239, 248, 0.5) 54%, rgba(236, 250, 255, 0.5)),
+    rgba(255, 252, 246, 0.7);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.58);
+}
+
+.zone::before {
+  content: "";
+  position: absolute;
+  inset: 6px;
+  border-radius: 16px;
+  pointer-events: none;
+  background:
+    linear-gradient(90deg, rgba(255, 255, 255, 0.24), transparent 26%, transparent 74%, rgba(255, 255, 255, 0.18)),
+    radial-gradient(circle at 92% 12%, rgba(244, 127, 170, 0.18), transparent 19%);
+}
+
+.zone > * {
+  position: relative;
+  z-index: 1;
+}
+
+.section-title {
+  color: var(--moe-ink);
+}
+
+.section-title::before {
+  content: "";
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  margin-right: 8px;
+  border-radius: 50% 50% 50% 0;
+  background: linear-gradient(135deg, var(--moe-pink), var(--moe-cyan));
+  transform: rotate(-18deg);
+  box-shadow: 0 0 12px rgba(244, 127, 170, 0.32);
+}
+
+.card,
+.minion-card,
+.persistent-card {
+  border-color: rgba(168, 87, 130, 0.22);
+  color: var(--moe-ink);
+  box-shadow: 0 14px 28px rgba(103, 52, 84, 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.48);
+}
+
+.card {
+  background:
+    linear-gradient(155deg, rgba(255, 255, 255, 0.96), rgba(255, 237, 247, 0.92) 58%, rgba(239, 250, 255, 0.9)),
+    var(--panel);
+}
+
+.card.spell {
+  background: linear-gradient(155deg, rgba(244, 252, 255, 0.98), rgba(219, 242, 255, 0.92) 64%, rgba(246, 238, 255, 0.9));
+}
+
+.card.persistent {
+  background: linear-gradient(155deg, rgba(255, 253, 240, 0.98), rgba(255, 240, 204, 0.92) 56%, rgba(255, 238, 247, 0.9));
+}
+
+.card.trap {
+  background: linear-gradient(155deg, rgba(255, 245, 255, 0.98), rgba(240, 226, 255, 0.93) 58%, rgba(255, 225, 239, 0.88));
+}
+
+.card::before {
+  content: "";
+  position: absolute;
+  top: 38px;
+  left: 12px;
+  right: 12px;
+  height: 38px;
+  border-radius: 18px;
+  pointer-events: none;
+  background:
+    radial-gradient(circle at 25% 28%, rgba(255, 255, 255, 0.9) 0 6px, transparent 7px),
+    radial-gradient(circle at 70% 42%, rgba(255, 255, 255, 0.62) 0 4px, transparent 5px),
+    linear-gradient(135deg, rgba(244, 127, 170, 0.28), rgba(118, 216, 245, 0.2));
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.54);
+}
+
+.card::after {
+  content: "";
+  position: absolute;
+  left: 12px;
+  top: 12px;
+  width: 17px;
+  height: 17px;
+  pointer-events: none;
+  background: linear-gradient(135deg, #fff5a8, #f47faa);
+  clip-path: polygon(50% 0, 62% 35%, 100% 50%, 62% 65%, 50% 100%, 38% 65%, 0 50%, 38% 35%);
+  filter: drop-shadow(0 0 8px rgba(244, 127, 170, 0.38));
+}
+
+.card > *,
+.minion-card > *,
+.persistent-card > * {
+  position: relative;
+  z-index: 1;
+}
+
+.hand-row .card:hover:not([aria-disabled="true"]) {
+  transform: translateY(-8px) rotate(-1deg);
+  box-shadow: 0 20px 42px rgba(103, 52, 84, 0.18), 0 0 28px rgba(244, 127, 170, 0.2);
+}
+
+.card-cost,
+.card-detail-cost {
+  background: radial-gradient(circle at 30% 20%, rgba(255, 255, 255, 0.92), transparent 26%),
+    linear-gradient(135deg, #5ab9e7, #8d68e8 62%, #f47faa);
+  box-shadow: 0 6px 16px rgba(74, 112, 204, 0.26), inset 0 1px 0 rgba(255, 255, 255, 0.44);
+}
+
+.minion-card {
+  background:
+    radial-gradient(circle at 82% 18%, rgba(255, 255, 255, 0.78) 0 15px, transparent 16px),
+    linear-gradient(155deg, rgba(255, 252, 255, 0.96), rgba(255, 239, 248, 0.9) 60%, rgba(241, 251, 255, 0.88));
+}
+
+.minion-card::before,
+.persistent-card::before {
+  content: "";
+  position: absolute;
+  right: 10px;
+  top: 10px;
+  width: 30px;
+  height: 30px;
+  border-radius: 50% 50% 46% 46%;
+  pointer-events: none;
+  background:
+    radial-gradient(circle at 35% 42%, #5b345d 0 2px, transparent 2.5px),
+    radial-gradient(circle at 65% 42%, #5b345d 0 2px, transparent 2.5px),
+    radial-gradient(ellipse at 50% 66%, rgba(244, 127, 170, 0.64) 0 4px, transparent 5px),
+    linear-gradient(160deg, #fff7fb, #ffd9e9);
+  box-shadow: 0 8px 18px rgba(244, 127, 170, 0.16), inset 0 -5px 0 rgba(244, 127, 170, 0.12);
+}
+
+.persistent-card.persistent {
+  background: linear-gradient(155deg, rgba(255, 253, 241, 0.96), rgba(255, 240, 204, 0.88) 62%, rgba(245, 253, 242, 0.88));
+}
+
+.persistent-card.trap {
+  background: linear-gradient(155deg, rgba(255, 247, 255, 0.96), rgba(239, 225, 255, 0.9) 58%, rgba(255, 232, 244, 0.88));
+}
+
+.card.minion,
+.minion-card {
+  --card-frame-base: url("/card-frames/minion/frame.png");
+  --card-frame-art-window: url("/card-frames/minion/art-window.png");
+  --card-frame-title-plate: url("/card-frames/minion/title-plate.png"), url("/card-frames/common/title-plate.png");
+  --card-frame-text-box: url("/card-frames/minion/text-box.png"), url("/card-frames/common/text-box.png");
+  --card-frame-ornaments: url("/card-frames/minion/ornaments.png");
+  --card-frame-cost-gem: url("/card-frames/minion/cost-gem.png"), url("/card-frames/common/cost-gem.png");
+}
+
+.card.spell {
+  --card-frame-base: url("/card-frames/spell/frame.png");
+  --card-frame-art-window: url("/card-frames/spell/art-window.png");
+  --card-frame-title-plate: url("/card-frames/spell/title-plate.png"), url("/card-frames/common/title-plate.png");
+  --card-frame-text-box: url("/card-frames/spell/text-box.png"), url("/card-frames/common/text-box.png");
+  --card-frame-ornaments: url("/card-frames/spell/ornaments.png");
+  --card-frame-cost-gem: url("/card-frames/spell/cost-gem.png"), url("/card-frames/common/cost-gem.png");
+}
+
+.card.persistent,
+.persistent-card.persistent {
+  --card-frame-base: url("/card-frames/persistent/frame.png");
+  --card-frame-art-window: url("/card-frames/persistent/art-window.png");
+  --card-frame-title-plate: url("/card-frames/persistent/title-plate.png"), url("/card-frames/common/title-plate.png");
+  --card-frame-text-box: url("/card-frames/persistent/text-box.png"), url("/card-frames/common/text-box.png");
+  --card-frame-ornaments: url("/card-frames/persistent/ornaments.png");
+  --card-frame-cost-gem: url("/card-frames/persistent/cost-gem.png"), url("/card-frames/common/cost-gem.png");
+}
+
+.card.trap,
+.persistent-card.trap {
+  --card-frame-base: url("/card-frames/trap/frame.png");
+  --card-frame-art-window: url("/card-frames/trap/art-window.png");
+  --card-frame-title-plate: url("/card-frames/trap/title-plate.png"), url("/card-frames/common/title-plate.png");
+  --card-frame-text-box: url("/card-frames/trap/text-box.png"), url("/card-frames/common/text-box.png");
+  --card-frame-ornaments: url("/card-frames/trap/ornaments.png");
+  --card-frame-cost-gem: url("/card-frames/trap/cost-gem.png"), url("/card-frames/common/cost-gem.png");
+}
+
+.card-frame-layers {
+  position: absolute !important;
+  inset: 0;
+  z-index: 0 !important;
+  display: block;
+  overflow: hidden;
+  border-radius: inherit;
+  pointer-events: none;
+}
+
+.card-frame-layer {
+  position: absolute;
+  display: block;
+  pointer-events: none;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: 100% 100%;
+}
+
+.card-frame-base,
+.card-frame-ornaments {
+  inset: 0;
+}
+
+.card-frame-base {
+  background-image: var(--card-frame-base);
+}
+
+.card-frame-art-window {
+  left: 8%;
+  right: 8%;
+  top: 18%;
+  height: 32%;
+  background-image: var(--card-frame-art-window);
+}
+
+.card-frame-title-plate {
+  left: 7%;
+  right: 7%;
+  top: 11%;
+  height: 18%;
+  background-image: var(--card-frame-title-plate);
+}
+
+.card-frame-text-box {
+  left: 7%;
+  right: 7%;
+  bottom: 13%;
+  height: 31%;
+  background-image: var(--card-frame-text-box);
+}
+
+.card-frame-ornaments {
+  background-image: var(--card-frame-ornaments);
+}
+
+.card-frame-layers + .card-cost,
+.card-cost,
+.card-detail-cost {
+  background-image:
+    var(--card-frame-cost-gem),
+    radial-gradient(circle at 30% 20%, rgba(255, 255, 255, 0.92), transparent 26%),
+    linear-gradient(135deg, #5ab9e7, #8d68e8 62%, #f47faa);
+  background-position: center;
+  background-size: 100% 100%, auto, auto;
+  background-repeat: no-repeat;
+}
+
+.stat-badge.attack {
+  background-image: var(--card-frame-stat-attack), linear-gradient(135deg, rgba(255, 239, 248, 0.9), rgba(255, 214, 231, 0.72));
+  background-size: 100% 100%, auto;
+}
+
+.stat-badge.health {
+  background-image: var(--card-frame-stat-health), linear-gradient(135deg, rgba(237, 255, 246, 0.9), rgba(211, 244, 228, 0.74));
+  background-size: 100% 100%, auto;
+}
+
+.stat-badge.threat {
+  background-image: var(--card-frame-stat-threat), linear-gradient(135deg, rgba(255, 249, 225, 0.92), rgba(255, 232, 148, 0.62));
+  background-size: 100% 100%, auto;
+}
+
+.minion-card.ready {
+  box-shadow: 0 0 0 2px rgba(142, 232, 189, 0.48), 0 0 26px rgba(142, 232, 189, 0.22), var(--shadow);
+}
+
+.minion-card.selected {
+  box-shadow: 0 0 0 2px rgba(118, 216, 245, 0.56), 0 0 28px rgba(118, 216, 245, 0.24), var(--shadow);
+}
+
+.minion-card.targetable,
+.hud.targetable,
+.card.targetable {
+  outline: 2px solid rgba(244, 127, 170, 0.52);
+  outline-offset: 3px;
+  animation: moe-target-pulse 1.2s ease-in-out infinite;
+}
+
+.keyword-badge,
+.field-count-badge,
+.hud-stat,
+.stat-badge,
+.card-play-state {
+  border-color: rgba(168, 87, 130, 0.18);
+  background: rgba(255, 255, 255, 0.72);
+}
+
+.keyword-badge {
+  color: #5d355f;
+}
+
+.card-play-state {
+  background: rgba(142, 232, 189, 0.18);
+  color: #2d7151;
+}
+
+.card-play-state.blocked {
+  background: rgba(137, 115, 132, 0.12);
+}
+
+.stat-badge.attack {
+  color: #91405b;
+  background: rgba(244, 127, 170, 0.16);
+}
+
+.stat-badge.health {
+  color: #277053;
+  background: rgba(142, 232, 189, 0.18);
+}
+
+.stat-badge.threat {
+  color: #6f5d22;
+  background: rgba(255, 232, 148, 0.24);
+}
+
+.hud {
+  border-color: rgba(168, 87, 130, 0.22);
+  background:
+    radial-gradient(circle at 92% 10%, rgba(255, 255, 255, 0.64), transparent 20%),
+    linear-gradient(145deg, rgba(255, 252, 255, 0.94), rgba(255, 239, 248, 0.88) 56%, rgba(238, 250, 255, 0.86));
+  box-shadow: 0 16px 36px rgba(103, 52, 84, 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.54);
+}
+
+.hud:disabled {
+  opacity: 1;
+}
+
+.hud.enemy {
+  background:
+    radial-gradient(circle at 92% 10%, rgba(255, 255, 255, 0.62), transparent 22%),
+    linear-gradient(145deg, rgba(252, 248, 255, 0.94), rgba(239, 230, 255, 0.9) 56%, rgba(255, 239, 246, 0.86));
+}
+
+.hud.player {
+  background:
+    radial-gradient(circle at 92% 10%, rgba(255, 255, 255, 0.62), transparent 22%),
+    linear-gradient(145deg, rgba(255, 252, 255, 0.95), rgba(235, 252, 245, 0.9) 54%, rgba(255, 239, 248, 0.86));
+}
+
+.hud-identity {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.hud-avatar {
+  position: relative;
+  flex: 0 0 auto;
+  width: 46px;
+  height: 46px;
+  border: 2px solid rgba(255, 255, 255, 0.8);
+  border-radius: 50% 50% 44% 44%;
+  background:
+    radial-gradient(circle at 34% 38%, #4f3154 0 2px, transparent 2.6px),
+    radial-gradient(circle at 66% 38%, #4f3154 0 2px, transparent 2.6px),
+    radial-gradient(ellipse at 50% 64%, rgba(244, 127, 170, 0.7) 0 5px, transparent 6px),
+    linear-gradient(160deg, #fff8fb, #ffd8e8 72%);
+  box-shadow: 0 10px 22px rgba(244, 127, 170, 0.18), inset 0 -7px 0 rgba(244, 127, 170, 0.12);
+}
+
+.hud-avatar::before,
+.hud-avatar::after {
+  content: "";
+  position: absolute;
+  top: -4px;
+  width: 18px;
+  height: 18px;
+  border-radius: 12px 12px 4px 12px;
+  background: linear-gradient(135deg, #f47faa, #b59cff);
+  box-shadow: inset 0 0 0 4px rgba(255, 255, 255, 0.32);
+}
+
+.hud-avatar::before {
+  left: 2px;
+  transform: rotate(-24deg);
+}
+
+.hud-avatar::after {
+  right: 2px;
+  transform: rotate(24deg) scaleX(-1);
+}
+
+.hud-avatar.enemy::before,
+.hud-avatar.enemy::after {
+  background: linear-gradient(135deg, #b59cff, #76d8f5);
+}
+
+.hud-avatar-face {
+  position: absolute;
+  left: 50%;
+  bottom: 11px;
+  width: 10px;
+  height: 5px;
+  border-bottom: 2px solid rgba(79, 49, 84, 0.72);
+  border-radius: 0 0 999px 999px;
+  transform: translateX(-50%);
+}
+
+.hud-title {
+  color: var(--moe-ink);
+  letter-spacing: 0;
+}
+
+.hud-resource {
+  border-color: rgba(168, 87, 130, 0.16);
+}
+
+.hud-resource.hp {
+  background: linear-gradient(135deg, rgba(255, 239, 248, 0.96), rgba(255, 214, 231, 0.92));
+}
+
+.hud-resource.mana {
+  background: linear-gradient(135deg, rgba(237, 251, 255, 0.96), rgba(205, 239, 255, 0.9));
+}
+
+.hud-resource-emblem.hp {
+  background:
+    radial-gradient(circle at 30% 25%, rgba(255, 255, 255, 0.9), rgba(255, 255, 255, 0.1) 34%),
+    linear-gradient(145deg, rgba(244, 127, 170, 0.36), rgba(187, 95, 213, 0.28));
+}
+
+.hud-resource-emblem.mana {
+  background:
+    radial-gradient(circle at 30% 25%, rgba(255, 255, 255, 0.9), rgba(255, 255, 255, 0.1) 34%),
+    linear-gradient(145deg, rgba(118, 216, 245, 0.38), rgba(141, 104, 232, 0.26));
+}
+
+.slot-fill.jump {
+  background: linear-gradient(90deg, #f47faa, #bb5fd5);
+}
+
+.slot-fill.god {
+  background: linear-gradient(90deg, #ffe894, #8ee8bd, #76d8f5);
+}
+
+.slot-card.ready {
+  border-color: rgba(142, 232, 189, 0.38);
+  background: rgba(237, 255, 246, 0.78);
+}
+
+.slot-card.full {
+  border-color: rgba(255, 232, 148, 0.44);
+  background: rgba(255, 248, 218, 0.84);
+}
+
+.effect-banner {
+  border-radius: 24px;
+  box-shadow: 0 18px 46px rgba(103, 52, 84, 0.2), var(--moe-glow);
+}
+
+.effect-banner-mark {
+  width: 18px;
+  border-radius: 999px;
+  background: linear-gradient(180deg, #fff, #ffd9e9 54%, #76d8f5);
+}
+
+.effect-banner.summon {
+  background: linear-gradient(135deg, rgba(244, 127, 170, 0.94), rgba(187, 95, 213, 0.9));
+}
+
+.effect-banner.persistent {
+  background: linear-gradient(135deg, rgba(255, 205, 112, 0.94), rgba(142, 232, 189, 0.88));
+}
+
+.effect-banner.spell {
+  background: linear-gradient(135deg, rgba(90, 185, 231, 0.94), rgba(141, 104, 232, 0.88));
+}
+
+.effect-banner.trap {
+  background: linear-gradient(135deg, rgba(181, 156, 255, 0.94), rgba(244, 127, 170, 0.88));
+}
+
+.card-detail-tooltip {
+  border-color: rgba(168, 87, 130, 0.22);
+  background:
+    linear-gradient(145deg, rgba(255, 253, 255, 0.98), rgba(255, 242, 249, 0.96) 60%, rgba(239, 251, 255, 0.96)),
+    var(--panel-strong);
+  box-shadow: 0 20px 58px rgba(103, 52, 84, 0.22), var(--moe-glow);
+}
+
+.game-brand-lockup {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.game-brand-crest {
+  position: relative;
+  flex: 0 0 auto;
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 35% 28%, rgba(255, 255, 255, 0.95), transparent 28%),
+    conic-gradient(from 18deg, #fff3a8, #f47faa, #b59cff, #76d8f5, #8ee8bd, #fff3a8);
+  box-shadow: 0 10px 22px rgba(103, 52, 84, 0.18), 0 0 24px rgba(244, 127, 170, 0.28);
+}
+
+.game-brand-crest::before,
+.game-brand-crest::after {
+  content: "";
+  position: absolute;
+  inset: 9px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.78);
+  box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.74);
+}
+
+.game-brand-crest::after {
+  inset: 16px;
+  border-radius: 30% 70% 58% 42%;
+  background: linear-gradient(135deg, #f47faa, #76d8f5);
+  transform: rotate(28deg);
+}
+
+.game-shell .hero-copy h1 {
+  color: #40233f;
+  text-shadow: 0 2px 0 rgba(255, 255, 255, 0.74), 0 0 18px rgba(244, 127, 170, 0.18);
+}
+
+.game-shell .hero {
+  background:
+    linear-gradient(135deg, rgba(255, 252, 255, 0.94), rgba(255, 235, 246, 0.9) 42%, rgba(233, 249, 255, 0.88)),
+    var(--panel);
+}
+
+.game-shell .battle-hero-stats .pill {
+  position: relative;
+  overflow: hidden;
+  border-radius: 16px;
+  background:
+    radial-gradient(circle at 18% 18%, rgba(255, 255, 255, 0.84), transparent 28%),
+    linear-gradient(145deg, rgba(255, 255, 255, 0.76), rgba(255, 229, 241, 0.56));
+}
+
+.game-shell .battle-hero-stats .pill::before {
+  content: "";
+  position: absolute;
+  left: 9px;
+  top: 9px;
+  width: 10px;
+  height: 10px;
+  border-radius: 50% 50% 50% 0;
+  background: linear-gradient(135deg, var(--moe-pink), var(--moe-cyan));
+  transform: rotate(-20deg);
+  box-shadow: 0 0 10px rgba(244, 127, 170, 0.36);
+}
+
+.arcana-table-art {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.22), rgba(255, 244, 252, 0.08) 42%, rgba(70, 45, 95, 0.12)),
+    url("/ui/moe-arcana-table.svg") center / cover no-repeat;
+  opacity: 0.72;
+  filter: saturate(1.08);
+}
+
+.arcana-table-art::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse at center, transparent 0 48%, rgba(56, 31, 72, 0.18) 100%),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.12), transparent 32%, transparent 68%, rgba(255, 255, 255, 0.12));
+}
+
+.game-shell .board-shell {
+  border-radius: 24px;
+  background:
+    linear-gradient(180deg, rgba(255, 252, 255, 0.82), rgba(244, 237, 255, 0.72)),
+    #fdf3fb;
+  box-shadow: 0 24px 58px rgba(64, 35, 63, 0.18), 0 0 48px rgba(118, 216, 245, 0.18);
+}
+
+.game-shell .board-shell::before {
+  inset: 12px;
+  z-index: 1;
+  border-radius: 20px;
+  background:
+    radial-gradient(ellipse at 50% 49%, rgba(255, 255, 255, 0.16), transparent 48%),
+    radial-gradient(circle at 18% 18%, rgba(255, 217, 236, 0.18), transparent 25%),
+    radial-gradient(circle at 82% 82%, rgba(118, 216, 245, 0.16), transparent 28%);
+}
+
+.game-shell .board-shell > .battle-layout,
+.game-shell .board-shell > .effect-layer,
+.game-shell .board-shell > .turn-seal {
+  position: relative;
+  z-index: 2;
+}
+
+.turn-seal {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  display: grid;
+  place-items: center;
+  width: clamp(86px, 7vw, 120px);
+  height: clamp(86px, 7vw, 120px);
+  border: 2px solid rgba(255, 255, 255, 0.52);
+  border-radius: 50%;
+  color: rgba(255, 255, 255, 0.72);
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: clamp(34px, 3vw, 52px);
+  font-weight: 800;
+  pointer-events: none;
+  transform: translate(-50%, -50%);
+  box-shadow: inset 0 0 0 12px rgba(255, 255, 255, 0.08), 0 0 38px rgba(244, 127, 170, 0.14);
+  text-shadow: 0 3px 12px rgba(68, 38, 80, 0.2);
+  opacity: 0.72;
+}
+
+.turn-seal::before,
+.turn-seal::after {
+  content: "";
+  position: absolute;
+  inset: -10px;
+  border-radius: 50%;
+  border: 1px dashed rgba(255, 255, 255, 0.42);
+  animation: moe-sigil-spin 16s linear infinite;
+}
+
+.turn-seal::after {
+  inset: 14px;
+  border-style: solid;
+  animation-duration: 22s;
+  animation-direction: reverse;
+}
+
+.turn-seal.player {
+  background: radial-gradient(circle, rgba(142, 232, 189, 0.28), rgba(244, 127, 170, 0.12) 62%, transparent 72%);
+}
+
+.turn-seal.enemy {
+  background: radial-gradient(circle, rgba(181, 156, 255, 0.28), rgba(118, 216, 245, 0.12) 62%, transparent 72%);
+}
+
+.game-shell .battle-layout {
+  position: relative;
+  z-index: 2;
+}
+
+.game-shell .field-zone,
+.game-shell .hand-zone {
+  border-radius: 20px;
+  border-color: rgba(255, 255, 255, 0.46);
+  background:
+    linear-gradient(145deg, rgba(255, 255, 255, 0.42), rgba(255, 235, 247, 0.24) 48%, rgba(229, 248, 255, 0.28)),
+    rgba(255, 255, 255, 0.2);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.5),
+    inset 0 -18px 42px rgba(82, 48, 93, 0.06),
+    0 12px 30px rgba(64, 35, 63, 0.08);
+  backdrop-filter: blur(5px);
+}
+
+.game-shell .enemy-half .field-zone {
+  background:
+    linear-gradient(145deg, rgba(244, 238, 255, 0.54), rgba(255, 235, 247, 0.22) 54%, rgba(229, 248, 255, 0.24)),
+    rgba(255, 255, 255, 0.18);
+}
+
+.game-shell .player-half .field-zone {
+  background:
+    linear-gradient(145deg, rgba(237, 255, 246, 0.52), rgba(255, 235, 247, 0.24) 54%, rgba(244, 238, 255, 0.24)),
+    rgba(255, 255, 255, 0.2);
+}
+
+.game-shell .hand-zone {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.48), rgba(255, 232, 245, 0.24)),
+    rgba(255, 255, 255, 0.22);
+}
+
+.game-shell .zone-header {
+  padding: 2px 2px 0;
+}
+
+.game-shell .section-title {
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.76);
+}
+
+.card-art {
+  position: relative;
+  display: block;
+  min-height: 78px;
+  margin: 10px 0 9px;
+  border: 2px solid rgba(255, 255, 255, 0.68);
+  border-radius: 16px;
+  overflow: hidden;
+  background-color: rgba(255, 255, 255, 0.44);
+  background-position: center;
+  background-size: cover;
+  box-shadow: inset 0 0 0 1px rgba(168, 87, 130, 0.12), 0 9px 18px rgba(103, 52, 84, 0.1);
+}
+
+.card-art.minion,
+.card-art.unit {
+  background-image: url("/ui/card-art-minion.svg");
+}
+
+.card-art.spell {
+  background-image: url("/ui/card-art-spell.svg");
+}
+
+.card-art.persistent,
+.card-art.persistent-unit {
+  background-image: url("/ui/card-art-persistent.svg");
+}
+
+.card-art.trap {
+  background-image: url("/ui/card-art-trap.svg");
+}
+
+.card-art::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(120deg, rgba(255, 255, 255, 0.44), transparent 28%, transparent 66%, rgba(255, 255, 255, 0.22)),
+    radial-gradient(circle at 18% 14%, rgba(255, 255, 255, 0.7), transparent 18%);
+}
+
+.card-art-glass {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(100deg, transparent 0 35%, rgba(255, 255, 255, 0.36) 48%, transparent 62% 100%);
+  transform: translateX(-120%);
+}
+
+.card:hover .card-art-glass,
+.minion-card:hover .card-art-glass,
+.persistent-card:hover .card-art-glass {
+  animation: card-glass-sweep 820ms ease-out;
+}
+
+.card-art-spark {
+  position: absolute;
+  width: 14px;
+  height: 14px;
+  background: linear-gradient(135deg, #fff3a8, #ffffff);
+  clip-path: polygon(50% 0, 62% 35%, 100% 50%, 62% 65%, 50% 100%, 38% 65%, 0 50%, 38% 35%);
+  filter: drop-shadow(0 0 6px rgba(255, 243, 168, 0.6));
+}
+
+.card-art-spark.one {
+  right: 16px;
+  top: 14px;
+}
+
+.card-art-spark.two {
+  left: 15px;
+  bottom: 13px;
+  width: 10px;
+  height: 10px;
+  background: linear-gradient(135deg, #ffffff, #76d8f5);
+}
+
+.game-shell .card {
+  min-height: 196px;
+  max-height: 228px;
+  grid-template-rows: auto auto auto auto minmax(0, 1fr) auto auto;
+  border-radius: 20px;
+  border-width: 2px;
+  padding: 10px 10px 11px;
+  transform-origin: center 125%;
+  --fan-offset: calc(var(--fan-index, 0) - ((var(--fan-count, 1) - 1) / 2));
+  transform: rotate(calc(var(--fan-offset) * 1.25deg));
+}
+
+.game-shell .hand-row > .card {
+  margin-left: -10px;
+}
+
+.game-shell .hand-row > .card:first-child {
+  margin-left: 0;
+}
+
+.game-shell .hand-row > .card:hover:not([aria-disabled="true"]) {
+  z-index: 5;
+  transform: translateY(-18px) scale(1.06) rotate(0deg);
+}
+
+.game-shell .card .card-art {
+  min-height: 56px;
+  margin: 7px 0 7px;
+  border-radius: 14px;
+}
+
+.game-shell .card h4 {
+  padding-right: 34px;
+  color: #3d2442;
+  font-size: 14px;
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.74);
+}
+
+.game-shell .card-cost {
+  top: 8px;
+  right: 8px;
+  min-width: 32px;
+  min-height: 32px;
+  display: grid;
+  place-items: center;
+  border: 2px solid rgba(255, 255, 255, 0.68);
+  font-size: 13px;
+}
+
+.game-shell .minion-card {
+  min-height: 166px;
+  max-height: 196px;
+  grid-template-rows: auto auto auto minmax(0, 1fr) auto auto;
+  border-radius: 20px;
+  border-width: 2px;
+  padding: 9px;
+}
+
+.game-shell .minion-card .card-art {
+  min-height: 44px;
+  max-height: 44px;
+  margin: 0 0 7px;
+  border-radius: 13px;
+}
+
+.game-shell .persistent-card {
+  min-height: 106px;
+  max-height: 128px;
+  grid-template-rows: auto auto auto minmax(0, 1fr);
+  border-radius: 18px;
+  border-width: 2px;
+  padding: 8px;
+}
+
+.game-shell .persistent-card .card-art {
+  min-height: 28px;
+  max-height: 28px;
+  margin: 0 0 6px;
+  border-radius: 12px;
+}
+
+.minion-card::before,
+.persistent-card::before {
+  right: 8px;
+  top: 8px;
+  width: 24px;
+  height: 24px;
+  opacity: 0.9;
+  z-index: 2;
+}
+
+.game-shell .minion-card h4,
+.game-shell .persistent-card h4 {
+  color: #3d2442;
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.7);
+}
+
+.game-shell .card p,
+.game-shell .minion-card p,
+.game-shell .persistent-card p {
+  color: #654e68;
+}
+
+.stats-line {
+  position: relative;
+}
+
+.stat-badge {
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.56), 0 6px 12px rgba(103, 52, 84, 0.08);
+}
+
+.game-shell .stat-badge {
+  border-radius: 12px;
+}
+
+.hud {
+  transform-style: preserve-3d;
+}
+
+.game-shell .hud {
+  border-width: 2px;
+  border-radius: 22px;
+}
+
+.game-shell .hud::before {
+  content: "";
+  position: absolute;
+  inset: 7px;
+  border-radius: 18px;
+  pointer-events: none;
+  border: 1px solid rgba(255, 255, 255, 0.54);
+  background:
+    linear-gradient(120deg, rgba(255, 255, 255, 0.2), transparent 38%),
+    radial-gradient(circle at 14% 16%, rgba(255, 255, 255, 0.48), transparent 18%);
+}
+
+.game-shell .hud > * {
+  position: relative;
+  z-index: 1;
+}
+
+.game-shell .hud-avatar {
+  width: 54px;
+  height: 54px;
+  border-width: 3px;
+}
+
+.game-shell .hud-title {
+  font-size: 20px;
+}
+
+.game-shell .hud-passive {
+  border-color: rgba(255, 255, 255, 0.52);
+  background: rgba(255, 255, 255, 0.5);
+}
+
+.game-shell .hud-resource {
+  border-width: 2px;
+}
+
+.game-shell .hud-resource-emblem {
+  box-shadow: 0 8px 16px rgba(103, 52, 84, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.5);
+}
+
+.game-shell .slot-card {
+  border-width: 2px;
+  background: rgba(255, 255, 255, 0.54);
+}
+
+.slot-bar {
+  border: 1px solid rgba(255, 255, 255, 0.62);
+  box-shadow: inset 0 2px 5px rgba(64, 35, 63, 0.08);
+}
+
+.slot-fill {
+  box-shadow: 0 0 14px currentColor;
+}
+
+.sidebar-card,
+.log-card {
+  backdrop-filter: blur(8px);
+}
+
+.game-shell .sidebar-card,
+.game-shell .log-card {
+  border-radius: 22px;
+  border-width: 2px;
+  background:
+    linear-gradient(145deg, rgba(255, 255, 255, 0.66), rgba(255, 239, 248, 0.46) 58%, rgba(235, 250, 255, 0.42)),
+    rgba(255, 255, 255, 0.22);
+}
+
+.game-shell .momentum-side {
+  border-color: rgba(255, 255, 255, 0.46);
+  background: rgba(255, 255, 255, 0.48);
+}
+
+.game-shell .momentum-side.player {
+  background: linear-gradient(150deg, rgba(255, 239, 248, 0.68), rgba(237, 255, 246, 0.5));
+}
+
+.game-shell .momentum-side.enemy {
+  background: linear-gradient(150deg, rgba(244, 238, 255, 0.7), rgba(237, 251, 255, 0.5));
+}
+
+.game-shell .log-list {
+  scrollbar-color: rgba(244, 127, 170, 0.42) rgba(255, 255, 255, 0.2);
+}
+
+.game-shell .log-item {
+  border-color: rgba(255, 255, 255, 0.5);
+  background: rgba(255, 255, 255, 0.56);
+}
+
+.modal-backdrop {
+  background:
+    radial-gradient(circle at 50% 45%, rgba(244, 127, 170, 0.18), transparent 36%),
+    rgba(45, 26, 58, 0.46);
+}
+
+.modal-card {
+  border-width: 2px;
+  box-shadow: 0 28px 70px rgba(45, 26, 58, 0.24), var(--moe-glow);
+}
+
+@media (min-width: 1181px) {
+  .game-shell .hand-row {
+    padding: 16px 14px 8px;
+  }
+
+  .game-shell .hand-zone {
+    overflow: visible;
+  }
+
+  .game-shell .battle-main {
+    grid-template-rows: minmax(166px, 1fr) minmax(190px, 1.08fr) clamp(206px, 24vh, 248px);
+  }
+}
+
+@media (max-width: 1180px) {
+  .moe-ribbon {
+    top: 10px;
+    right: 12px;
+  }
+}
+
+@media (max-width: 700px) {
+  .moe-ribbon {
+    display: none;
+  }
+
+  .hud-identity {
+    align-items: flex-start;
+  }
+
+  .hud-avatar {
+    width: 42px;
+    height: 42px;
+  }
+}
+
 @keyframes attack-lunge {
   0% {
     transform: translate3d(0, 0, 0) scale(1);
@@ -2161,6 +3474,55 @@ button:disabled {
   }
 }
 
+@keyframes moe-sparkle-drift {
+  0% {
+    background-position: 0 0, 28px 42px, 74px 18px;
+  }
+  100% {
+    background-position: 96px 96px, 160px 174px, 230px 174px;
+  }
+}
+
+@keyframes moe-orbit-glow {
+  0%,
+  100% {
+    opacity: 0.55;
+    transform: translate3d(0, 0, 0) scale(0.98);
+  }
+  50% {
+    opacity: 0.9;
+    transform: translate3d(0, -10px, 0) scale(1.04);
+  }
+}
+
+@keyframes moe-target-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(244, 127, 170, 0.12), var(--shadow);
+  }
+  50% {
+    box-shadow: 0 0 0 6px rgba(244, 127, 170, 0.1), 0 0 30px rgba(244, 127, 170, 0.22), var(--shadow);
+  }
+}
+
+@keyframes moe-sigil-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes card-glass-sweep {
+  0% {
+    transform: translateX(-120%);
+  }
+  100% {
+    transform: translateX(120%);
+  }
+}
+
 @media (max-width: 1180px) {
   .game-shell {
     width: auto;
@@ -2250,8 +3612,7 @@ button:disabled {
 
   .character-grid,
   .talent-grid,
-  .deck-choice-grid,
-  .mulligan-grid {
+  .deck-choice-grid {
     grid-template-columns: 1fr;
   }
 
@@ -2292,5 +3653,2895 @@ button:disabled {
   .hud-resource-glyph.mana {
     width: 24px;
     height: 24px;
+  }
+}
+
+/* Layout stabilization: keep the ornate card-table skin inside the viewport. */
+.game-shell,
+.game-shell * {
+  max-width: 100%;
+}
+
+.game-shell {
+  isolation: isolate;
+}
+
+.game-shell .hero,
+.game-shell .board-shell,
+.game-shell .battle-layout,
+.game-shell .battle-main,
+.game-shell .battlefield-half,
+.game-shell .zone,
+.game-shell .hud,
+.game-shell .sidebar,
+.game-shell .sidebar-card,
+.game-shell .log-card {
+  min-width: 0;
+}
+
+.game-shell .hero {
+  overflow: hidden;
+}
+
+.game-shell .moe-ribbon {
+  top: 8px;
+  right: 10px;
+  max-width: min(230px, calc(100% - 20px));
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.game-shell .board-shell {
+  overflow: hidden;
+  contain: layout paint;
+}
+
+.game-shell .arcana-table-art {
+  inset: 0;
+  overflow: hidden;
+}
+
+.game-shell .turn-seal {
+  width: clamp(58px, 5.2vw, 84px);
+  height: clamp(58px, 5.2vw, 84px);
+  font-size: clamp(24px, 2.2vw, 38px);
+  opacity: 0.45;
+}
+
+.game-shell .turn-seal::before {
+  inset: -5px;
+}
+
+.game-shell .turn-seal::after {
+  inset: 10px;
+}
+
+.game-shell .minion-row,
+.game-shell .persistent-row,
+.game-shell .hand-row {
+  max-width: 100%;
+  min-width: 0;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  overflow-y: hidden;
+  overscroll-behavior-x: contain;
+  scrollbar-width: thin;
+}
+
+.game-shell .hand-zone,
+.game-shell .field-zone,
+.game-shell .zone-stack {
+  overflow: hidden;
+}
+
+.game-shell .hand-row {
+  align-items: stretch;
+  padding: 6px 4px 5px;
+}
+
+.game-shell .minion-row > .minion-card,
+.game-shell .persistent-row > .persistent-card,
+.game-shell .hand-row > .card {
+  flex-grow: 0;
+  flex-shrink: 0;
+  margin-left: 0;
+  transform: none;
+}
+
+.game-shell .hand-row > .card {
+  width: clamp(132px, 7.2vw, 158px);
+  flex-basis: clamp(132px, 7.2vw, 158px);
+}
+
+.game-shell .hand-row > .card:hover:not([aria-disabled="true"]) {
+  z-index: 5;
+  transform: translateY(-4px);
+}
+
+.hand-row .card:hover:not([aria-disabled="true"]) {
+  transform: translateY(-4px);
+}
+
+.game-shell .card {
+  min-height: 176px;
+  max-height: 196px;
+  grid-template-rows: auto auto auto auto minmax(0, 1fr) auto auto;
+}
+
+.game-shell .card .card-art {
+  min-height: 44px;
+  max-height: 48px;
+  margin: 6px 0;
+}
+
+.game-shell .minion-card {
+  min-height: 146px;
+  max-height: 168px;
+}
+
+.game-shell .minion-card .card-art {
+  min-height: 34px;
+  max-height: 36px;
+}
+
+.game-shell .persistent-card {
+  min-height: 86px;
+  max-height: 108px;
+}
+
+.game-shell .persistent-card .card-art {
+  min-height: 22px;
+  max-height: 24px;
+}
+
+.game-shell .card h4,
+.game-shell .minion-card h4,
+.game-shell .persistent-card h4 {
+  min-width: 0;
+}
+
+.game-shell .card p,
+.game-shell .minion-card p,
+.game-shell .persistent-card p,
+.game-shell .small-note,
+.game-shell .action-hint p {
+  overflow-wrap: anywhere;
+}
+
+.game-shell .card-play-state,
+.game-shell .keyword-badge,
+.game-shell .field-count-badge,
+.game-shell .pill,
+.game-shell .hud-stat,
+.game-shell .stat-badge {
+  min-width: 0;
+}
+
+.game-shell .hud-avatar {
+  width: clamp(42px, 3.2vw, 50px);
+  height: clamp(42px, 3.2vw, 50px);
+}
+
+.game-shell .hud-resource-row {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.game-shell .hud-resource {
+  min-width: 0;
+}
+
+.game-shell .hud-resource-value {
+  font-size: clamp(20px, 1.55vw, 28px);
+}
+
+.game-shell .effect-layer {
+  max-width: calc(100% - 24px);
+}
+
+.card-detail-tooltip {
+  max-width: calc(100vw - 28px);
+}
+
+@media (min-width: 1181px) {
+  .game-shell .hand-zone {
+    overflow: hidden;
+  }
+
+  .game-shell .hand-row {
+    padding: 6px 4px 5px;
+  }
+
+  .game-shell .battle-main {
+    grid-template-rows: minmax(142px, 1fr) minmax(162px, 1.05fr) clamp(184px, 21vh, 212px);
+  }
+}
+
+@media (max-width: 1180px) {
+  .game-shell {
+    overflow-x: hidden;
+  }
+
+  .game-shell .board-shell {
+    overflow: hidden;
+  }
+
+  .game-shell .minion-row,
+  .game-shell .persistent-row,
+  .game-shell .hand-row {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    overflow-y: hidden;
+  }
+
+  .game-shell .minion-row > .minion-card {
+    width: clamp(150px, 34vw, 188px);
+    flex-basis: clamp(150px, 34vw, 188px);
+  }
+
+  .game-shell .persistent-row > .persistent-card {
+    width: clamp(150px, 36vw, 190px);
+    flex-basis: clamp(150px, 36vw, 190px);
+  }
+
+  .game-shell .hand-row > .card {
+    width: clamp(132px, 38vw, 172px);
+    flex-basis: clamp(132px, 38vw, 172px);
+  }
+
+  .game-shell .hand-row > .card:hover:not([aria-disabled="true"]),
+  .hand-row .card:hover:not([aria-disabled="true"]) {
+    transform: none;
+  }
+}
+
+@media (max-width: 700px) {
+  .game-shell .hero {
+    overflow: hidden;
+  }
+
+  .game-shell .card,
+  .game-shell .minion-card,
+  .game-shell .persistent-card {
+    width: auto;
+  }
+
+  .game-shell .turn-seal {
+    display: none;
+  }
+
+  .game-shell .hand-row > .card {
+    width: min(72vw, 176px);
+    flex-basis: min(72vw, 176px);
+  }
+
+  .game-shell .minion-row > .minion-card,
+  .game-shell .persistent-row > .persistent-card {
+    width: min(76vw, 190px);
+    flex-basis: min(76vw, 190px);
+  }
+}
+
+/* Global responsive guardrails for setup and mulligan screens. */
+.app-shell,
+.legacy-app-root,
+.setup-grid,
+.setup-panel,
+.character-grid,
+.talent-grid,
+.deck-choice-grid,
+.hero,
+.hero-stats,
+.option-card {
+  min-width: 0;
+  max-width: 100%;
+}
+
+html,
+body,
+#app,
+#root {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+.app-shell {
+  width: min(100%, 1380px);
+}
+
+.setup-grid,
+.character-grid,
+.talent-grid,
+.deck-choice-grid {
+  width: 100%;
+}
+
+.character-grid {
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr));
+}
+
+.talent-grid,
+.deck-choice-grid {
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 180px), 1fr));
+}
+
+.hero > *,
+.hero > div,
+.hero-copy,
+.setup-panel > *,
+.option-card > *,
+.pill > *,
+.flex-between > *,
+.setup-toolbar > *,
+.game-toolbar > * {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.hero h1,
+.setup-panel h2,
+.option-card h3,
+.option-card h4,
+.hud-title,
+.section-title {
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.row,
+.setup-toolbar,
+.game-toolbar {
+  flex-wrap: wrap;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.setup-panel,
+.option-card,
+.hero {
+  overflow: hidden;
+}
+
+.flex-between {
+  min-width: 0;
+}
+
+.small-note,
+.option-card p,
+.setup-panel p,
+.hero p,
+.pill {
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 900px) {
+  .hero {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 14px;
+  }
+
+  .hero-stats {
+    width: 100%;
+    min-width: 0;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .moe-ribbon {
+    display: none;
+  }
+
+  .flex-between {
+    align-items: flex-start;
+    flex-wrap: wrap;
+  }
+
+  .flex-between > * {
+    min-width: 0;
+  }
+}
+
+@media (max-width: 700px) {
+  .app-shell {
+    width: 100%;
+    max-width: 100%;
+    padding-inline: 12px;
+    overflow-x: hidden;
+  }
+
+  .hero {
+    padding: 16px 14px;
+    border-radius: 22px;
+  }
+
+  .hero h1 {
+    font-size: clamp(25px, 8.5vw, 34px);
+    line-height: 1.08;
+  }
+
+  .hero-stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+  }
+
+  .pill {
+    min-height: 68px;
+    padding: 8px;
+    font-size: 13px;
+  }
+
+  .setup-panel {
+    padding: 16px;
+    border-radius: 20px;
+  }
+
+  .option-card {
+    width: 100%;
+    padding: 14px;
+  }
+
+  .character-grid,
+  .talent-grid,
+  .deck-choice-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (min-width: 431px) and (max-width: 540px) {
+  .app-shell {
+    width: 390px;
+    max-width: 390px;
+    margin-left: 0;
+    margin-right: auto;
+  }
+
+  .hero-stats {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 430px) {
+  .hero-stats {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .pill {
+    min-height: 0;
+  }
+}
+
+/* Battle hand visibility: the hand row must never be treated as disposable overflow. */
+.game-shell.game-shell {
+  width: 100%;
+  max-width: none;
+}
+
+.game-shell .board-shell {
+  min-height: 0;
+}
+
+.game-shell .battle-layout,
+.game-shell .battle-main {
+  min-height: 0;
+}
+
+.game-shell .hand-zone {
+  min-height: 258px;
+  grid-template-rows: auto minmax(198px, 1fr);
+}
+
+.game-shell .hand-zone .zone-header {
+  align-items: center;
+  margin-bottom: 6px;
+}
+
+.game-shell .hand-zone .section-title {
+  white-space: nowrap;
+}
+
+.game-shell .hand-zone .game-toolbar {
+  margin-left: auto;
+  justify-content: flex-end;
+}
+
+.game-shell .hand-row {
+  height: 100%;
+  min-height: 198px;
+  align-items: flex-start;
+  padding: 4px 4px 10px;
+}
+
+.game-shell .hand-row > .card {
+  height: 192px;
+  min-height: 192px;
+  max-height: 192px;
+}
+
+.game-shell .hand-row > .card:hover:not([aria-disabled="true"]),
+.hand-row .card:hover:not([aria-disabled="true"]) {
+  transform: translateY(-3px);
+}
+
+.game-shell .hand-row .card .card-art {
+  min-height: 42px;
+  max-height: 42px;
+  margin: 5px 0;
+}
+
+.game-shell .hand-row .card h4 {
+  font-size: 13px;
+  line-height: 1.15;
+}
+
+.game-shell .hand-row .card p {
+  line-height: 1.25;
+}
+
+@media (min-width: 1181px) {
+  .game-shell .battle-main {
+    grid-template-rows: minmax(118px, 0.75fr) minmax(150px, 0.9fr) minmax(270px, 28vh);
+  }
+}
+
+@media (max-height: 940px) and (min-width: 1181px) {
+  .game-shell {
+    gap: 8px;
+    padding: 8px 10px 10px;
+  }
+
+  .game-shell .hero {
+    padding: 10px 14px;
+  }
+
+  .game-shell .hero p {
+    margin-top: 3px;
+    line-height: 1.25;
+  }
+
+  .game-shell .board-shell {
+    padding: 10px;
+  }
+
+  .game-shell .battle-main {
+    gap: 8px;
+    grid-template-rows: minmax(104px, 0.7fr) minmax(132px, 0.84fr) minmax(244px, 29vh);
+  }
+
+  .game-shell .hand-zone {
+    min-height: 236px;
+    grid-template-rows: auto minmax(178px, 1fr);
+  }
+
+  .game-shell .hand-row {
+    min-height: 178px;
+  }
+
+  .game-shell .hand-row > .card {
+    height: 174px;
+    min-height: 174px;
+    max-height: 174px;
+    padding: 8px;
+  }
+
+  .game-shell .hand-row .card .card-art {
+    min-height: 34px;
+    max-height: 34px;
+  }
+
+  .game-shell .hand-row .card p {
+    margin-top: 5px;
+    font-size: 11px;
+  }
+
+  .game-shell .hand-row .card-play-state,
+  .game-shell .hand-row .stats-line {
+    display: none;
+  }
+}
+
+/* Character artwork slots: drop JPGs into public/characters/<character_id>/. */
+.character-option-card {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  gap: 12px;
+  align-content: start;
+  text-align: left;
+}
+
+.character-card-art {
+  position: relative;
+  display: block;
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  border-radius: 16px;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.72);
+  background-image:
+    linear-gradient(180deg, transparent, rgba(55, 36, 58, 0.12)),
+    var(--character-card-art),
+    radial-gradient(circle at 24% 22%, rgba(255, 255, 255, 0.78), transparent 18%),
+    radial-gradient(circle at 74% 32%, rgba(118, 216, 245, 0.28), transparent 24%),
+    linear-gradient(145deg, rgba(255, 223, 237, 0.96), rgba(236, 249, 255, 0.92));
+  background-position: center;
+  background-size: cover;
+  box-shadow: inset 0 0 0 1px rgba(168, 87, 130, 0.12), 0 12px 24px rgba(103, 52, 84, 0.1);
+}
+
+.character-card-art::before {
+  content: "";
+  position: absolute;
+  inset: 10px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.52);
+  pointer-events: none;
+}
+
+.character-card-art::after {
+  content: "";
+  position: absolute;
+  left: 14px;
+  bottom: 12px;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 35% 28%, rgba(255, 255, 255, 0.95), transparent 32%),
+    conic-gradient(from 18deg, #fff3a8, #f47faa, #b59cff, #76d8f5, #8ee8bd, #fff3a8);
+  box-shadow: 0 0 18px rgba(244, 127, 170, 0.28);
+  pointer-events: none;
+}
+
+.character-card-art-shine {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(105deg, rgba(255, 255, 255, 0.2), transparent 34%, transparent 64%, rgba(255, 255, 255, 0.22));
+  pointer-events: none;
+}
+
+.character-option-copy {
+  display: grid;
+  gap: 7px;
+  min-width: 0;
+}
+
+.character-option-copy p {
+  margin: 0;
+}
+
+.hud-avatar {
+  overflow: hidden;
+  background-image:
+    var(--character-avatar-art),
+    radial-gradient(circle at 34% 38%, #4f3154 0 2px, transparent 2.6px),
+    radial-gradient(circle at 66% 38%, #4f3154 0 2px, transparent 2.6px),
+    radial-gradient(ellipse at 50% 64%, rgba(244, 127, 170, 0.7) 0 5px, transparent 6px),
+    linear-gradient(160deg, #fff8fb, #ffd8e8 72%);
+  background-position: center;
+  background-size: cover;
+}
+
+.hud-avatar-img {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: inherit;
+}
+
+.hud-avatar.with-art::before,
+.hud-avatar.with-art::after,
+.hud-avatar.with-art .hud-avatar-face {
+  display: none;
+}
+
+/* Minimal card face: card text lives in hover detail, the face keeps only cost and battle stats. */
+.card > h4,
+.card > .card-meta,
+.card > .keyword-row,
+.card > p,
+.card > .card-play-state,
+.minion-card > h4,
+.minion-card > .keyword-row,
+.minion-card > .minion-meta,
+.minion-card > p,
+.persistent-card > h4,
+.persistent-card > .persistent-meta,
+.persistent-card > p {
+  display: none !important;
+}
+
+.card,
+.minion-card,
+.persistent-card {
+  display: grid;
+  grid-template-rows: minmax(0, 1fr) auto;
+  align-content: stretch;
+}
+
+.card .card-art,
+.minion-card .card-art,
+.persistent-card .card-art {
+  align-self: stretch;
+  width: 100%;
+}
+
+.card .stats-line,
+.minion-card .stats-line,
+.persistent-card .stats-line,
+.game-shell .hand-row .stats-line {
+  display: grid !important;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  width: 100%;
+  gap: 6px;
+  margin-top: auto;
+}
+
+.card .stat-badge,
+.minion-card .stat-badge,
+.persistent-card .stat-badge {
+  min-width: 0;
+  justify-content: center;
+  padding: 6px 5px;
+  font-size: 12px;
+  line-height: 1.1;
+  white-space: nowrap;
+}
+
+.game-shell .hand-row > .card {
+  grid-template-rows: minmax(0, 1fr) auto;
+}
+
+.game-shell .hand-row .card .card-art {
+  min-height: 86px !important;
+  max-height: none !important;
+  margin: 24px 0 8px;
+}
+
+.game-shell .minion-card .card-art {
+  min-height: 66px;
+  max-height: none;
+}
+
+.game-shell .persistent-card .card-art {
+  min-height: 38px;
+  max-height: none;
+}
+
+/* Apply bitmap card frames as the visible card shell. */
+.card,
+.minion-card,
+.persistent-card {
+  border: 0 !important;
+  background: transparent !important;
+  box-shadow: none;
+}
+
+.card-frame-layers {
+  inset: 0 !important;
+  opacity: 1;
+}
+
+.card-frame-base {
+  inset: 0 !important;
+  background-image: var(--card-frame-base) !important;
+  background-size: 100% 100% !important;
+}
+
+.card::before,
+.card::after,
+.minion-card::before,
+.persistent-card::before {
+  display: none !important;
+}
+
+.card {
+  aspect-ratio: 720 / 1040;
+  padding: 0 !important;
+}
+
+.card > .card-cost,
+.game-shell .card-cost {
+  top: 5.8% !important;
+  left: 8.8% !important;
+  right: auto !important;
+  z-index: 4;
+  width: 18.5%;
+  min-width: 0;
+  height: 11.5%;
+  min-height: 0;
+  padding: 0;
+  display: grid;
+  place-items: center;
+  border: 0;
+  border-radius: 24% 24% 28% 28%;
+  color: #ffffff;
+  font-size: clamp(14px, 2.1em, 24px);
+  line-height: 1;
+  text-shadow: 0 2px 6px rgba(73, 55, 145, 0.28);
+  background:
+    radial-gradient(circle at 34% 22%, rgba(255, 255, 255, 0.9), transparent 24%),
+    linear-gradient(145deg, rgba(91, 190, 238, 0.92), rgba(145, 95, 231, 0.9) 58%, rgba(244, 127, 170, 0.86));
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.5), 0 5px 12px rgba(95, 86, 184, 0.22);
+}
+
+.card .card-art {
+  position: absolute;
+  left: 13.2%;
+  right: 13.2%;
+  top: 14.2%;
+  width: auto;
+  height: 48.4%;
+  min-height: 0 !important;
+  max-height: none !important;
+  margin: 0 !important;
+  border: 0;
+  border-radius: 7%;
+  box-shadow: none;
+}
+
+.card .stats-line {
+  position: absolute;
+  left: 17.4%;
+  right: 17.4%;
+  bottom: 12%;
+  z-index: 3;
+  height: 8.4%;
+  margin: 0 !important;
+  align-items: stretch;
+  gap: 8%;
+}
+
+.card .stat-badge {
+  display: grid;
+  place-items: center;
+  min-width: 0;
+  height: 100%;
+  padding: 0 4px;
+  border: 0;
+  border-radius: 24%;
+  font-size: clamp(10px, 0.95em, 14px);
+  font-weight: 900;
+  line-height: 1;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.46), 0 4px 10px rgba(103, 52, 84, 0.08);
+}
+
+.game-shell .hand-row > .card {
+  height: auto !important;
+  min-height: auto !important;
+  max-height: none !important;
+}
+
+.game-shell .hand-row {
+  align-items: flex-start;
+}
+
+.game-shell .hand-row .card .card-art {
+  min-height: 0 !important;
+  max-height: none !important;
+  margin: 0 !important;
+}
+
+.game-shell .hand-row .stats-line {
+  display: grid !important;
+}
+
+/* Framed-card architecture: the root element owns the bitmap frame. */
+.framed-card {
+  --card-frame-base: url("/card-frames/common/frame.png");
+  position: relative !important;
+  display: block !important;
+  flex: 0 0 auto;
+  aspect-ratio: 720 / 1040;
+  min-width: 0;
+  min-height: 0 !important;
+  max-height: none !important;
+  padding: 0 !important;
+  border: 0 !important;
+  border-radius: 7.5%;
+  overflow: hidden;
+  isolation: isolate;
+  color: var(--moe-ink);
+  background-color: transparent !important;
+  background-image: var(--card-frame-base) !important;
+  background-position: center !important;
+  background-repeat: no-repeat !important;
+  background-size: 100% 100% !important;
+  box-shadow: 0 12px 26px rgba(103, 52, 84, 0.14);
+  transform-origin: center bottom;
+}
+
+.card.minion.framed-card,
+.minion-card.framed-card {
+  --card-frame-base: url("/card-frames/minion/frame.png");
+}
+
+.card.spell.framed-card {
+  --card-frame-base: url("/card-frames/spell/frame.png");
+}
+
+.card.persistent.framed-card,
+.persistent-card.persistent.framed-card {
+  --card-frame-base: url("/card-frames/persistent/frame.png");
+}
+
+.card.trap.framed-card,
+.persistent-card.trap.framed-card {
+  --card-frame-base: url("/card-frames/trap/frame.png");
+}
+
+.framed-card > .card-frame-layers {
+  display: none !important;
+}
+
+.card.framed-card {
+  width: 180px;
+}
+
+.minion-card.framed-card {
+  width: 136px;
+}
+
+.persistent-card.framed-card {
+  width: 124px;
+}
+
+.framed-card > .card-cost {
+  position: absolute !important;
+  top: 5.7% !important;
+  left: 8.8% !important;
+  right: auto !important;
+  z-index: 4;
+  display: grid;
+  place-items: center;
+  width: 18.7%;
+  height: 11.7%;
+  min-width: 0;
+  min-height: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 28%;
+  color: #ffffff;
+  font-size: clamp(12px, 1rem, 22px);
+  font-weight: 900;
+  line-height: 1;
+  text-shadow: 0 2px 6px rgba(69, 55, 150, 0.32);
+  background:
+    radial-gradient(circle at 34% 24%, rgba(255, 255, 255, 0.96), transparent 24%),
+    linear-gradient(145deg, rgba(91, 190, 238, 0.94), rgba(145, 95, 231, 0.92) 58%, rgba(244, 127, 170, 0.88));
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.5), 0 5px 12px rgba(95, 86, 184, 0.22);
+}
+
+.framed-card > .card-art {
+  position: absolute !important;
+  z-index: 1;
+  left: 13%;
+  right: 13%;
+  top: 13.8%;
+  width: auto !important;
+  height: 49.4% !important;
+  min-height: 0 !important;
+  max-height: none !important;
+  margin: 0 !important;
+  border: 0;
+  border-radius: 7%;
+  box-shadow: none;
+}
+
+.framed-card > .stats-line {
+  position: absolute !important;
+  z-index: 3;
+  left: 17.4%;
+  right: 17.4%;
+  bottom: 11.7%;
+  display: grid !important;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  align-items: stretch;
+  width: auto !important;
+  height: 8.6%;
+  gap: 8%;
+  margin: 0 !important;
+}
+
+.framed-card > .stats-line > .stat-badge {
+  display: grid;
+  place-items: center;
+  min-width: 0;
+  width: 100%;
+  height: 100%;
+  padding: 0 2px;
+  border: 0;
+  border-radius: 28%;
+  overflow: hidden;
+  color: #56315a;
+  font-size: clamp(8px, 0.68rem, 12px);
+  font-weight: 900;
+  line-height: 1;
+  white-space: nowrap;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.5), 0 4px 10px rgba(103, 52, 84, 0.08);
+}
+
+.game-shell .hand-row > .card.framed-card {
+  width: clamp(132px, 7.2vw, 158px) !important;
+  flex-basis: clamp(132px, 7.2vw, 158px) !important;
+  height: auto !important;
+}
+
+.game-shell .minion-row > .minion-card.framed-card {
+  width: clamp(104px, 6vw, 128px) !important;
+  flex-basis: clamp(104px, 6vw, 128px) !important;
+}
+
+.game-shell .persistent-row > .persistent-card.framed-card {
+  width: clamp(94px, 5.4vw, 116px) !important;
+  flex-basis: clamp(94px, 5.4vw, 116px) !important;
+}
+
+.game-shell .hand-row > .card.framed-card:hover:not([aria-disabled="true"]),
+.hand-row .card.framed-card:hover:not([aria-disabled="true"]) {
+  z-index: 5;
+  transform: translateY(-4px) scale(1.02);
+}
+
+@media (max-width: 1180px) {
+  .game-shell .hand-row > .card.framed-card {
+    width: clamp(132px, 38vw, 172px) !important;
+    flex-basis: clamp(132px, 38vw, 172px) !important;
+  }
+
+  .game-shell .minion-row > .minion-card.framed-card,
+  .game-shell .persistent-row > .persistent-card.framed-card {
+    width: min(42vw, 142px) !important;
+    flex-basis: min(42vw, 142px) !important;
+  }
+}
+
+@media (max-width: 700px) {
+  .game-shell .hand-row > .card.framed-card {
+    width: min(72vw, 176px) !important;
+    flex-basis: min(72vw, 176px) !important;
+  }
+
+  .game-shell .minion-row > .minion-card.framed-card,
+  .game-shell .persistent-row > .persistent-card.framed-card {
+    width: min(58vw, 150px) !important;
+    flex-basis: min(58vw, 150px) !important;
+  }
+}
+
+/* Card stat icons: sword / shield / lightning plus the numeric value. */
+.stat-badge {
+  display: inline-grid;
+  grid-template-columns: auto auto;
+  align-items: center;
+  justify-content: center;
+  gap: 0.28em;
+}
+
+.framed-card > .stats-line > .stat-badge {
+  display: inline-grid;
+  grid-template-columns: auto auto;
+  place-items: center;
+  justify-content: center;
+  gap: 0.18em;
+}
+
+.stat-icon {
+  position: relative;
+  display: inline-block;
+  width: 1em;
+  height: 1em;
+  flex: 0 0 auto;
+  color: currentColor;
+}
+
+.stat-value {
+  min-width: 0.55em;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+
+.stat-icon-sword {
+  transform: rotate(42deg);
+}
+
+.stat-icon-sword::before {
+  content: "";
+  position: absolute;
+  left: 42%;
+  top: 2%;
+  width: 18%;
+  height: 72%;
+  border-radius: 999px 999px 3px 3px;
+  background: currentColor;
+  box-shadow: inset 0.08em 0 0 rgba(255, 255, 255, 0.36);
+}
+
+.stat-icon-sword::after {
+  content: "";
+  position: absolute;
+  left: 22%;
+  top: 62%;
+  width: 58%;
+  height: 34%;
+  background:
+    linear-gradient(currentColor, currentColor) 50% 72% / 18% 42% no-repeat,
+    linear-gradient(currentColor, currentColor) 50% 36% / 100% 16% no-repeat;
+  border-radius: 999px;
+}
+
+.stat-icon-shield {
+  border-radius: 0.18em 0.18em 0.44em 0.44em;
+  background: currentColor;
+  clip-path: polygon(50% 4%, 88% 18%, 82% 66%, 50% 96%, 18% 66%, 12% 18%);
+}
+
+.stat-icon-shield::after {
+  content: "";
+  position: absolute;
+  inset: 22% 39% 20% 39%;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.42);
+}
+
+.stat-icon-lightning {
+  background: currentColor;
+  clip-path: polygon(58% 0, 18% 54%, 45% 54%, 34% 100%, 84% 38%, 56% 38%);
+  filter: drop-shadow(0 0 0.2em rgba(255, 231, 128, 0.35));
+}
+
+.stat-badge.attack {
+  color: #a14a66;
+}
+
+.stat-badge.health {
+  color: #3d8670;
+}
+
+.stat-badge.threat {
+  color: #927126;
+}
+
+/* Battle UI redesign step 1: no header, the board owns the full viewport. */
+.game-shell {
+  grid-template-rows: minmax(0, 1fr) !important;
+  gap: 0 !important;
+}
+
+.game-shell .game-hero {
+  display: none !important;
+}
+
+.game-shell .board-shell {
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  margin: 0 !important;
+}
+
+.game-shell .battle-layout,
+.game-shell .battle-main,
+.game-shell .sidebar {
+  height: 100%;
+}
+
+@media (min-width: 1181px) {
+  .game-shell .battle-main {
+    grid-template-rows: minmax(138px, 0.9fr) minmax(166px, 1fr) minmax(270px, 28vh);
+  }
+}
+
+@media (max-height: 940px) and (min-width: 1181px) {
+  .game-shell .battle-main {
+    grid-template-rows: minmax(120px, 0.8fr) minmax(146px, 0.9fr) minmax(244px, 29vh);
+  }
+}
+
+/* Battle UI redesign step 2: momentum lives in HUD, log is a right-side drawer. */
+.game-shell .battle-layout {
+  position: relative;
+  grid-template-columns: minmax(0, 1fr) !important;
+}
+
+.game-shell .battle-main {
+  grid-column: 1;
+}
+
+.game-shell .hud-momentum {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+  margin-top: 0;
+  padding: 8px 10px;
+  border: 1px solid rgba(168, 87, 130, 0.18);
+  border-radius: 14px;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.74), rgba(238, 250, 255, 0.52));
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.5);
+}
+
+.game-shell .hud-momentum-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.game-shell .hud-momentum-total {
+  color: var(--moe-ink);
+  font-size: 18px;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+.game-shell .hud-momentum-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 4px;
+}
+
+.game-shell .hud-momentum-grid span {
+  min-width: 0;
+  padding: 4px 5px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.68);
+  color: #684465;
+  font-size: 11px;
+  font-weight: 800;
+  line-height: 1;
+  text-align: center;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+.game-shell .battle-log-dock {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  z-index: 40;
+  display: flex;
+  justify-content: flex-end;
+  width: min(360px, calc(100% - 24px));
+  pointer-events: none;
+}
+
+.game-shell .battle-log-drawer {
+  display: grid;
+  justify-items: end;
+  width: max-content;
+  max-width: 100%;
+  color: var(--moe-ink);
+  pointer-events: auto;
+}
+
+.game-shell .battle-log-drawer[open] {
+  width: 100%;
+  justify-items: stretch;
+}
+
+.game-shell .battle-log-drawer summary {
+  display: flex;
+  align-items: center;
+  justify-self: end;
+  gap: 10px;
+  min-width: 0;
+  padding: 10px 14px;
+  border: 1px solid rgba(168, 87, 130, 0.22);
+  border-radius: 999px;
+  background: rgba(255, 252, 255, 0.9);
+  box-shadow: 0 10px 24px rgba(103, 52, 84, 0.14), inset 0 1px 0 rgba(255, 255, 255, 0.58);
+  cursor: pointer;
+  list-style: none;
+  user-select: none;
+}
+
+.game-shell .battle-log-drawer summary::-webkit-details-marker {
+  display: none;
+}
+
+.game-shell .battle-log-drawer summary::after {
+  content: "";
+  width: 8px;
+  height: 8px;
+  border-right: 2px solid currentColor;
+  border-bottom: 2px solid currentColor;
+  transform: rotate(45deg) translateY(-1px);
+  transition: transform 160ms ease;
+}
+
+.game-shell .battle-log-drawer[open] summary::after {
+  transform: rotate(225deg) translateY(-1px);
+}
+
+.game-shell .battle-log-drawer summary span,
+.game-shell .battle-log-drawer summary strong {
+  min-width: 0;
+  white-space: nowrap;
+}
+
+.game-shell .battle-log-drawer summary span {
+  font-weight: 900;
+}
+
+.game-shell .battle-log-drawer summary strong {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.game-shell .battle-log-drawer .battle-log-panel {
+  display: block;
+  width: 100%;
+  max-height: min(58vh, 520px);
+  margin-top: 8px;
+  padding: 10px;
+  overflow: hidden;
+  border-radius: 18px;
+  background: rgba(255, 252, 255, 0.9);
+  box-shadow: 0 18px 42px rgba(64, 35, 63, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.56);
+  backdrop-filter: blur(14px);
+}
+
+.game-shell .battle-log-drawer .log-list {
+  max-height: min(52vh, 460px);
+  overflow: auto;
+  padding-right: 4px;
+}
+
+@media (max-width: 1180px) {
+  .game-shell .battle-log-dock {
+    top: 10px;
+    right: 10px;
+    width: min(330px, calc(100% - 20px));
+  }
+}
+
+@media (max-width: 700px) {
+  .game-shell .battle-log-dock {
+    top: 8px;
+    right: 8px;
+    width: calc(100% - 16px);
+  }
+
+  .game-shell .battle-log-drawer summary {
+    padding: 9px 12px;
+  }
+
+  .game-shell .battle-log-drawer .battle-log-panel {
+    max-height: 46vh;
+  }
+
+  .game-shell .battle-log-drawer .log-list {
+    max-height: 40vh;
+  }
+}
+
+/* Battle UI redesign step 3: corner HUDs and unframed hand strip. */
+.game-shell {
+  --corner-hud-gap: 12px;
+  --enemy-hud-gap: -6px;
+  --corner-hud-width: clamp(276px, 17vw, 340px);
+  --enemy-field-offset: clamp(210px, 13vw, 270px);
+  --corner-hud-reserve: calc(var(--corner-hud-width) + var(--corner-hud-gap) + 10px);
+}
+
+.game-shell .hud-corner {
+  position: absolute;
+  z-index: 34;
+  width: var(--corner-hud-width);
+  pointer-events: none;
+}
+
+.game-shell .enemy-hud-corner {
+  top: var(--enemy-hud-gap);
+  left: var(--enemy-hud-gap);
+}
+
+.game-shell .player-hud-corner {
+  right: var(--corner-hud-gap);
+  bottom: var(--corner-hud-gap);
+}
+
+.game-shell .hud-corner .hud {
+  width: 100%;
+  height: auto !important;
+  max-height: min(42vh, 330px);
+  gap: 6px;
+  padding: 10px 11px;
+  overflow: hidden;
+  pointer-events: auto;
+}
+
+.game-shell .hud-corner .hud-header {
+  gap: 6px;
+}
+
+.game-shell .hud-corner .hud-passive {
+  max-height: 38px;
+  padding: 6px 8px;
+  -webkit-line-clamp: 2;
+}
+
+.game-shell .hud-corner .hud-avatar {
+  width: 44px;
+  height: 44px;
+}
+
+.game-shell .hud-corner .hud-title {
+  font-size: 18px;
+}
+
+.game-shell .hud-corner .hud-resource-row {
+  gap: 6px;
+}
+
+.game-shell .hud-corner .hud-resource {
+  padding: 7px 8px;
+}
+
+.game-shell .hud-corner .hud-resource-emblem {
+  width: 32px;
+  height: 32px;
+}
+
+.game-shell .hud-corner .hud-resource-value {
+  font-size: 21px;
+}
+
+.game-shell .hud-corner .hud-stats {
+  gap: 6px;
+}
+
+.game-shell .hud-corner .hud-stat {
+  padding: 5px 8px;
+  font-size: 11px;
+}
+
+.game-shell .hud-corner .hud-momentum {
+  padding: 6px 8px;
+}
+
+.game-shell .hud-corner .hud-momentum-total {
+  font-size: 16px;
+}
+
+.game-shell .hud-corner .hud-momentum-grid span {
+  padding: 3px 4px;
+  font-size: 10px;
+}
+
+.game-shell .hud-corner .slot-metrics {
+  margin-top: 0;
+}
+
+.game-shell .hud-corner .slot-card {
+  padding: 6px 7px;
+}
+
+.game-shell .hud-corner .slot-card-note {
+  display: none;
+}
+
+.game-shell .enemy-half,
+.game-shell .player-half {
+  grid-template-columns: minmax(0, 1fr) !important;
+}
+
+.game-shell .enemy-half .field-zone {
+  margin-left: var(--enemy-field-offset);
+}
+
+.game-shell .player-half .field-zone {
+  margin-right: 0;
+}
+
+.game-shell .hand-zone {
+  position: relative;
+  display: grid !important;
+  grid-template-rows: auto minmax(0, 1fr) !important;
+  align-content: end;
+  min-height: 0 !important;
+  padding: 0 var(--corner-hud-reserve) 8px 8px !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  overflow: visible !important;
+}
+
+.game-shell .hand-zone::before,
+.game-shell .hand-zone::after {
+  display: none !important;
+}
+
+.game-shell .hand-controls {
+  justify-self: end;
+  align-self: end;
+  gap: 8px;
+  margin: 0 0 8px;
+  padding: 0;
+}
+
+.game-shell .hand-zone .hand-row {
+  justify-content: flex-end;
+  align-items: flex-end;
+  min-height: 0;
+  padding: 4px 4px 10px;
+  overflow-x: auto;
+  overflow-y: visible;
+}
+
+.game-shell .hand-zone .hand-row > .card.framed-card {
+  width: clamp(136px, 7.4vw, 162px) !important;
+  flex-basis: clamp(136px, 7.4vw, 162px) !important;
+}
+
+@media (min-width: 1181px) {
+  .game-shell .battle-main {
+    grid-template-rows: minmax(132px, 0.82fr) minmax(170px, 0.98fr) minmax(232px, 26vh) !important;
+  }
+}
+
+@media (max-height: 940px) and (min-width: 1181px) {
+  .game-shell {
+    --corner-hud-width: clamp(258px, 16vw, 318px);
+    --enemy-field-offset: clamp(196px, 12.4vw, 252px);
+  }
+
+  .game-shell .hud-corner .hud {
+    max-height: min(44vh, 306px);
+  }
+
+  .game-shell .battle-main {
+    grid-template-rows: minmax(112px, 0.72fr) minmax(142px, 0.86fr) minmax(224px, 29vh) !important;
+  }
+}
+
+@media (max-width: 1180px) {
+  .game-shell {
+    --corner-hud-width: min(310px, calc(50vw - 18px));
+    --enemy-field-offset: 0px;
+  }
+
+  .game-shell .enemy-half .field-zone {
+    margin-left: 0;
+    padding-top: min(22vh, 154px);
+  }
+
+  .game-shell .hand-zone {
+    padding-right: var(--corner-hud-reserve) !important;
+  }
+}
+
+@media (max-width: 700px) {
+  .game-shell {
+    --corner-hud-gap: 8px;
+    --enemy-hud-gap: -4px;
+    --corner-hud-width: min(304px, calc(100% - 16px));
+    --enemy-field-offset: 0px;
+    --corner-hud-reserve: 0px;
+  }
+
+  .game-shell .hud-corner .hud {
+    max-height: 212px;
+  }
+
+  .game-shell .enemy-half .field-zone {
+    padding-top: 150px;
+  }
+
+  .game-shell .hand-zone {
+    padding: 0 0 218px !important;
+  }
+
+  .game-shell .hand-controls {
+    justify-self: end;
+    flex-wrap: wrap;
+  }
+
+  .game-shell .hand-zone .hand-row {
+    justify-content: flex-start;
+  }
+}
+
+/* Battlefield V2: 7 minion slots plus one shared 7-slot backrow. */
+.game-shell {
+  --corner-hud-width: clamp(284px, 18vw, 342px);
+  --enemy-field-offset: clamp(220px, 14vw, 286px);
+}
+
+.game-shell .hud-corner {
+  z-index: 56;
+}
+
+.game-shell .turn-seal {
+  z-index: 54;
+}
+
+.game-shell .battlefield-v2 {
+  position: relative;
+  overflow: visible;
+}
+
+.game-shell .battlefield-v2 .zone-stack {
+  display: grid;
+  grid-template-rows: minmax(62px, 0.45fr) minmax(118px, 1fr) !important;
+  align-content: stretch;
+  gap: clamp(8px, 1vh, 12px);
+  overflow: visible;
+  padding-right: 0;
+}
+
+.game-shell .battlefield-v2 .zone-stack > .zone-lane:not(.slot-lane) {
+  display: none !important;
+}
+
+.game-shell .battlefield-v2 .slot-lane {
+  display: grid !important;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  align-items: stretch;
+  gap: clamp(7px, 0.72vw, 12px);
+  min-width: 0;
+  min-height: 0;
+  max-height: none;
+  margin: 0 !important;
+  padding: 0;
+  overflow: visible;
+  scroll-snap-type: none;
+}
+
+.game-shell .battlefield-slot {
+  position: relative;
+  display: grid;
+  place-items: center;
+  min-width: 0;
+  overflow: visible;
+  border: 1px solid rgba(168, 87, 130, 0.22);
+  border-radius: 15px;
+  background:
+    radial-gradient(circle at 48% 32%, rgba(255, 255, 255, 0.7), transparent 18%),
+    linear-gradient(145deg, rgba(255, 252, 255, 0.74), rgba(239, 249, 255, 0.62));
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.56), 0 8px 16px rgba(103, 52, 84, 0.08);
+}
+
+.game-shell .battlefield-slot::after {
+  content: "";
+  position: absolute;
+  left: 12%;
+  right: 12%;
+  bottom: 8px;
+  height: 5px;
+  border-radius: 999px;
+  background: rgba(244, 127, 170, 0.22);
+  pointer-events: none;
+}
+
+.game-shell .battlefield-slot.backrow-slot {
+  min-height: clamp(60px, 8vh, 86px);
+  border-color: rgba(118, 216, 245, 0.36);
+  background:
+    radial-gradient(circle at 50% 28%, rgba(255, 255, 255, 0.76), transparent 18%),
+    linear-gradient(145deg, rgba(248, 253, 255, 0.82), rgba(239, 247, 255, 0.68));
+}
+
+.game-shell .battlefield-slot.backrow-slot::after {
+  background: rgba(118, 216, 245, 0.28);
+}
+
+.game-shell .battlefield-slot.minion-slot {
+  min-height: clamp(112px, 15vh, 156px);
+}
+
+.game-shell .battlefield-slot.occupied {
+  background: linear-gradient(145deg, rgba(255, 255, 255, 0.32), rgba(238, 250, 255, 0.18));
+}
+
+.game-shell .battlefield-slot.occupied::after,
+.game-shell .battlefield-slot.occupied .battlefield-slot-index,
+.game-shell .battlefield-slot.occupied .battlefield-slot-label,
+.game-shell .battlefield-slot.occupied .battlefield-slot-spark {
+  display: none;
+}
+
+.game-shell .battlefield-slot-index {
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 12px;
+  font-weight: 900;
+  text-shadow: 0 2px 6px rgba(103, 52, 84, 0.16);
+}
+
+.game-shell .battlefield-slot-label {
+  color: #76506b;
+  font-size: 11px;
+  font-weight: 900;
+  line-height: 1;
+}
+
+.game-shell .battlefield-slot-spark {
+  position: absolute;
+  top: 9px;
+  left: 10px;
+  width: 12px;
+  height: 12px;
+  color: #f47faa;
+  transform: rotate(45deg);
+}
+
+.game-shell .backrow-slot .battlefield-slot-spark {
+  color: #76d8f5;
+}
+
+.game-shell .battlefield-slot-spark::before,
+.game-shell .battlefield-slot-spark::after {
+  content: "";
+  position: absolute;
+  border-radius: 999px;
+  background: currentColor;
+}
+
+.game-shell .battlefield-slot-spark::before {
+  left: 43%;
+  top: 0;
+  width: 14%;
+  height: 100%;
+}
+
+.game-shell .battlefield-slot-spark::after {
+  left: 0;
+  top: 43%;
+  width: 100%;
+  height: 14%;
+}
+
+.game-shell .battlefield-slot > .framed-card,
+.game-shell .battlefield-slot > .minion-card.framed-card,
+.game-shell .battlefield-slot > .persistent-card.framed-card {
+  width: 100% !important;
+  height: 100% !important;
+  min-height: 0 !important;
+  max-height: none !important;
+  flex: 1 1 auto !important;
+  flex-basis: auto !important;
+}
+
+.game-shell .battlefield-slot > .minion-card.framed-card {
+  min-height: clamp(108px, 14.5vh, 150px) !important;
+}
+
+.game-shell .battlefield-slot > .persistent-card.framed-card {
+  min-height: clamp(58px, 7.6vh, 82px) !important;
+}
+
+.game-shell .backrow-secret-card {
+  position: relative;
+  display: grid;
+  place-items: center;
+  gap: 4px;
+  width: 100%;
+  height: 100%;
+  min-height: clamp(58px, 7.6vh, 82px);
+  overflow: hidden;
+  border: 1px solid rgba(168, 87, 130, 0.22);
+  border-radius: 14px;
+  background:
+    linear-gradient(120deg, rgba(255, 255, 255, 0.24), transparent 34%, rgba(255, 255, 255, 0.2) 66%, transparent),
+    linear-gradient(145deg, rgba(255, 235, 247, 0.88), rgba(235, 250, 255, 0.78));
+  color: #7a4a78;
+  font-size: 11px;
+  font-weight: 900;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.58), 0 8px 16px rgba(103, 52, 84, 0.1);
+}
+
+.game-shell .backrow-secret-gem {
+  width: 20px;
+  height: 20px;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #fff3a8, #f47faa 58%, #76d8f5);
+  box-shadow: 0 0 14px rgba(244, 127, 170, 0.26);
+}
+
+@media (max-width: 1180px) {
+  .game-shell .battlefield-v2 .slot-lane {
+    grid-template-columns: repeat(7, minmax(96px, 1fr));
+    overflow-x: auto;
+    overflow-y: visible;
+    padding-bottom: 4px;
+  }
+
+  .game-shell .battlefield-slot.minion-slot {
+    min-height: 136px;
+  }
+
+  .game-shell .battlefield-slot.backrow-slot {
+    min-height: 74px;
+  }
+}
+
+@media (max-width: 700px) {
+  .game-shell .battlefield-v2 .zone-stack {
+    grid-template-rows: minmax(70px, auto) minmax(132px, auto) !important;
+  }
+
+  .game-shell .battlefield-v2 .slot-lane {
+    grid-template-columns: repeat(7, minmax(88px, 1fr));
+  }
+}
+
+/* Battlefield V2.1: opponent hand is visible as face-down cards, so both fields use smaller equal slots. */
+.game-shell {
+  --enemy-field-offset: clamp(204px, 12.8vw, 264px);
+}
+
+.game-shell .battle-main {
+  grid-template-rows:
+    clamp(58px, 7.2vh, 78px)
+    minmax(128px, 0.86fr)
+    minmax(128px, 0.86fr)
+    clamp(210px, 24vh, 238px) !important;
+  gap: clamp(7px, 0.82vh, 10px) !important;
+}
+
+.game-shell .enemy-hand-zone {
+  position: relative;
+  z-index: 20;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 10px;
+  min-height: 0;
+  padding: 0 14px 0 var(--enemy-field-offset);
+  overflow: visible;
+}
+
+.game-shell .enemy-hand-meta {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-width: max-content;
+  padding: 8px 12px;
+  border: 1px solid rgba(168, 87, 130, 0.22);
+  border-radius: 999px;
+  background: rgba(255, 252, 255, 0.82);
+  color: #684465;
+  font-size: 12px;
+  font-weight: 900;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.56), 0 8px 16px rgba(103, 52, 84, 0.08);
+}
+
+.game-shell .enemy-hand-meta strong {
+  color: var(--moe-ink);
+  font-size: 16px;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+.game-shell .enemy-hand-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 0;
+  min-height: 0;
+  gap: clamp(5px, 0.5vw, 8px);
+  overflow-x: auto;
+  overflow-y: visible;
+  padding: 5px 6px;
+  scrollbar-width: thin;
+}
+
+.game-shell .enemy-hand-empty {
+  color: #76506b;
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.game-shell .enemy-hand-card {
+  position: relative;
+  flex: 0 0 clamp(42px, 3.1vw, 54px);
+  width: clamp(42px, 3.1vw, 54px);
+  height: clamp(58px, 5.3vw, 72px);
+  overflow: hidden;
+  border: 1px solid rgba(168, 87, 130, 0.28);
+  border-radius: 12px;
+  background:
+    radial-gradient(circle at 50% 36%, rgba(255, 255, 255, 0.84), transparent 18%),
+    linear-gradient(145deg, rgba(255, 232, 245, 0.94), rgba(225, 248, 255, 0.88));
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.62), 0 9px 18px rgba(103, 52, 84, 0.12);
+}
+
+.game-shell .enemy-hand-card::before {
+  content: "";
+  position: absolute;
+  inset: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.68);
+  border-radius: 9px;
+  background:
+    linear-gradient(120deg, rgba(255, 255, 255, 0.28), transparent 36%, rgba(255, 255, 255, 0.2) 68%, transparent),
+    radial-gradient(circle at 50% 50%, rgba(244, 127, 170, 0.18), transparent 42%);
+}
+
+.game-shell .enemy-hand-card-mark {
+  position: absolute;
+  inset: 50% auto auto 50%;
+  width: 18px;
+  height: 18px;
+  border-radius: 999px;
+  transform: translate(-50%, -50%);
+  background: linear-gradient(135deg, #fff3a8, #f47faa 58%, #76d8f5);
+  box-shadow: 0 0 12px rgba(244, 127, 170, 0.26);
+}
+
+.game-shell .enemy-hand-card-glow {
+  position: absolute;
+  inset: auto 8px 8px 8px;
+  height: 4px;
+  border-radius: 999px;
+  background: rgba(118, 216, 245, 0.32);
+}
+
+.game-shell .battlefield-v2 .zone-stack {
+  grid-template-rows: minmax(46px, 0.36fr) minmax(88px, 1fr) !important;
+  gap: clamp(6px, 0.72vh, 9px);
+}
+
+.game-shell .battlefield-v2 .slot-lane {
+  gap: clamp(5px, 0.56vw, 9px);
+}
+
+.game-shell .battlefield-slot {
+  border-radius: 12px;
+}
+
+.game-shell .battlefield-slot.backrow-slot {
+  min-height: clamp(46px, 5.9vh, 64px);
+}
+
+.game-shell .battlefield-slot.minion-slot {
+  min-height: clamp(86px, 10.8vh, 118px);
+}
+
+.game-shell .battlefield-slot > .minion-card.framed-card {
+  min-height: clamp(82px, 10.4vh, 114px) !important;
+}
+
+.game-shell .battlefield-slot > .persistent-card.framed-card,
+.game-shell .backrow-secret-card {
+  min-height: clamp(44px, 5.6vh, 62px) !important;
+}
+
+.game-shell .battlefield-slot-label {
+  font-size: 10px;
+}
+
+.game-shell .battlefield-slot-index {
+  font-size: 11px;
+}
+
+@media (max-height: 940px) and (min-width: 1181px) {
+  .game-shell {
+    --enemy-field-offset: clamp(190px, 12vw, 246px);
+  }
+
+  .game-shell .battle-main {
+    grid-template-rows:
+      clamp(52px, 6.8vh, 68px)
+      minmax(110px, 0.82fr)
+      minmax(110px, 0.82fr)
+      clamp(198px, 25vh, 226px) !important;
+  }
+
+  .game-shell .battlefield-slot.minion-slot,
+  .game-shell .battlefield-slot > .minion-card.framed-card {
+    min-height: clamp(78px, 10vh, 104px) !important;
+  }
+}
+
+@media (max-width: 1180px) {
+  .game-shell .battle-main {
+    grid-template-rows:
+      auto
+      minmax(150px, auto)
+      minmax(150px, auto)
+      minmax(220px, auto) !important;
+  }
+
+  .game-shell .enemy-hand-zone {
+    padding-left: 0;
+  }
+
+  .game-shell .enemy-hand-row {
+    justify-content: flex-start;
+  }
+
+  .game-shell .battlefield-v2 .slot-lane {
+    grid-template-columns: repeat(7, minmax(82px, 1fr));
+  }
+}
+
+@media (max-width: 700px) {
+  .game-shell .enemy-hand-zone {
+    grid-template-columns: 1fr;
+    gap: 6px;
+    padding: 0;
+  }
+
+  .game-shell .enemy-hand-meta {
+    justify-self: start;
+  }
+
+  .game-shell .battlefield-v2 .slot-lane {
+    grid-template-columns: repeat(7, minmax(76px, 1fr));
+  }
+}
+
+/* Battle UI redesign step 4: match the table map layout.
+   Center lanes are front fields only; the shared backrows move to side panels. */
+.game-shell {
+  --side-backrow-width: clamp(210px, 16vw, 318px);
+  --center-hand-height: clamp(96px, 14.5vh, 174px);
+  --bottom-hand-height: clamp(168px, 21vh, 228px);
+  --corner-hud-width: clamp(276px, 17vw, 340px);
+  --corner-hud-reserve: calc(var(--corner-hud-width) + var(--corner-hud-gap) + 12px);
+}
+
+.game-shell .battle-main {
+  display: grid !important;
+  grid-template-columns: var(--side-backrow-width) minmax(0, 1fr) var(--side-backrow-width) !important;
+  grid-template-rows:
+    var(--center-hand-height)
+    minmax(116px, 1fr)
+    minmax(116px, 1fr)
+    var(--bottom-hand-height) !important;
+  grid-template-areas:
+    "enemyTop enemyHand logSpace"
+    "enemySide enemyField playerSide"
+    "enemySide playerField playerSide"
+    "bottomSpace hand playerHudPad";
+  align-items: stretch;
+  gap: clamp(8px, 0.9vh, 12px) clamp(10px, 0.9vw, 16px) !important;
+  min-height: 0;
+}
+
+.game-shell .enemy-hand-zone {
+  grid-area: enemyHand;
+  align-self: stretch;
+  padding: 0 !important;
+}
+
+.game-shell .enemy-hand-row {
+  justify-content: center;
+}
+
+.game-shell .enemy-half {
+  grid-area: enemyField;
+}
+
+.game-shell .player-half {
+  grid-area: playerField;
+}
+
+.game-shell .hand-zone {
+  grid-area: hand;
+  padding: 0 0 6px !important;
+}
+
+.game-shell .enemy-half .field-zone,
+.game-shell .player-half .field-zone {
+  height: 100%;
+  margin: 0 !important;
+  padding: clamp(10px, 1.1vh, 14px) !important;
+}
+
+.game-shell .battlefield-v2 .zone-header {
+  margin-bottom: clamp(6px, 0.8vh, 10px);
+}
+
+.game-shell .field-zone.battlefield-v2 .zone-stack {
+  grid-template-rows: minmax(0, 1fr) !important;
+  height: calc(100% - clamp(32px, 4vh, 44px));
+  gap: 0;
+}
+
+.game-shell .field-zone.battlefield-v2 .zone-stack > .shared-backrow-row {
+  display: none !important;
+}
+
+.game-shell .field-zone.battlefield-v2 .zone-stack > .minion-row.slot-lane {
+  height: 100%;
+  min-height: 0;
+}
+
+.game-shell .field-zone.battlefield-v2 .battlefield-slot.minion-slot {
+  min-height: clamp(88px, 13vh, 136px);
+}
+
+.game-shell .field-zone.battlefield-v2 .battlefield-slot > .minion-card.framed-card {
+  min-height: clamp(84px, 12.6vh, 130px) !important;
+}
+
+.game-shell .side-backrow-zone {
+  position: relative;
+  z-index: 24;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  gap: 8px;
+  min-width: 0;
+  min-height: 0;
+  padding: clamp(8px, 1vh, 12px);
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.42);
+  border-radius: 22px;
+  background:
+    radial-gradient(circle at 32% 24%, rgba(255, 255, 255, 0.38), transparent 26%),
+    linear-gradient(145deg, rgba(255, 246, 252, 0.72), rgba(232, 248, 255, 0.48));
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.48),
+    0 16px 34px rgba(64, 35, 63, 0.13);
+  backdrop-filter: blur(12px);
+}
+
+.game-shell .enemy-backrow-zone {
+  grid-area: enemySide;
+}
+
+.game-shell .player-backrow-zone {
+  grid-area: playerSide;
+}
+
+.game-shell .side-zone-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  min-width: 0;
+  padding: 6px 9px;
+  border-radius: 999px;
+  background: rgba(255, 252, 255, 0.78);
+  color: #684465;
+  font-size: 12px;
+  font-weight: 900;
+  line-height: 1;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.54);
+}
+
+.game-shell .side-zone-header span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.game-shell .side-zone-header strong {
+  color: var(--moe-ink);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.game-shell .side-backrow-lane {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) !important;
+  grid-template-rows: repeat(7, minmax(0, 1fr));
+  gap: clamp(5px, 0.7vh, 8px);
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+  padding: 0 !important;
+}
+
+.game-shell .side-backrow-zone .battlefield-slot.backrow-slot {
+  min-height: 0 !important;
+  height: 100%;
+  border-radius: 12px;
+}
+
+.game-shell .side-backrow-zone .battlefield-slot > .persistent-card.framed-card,
+.game-shell .side-backrow-zone .backrow-secret-card {
+  width: 100% !important;
+  height: 100% !important;
+  min-height: 0 !important;
+  border-radius: 12px;
+}
+
+.game-shell .side-backrow-zone .framed-card > .card-cost,
+.game-shell .side-backrow-zone .framed-card > .stats-line {
+  transform: scale(0.9);
+  transform-origin: center;
+}
+
+.game-shell .side-backrow-zone .battlefield-slot-index {
+  font-size: 10px;
+}
+
+.game-shell .side-backrow-zone .battlefield-slot-label {
+  font-size: 9px;
+}
+
+@media (max-height: 860px) and (min-width: 1181px) {
+  .game-shell {
+    --center-hand-height: clamp(82px, 12vh, 132px);
+    --bottom-hand-height: clamp(148px, 20vh, 206px);
+    --side-backrow-width: clamp(190px, 15vw, 286px);
+  }
+
+  .game-shell .battle-main {
+    grid-template-rows:
+      var(--center-hand-height)
+      minmax(96px, 1fr)
+      minmax(96px, 1fr)
+      var(--bottom-hand-height) !important;
+  }
+}
+
+@media (max-width: 1180px) {
+  .game-shell {
+    --side-backrow-width: 100%;
+  }
+
+  .game-shell .battle-main {
+    grid-template-columns: minmax(0, 1fr) !important;
+    grid-template-rows:
+      auto
+      minmax(150px, auto)
+      minmax(72px, auto)
+      minmax(150px, auto)
+      minmax(72px, auto)
+      minmax(220px, auto) !important;
+    grid-template-areas:
+      "enemyHand"
+      "enemyField"
+      "enemySide"
+      "playerField"
+      "playerSide"
+      "hand";
+  }
+
+  .game-shell .side-backrow-lane {
+    grid-template-columns: repeat(7, minmax(82px, 1fr)) !important;
+    grid-template-rows: minmax(62px, auto);
+    overflow-x: auto;
+    overflow-y: hidden;
+  }
+
+  .game-shell .hand-zone {
+    padding-right: var(--corner-hud-reserve) !important;
+  }
+}
+
+@media (max-width: 700px) {
+  .game-shell .battle-main {
+    grid-template-rows:
+      auto
+      minmax(150px, auto)
+      minmax(72px, auto)
+      minmax(150px, auto)
+      minmax(72px, auto)
+      minmax(210px, auto) !important;
+  }
+
+  .game-shell .side-backrow-lane {
+    grid-template-columns: repeat(7, minmax(76px, 1fr)) !important;
+  }
+
+  .game-shell .hand-zone {
+    padding: 0 0 218px !important;
+  }
+}
+
+/* Battle UI redesign step 4.1: compact 2x4 backrow matrix.
+   The first cell is the count tile; the remaining seven cells are shared backrow slots. */
+.game-shell {
+  --side-backrow-width: clamp(188px, 14.4vw, 284px);
+  --side-backrow-panel-height: clamp(244px, 37vh, 372px);
+}
+
+.game-shell .side-backrow-zone {
+  align-self: center;
+  justify-self: stretch;
+  display: block;
+  height: min(100%, var(--side-backrow-panel-height));
+  min-height: 0;
+}
+
+.game-shell .side-backrow-lane {
+  height: 100%;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  grid-template-rows: repeat(4, minmax(0, 1fr)) !important;
+  gap: clamp(5px, 0.72vh, 8px) clamp(8px, 0.78vw, 12px);
+}
+
+.game-shell .side-zone-header {
+  display: grid;
+  align-content: center;
+  justify-items: start;
+  gap: 3px;
+  min-width: 0;
+  min-height: 0;
+  padding: clamp(7px, 0.85vh, 10px);
+  border: 1px solid rgba(62, 92, 154, 0.34);
+  border-radius: 12px;
+  background:
+    radial-gradient(circle at 28% 18%, rgba(255, 255, 255, 0.42), transparent 22%),
+    linear-gradient(145deg, rgba(239, 248, 255, 0.92), rgba(205, 225, 255, 0.78));
+  color: #31223a;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.54), 0 8px 14px rgba(45, 60, 120, 0.1);
+}
+
+.game-shell .side-zone-header span,
+.game-shell .side-zone-header strong {
+  display: block;
+  max-width: 100%;
+  line-height: 1.02;
+  white-space: nowrap;
+}
+
+.game-shell .side-zone-header span {
+  font-size: clamp(14px, 1.35vw, 23px);
+}
+
+.game-shell .side-zone-header strong {
+  font-size: clamp(18px, 1.8vw, 30px);
+}
+
+.game-shell .side-backrow-zone .battlefield-slot.backrow-slot {
+  min-height: 0 !important;
+}
+
+@media (max-height: 860px) and (min-width: 1181px) {
+  .game-shell {
+    --side-backrow-width: clamp(176px, 13.8vw, 260px);
+    --side-backrow-panel-height: clamp(216px, 36vh, 326px);
+  }
+}
+
+@media (max-width: 1180px) {
+  .game-shell .side-backrow-zone {
+    height: clamp(154px, 23vh, 230px);
+  }
+
+  .game-shell .side-backrow-lane {
+    grid-template-columns: repeat(4, minmax(76px, 1fr)) !important;
+    grid-template-rows: repeat(2, minmax(0, 1fr)) !important;
+    overflow-x: auto;
+    overflow-y: hidden;
+  }
+}
+
+/* Battle UI redesign step 4.2: action buttons live below the battle-log control. */
+.game-shell .battle-control-dock {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  z-index: 44;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
+  width: min(360px, calc(100% - 24px));
+  min-width: 0;
+  pointer-events: none;
+}
+
+.game-shell .battle-control-dock .battle-log-drawer {
+  pointer-events: auto;
+}
+
+.game-shell .battle-action-stack {
+  pointer-events: auto;
+  display: flex !important;
+  flex-direction: column;
+  align-items: stretch;
+  justify-self: auto;
+  align-self: auto;
+  gap: 8px;
+  width: clamp(144px, 9.6vw, 178px);
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+}
+
+.game-shell .battle-action-stack > button {
+  width: 100%;
+  min-height: 42px;
+  justify-content: center;
+  white-space: normal;
+  text-align: center;
+}
+
+.game-shell .hand-zone .hand-controls {
+  display: none !important;
+}
+
+@media (max-width: 1180px) {
+  .game-shell .battle-control-dock {
+    top: 10px;
+    right: 10px;
+    width: min(330px, calc(100% - 20px));
+  }
+
+  .game-shell .battle-action-stack {
+    width: clamp(136px, 18vw, 172px);
+  }
+}
+
+@media (max-width: 700px) {
+  .game-shell .battle-control-dock {
+    top: 8px;
+    right: 8px;
+    width: min(220px, calc(100% - 16px));
+  }
+
+  .game-shell .battle-action-stack {
+    width: min(176px, 100%);
+    gap: 6px;
+  }
+
+  .game-shell .battle-action-stack > button {
+    min-height: 38px;
+    padding: 8px 10px;
+  }
+}
+
+/* Battle UI redesign step 4.3: fine tuning after the compact board layout. */
+.game-shell {
+  --enemy-hud-gap: var(--corner-hud-gap);
+  --center-hand-height: clamp(154px, 22vh, 232px);
+}
+
+.game-shell .enemy-backrow-zone {
+  align-self: start;
+  margin-top: clamp(52px, 7vh, 92px);
+}
+
+.game-shell .player-backrow-zone {
+  align-self: end;
+  margin-bottom: clamp(92px, 12vh, 148px);
+}
+
+.game-shell .enemy-half .field-zone,
+.game-shell .player-half .field-zone {
+  border: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  backdrop-filter: none !important;
+}
+
+.game-shell .enemy-half .field-zone::before,
+.game-shell .enemy-half .field-zone::after,
+.game-shell .player-half .field-zone::before,
+.game-shell .player-half .field-zone::after {
+  display: none !important;
+}
+
+.game-shell .battlefield-slot:not(.occupied) {
+  border-color: transparent !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+.game-shell .battlefield-slot:not(.occupied)::after,
+.game-shell .battlefield-slot:not(.occupied) .battlefield-slot-spark,
+.game-shell .battlefield-slot:not(.occupied) .battlefield-slot-index,
+.game-shell .battlefield-slot:not(.occupied) .battlefield-slot-label {
+  display: none !important;
+}
+
+.game-shell .enemy-hand-zone {
+  grid-template-columns: minmax(0, 1fr) !important;
+}
+
+.game-shell .enemy-hand-meta {
+  display: none !important;
+}
+
+.game-shell .enemy-hand-row {
+  justify-content: center;
+  align-items: flex-end;
+  gap: clamp(8px, 0.72vw, 13px);
+  padding: 0 6px 6px;
+}
+
+.game-shell .enemy-hand-card {
+  flex-basis: clamp(136px, 7.4vw, 162px);
+  width: clamp(136px, 7.4vw, 162px);
+  height: auto;
+  aspect-ratio: 720 / 1040;
+  border-radius: 7.5%;
+}
+
+.game-shell .enemy-hand-card::before {
+  inset: 8%;
+  border-radius: 7%;
+}
+
+.game-shell .enemy-hand-card-mark {
+  width: 24%;
+  height: 16.6%;
+}
+
+.game-shell .enemy-hand-card-glow {
+  left: 15%;
+  right: 15%;
+  bottom: 10%;
+  height: 3.6%;
+}
+
+@media (max-height: 860px) and (min-width: 1181px) {
+  .game-shell {
+    --center-hand-height: clamp(136px, 20vh, 200px);
+  }
+
+  .game-shell .enemy-hand-card {
+    flex-basis: clamp(118px, 6.7vw, 148px);
+    width: clamp(118px, 6.7vw, 148px);
+  }
+
+  .game-shell .enemy-backrow-zone {
+    margin-top: clamp(38px, 6vh, 70px);
+  }
+
+  .game-shell .player-backrow-zone {
+    margin-bottom: clamp(76px, 11vh, 126px);
+  }
+}
+
+@media (max-width: 1180px) {
+  .game-shell {
+    --center-hand-height: auto;
+  }
+
+  .game-shell .enemy-backrow-zone,
+  .game-shell .player-backrow-zone {
+    align-self: stretch;
+    margin-top: 0;
+    margin-bottom: 0;
+  }
+
+  .game-shell .enemy-hand-row {
+    justify-content: flex-start;
+  }
+
+  .game-shell .enemy-hand-card {
+    flex-basis: clamp(132px, 25vw, 162px);
+    width: clamp(132px, 25vw, 162px);
+  }
+}
+
+/* Battle UI redesign step 4.4: align enemy backrow with HUD and anchor end-turn below player backrow. */
+.game-shell .enemy-backrow-zone {
+  justify-self: start;
+  margin-left: var(--enemy-hud-gap);
+}
+
+.game-shell .side-backrow-zone {
+  display: grid;
+  grid-template-rows: var(--side-backrow-panel-height) auto;
+  gap: 8px;
+  height: auto;
+}
+
+.game-shell .side-backrow-lane {
+  height: 100%;
+}
+
+.game-shell .side-backrow-footer {
+  display: flex;
+  justify-content: stretch;
+  min-width: 0;
+}
+
+.game-shell .side-end-turn-btn {
+  width: 100%;
+  min-height: 44px;
+  justify-content: center;
+  white-space: normal;
+}
+
+.game-shell .player-backrow-zone {
+  margin-bottom: clamp(42px, 6vh, 82px);
+}
+
+@media (max-height: 860px) and (min-width: 1181px) {
+  .game-shell .player-backrow-zone {
+    margin-bottom: clamp(30px, 5vh, 64px);
+  }
+}
+
+@media (max-width: 1180px) {
+  .game-shell .enemy-backrow-zone {
+    margin-left: 0;
+  }
+
+  .game-shell .side-backrow-zone {
+    grid-template-rows: clamp(154px, 23vh, 230px) auto;
+  }
+}
+
+/* Battle UI redesign step 4.5: enemy backrow is anchored to the board edge, not to the grid column. */
+@media (min-width: 1181px) {
+  .game-shell .battle-main {
+    position: relative;
+  }
+
+  .game-shell .enemy-backrow-zone {
+    position: absolute;
+    left: var(--enemy-hud-gap);
+    top: calc(var(--enemy-hud-gap) + min(42vh, 330px) + clamp(20px, 3vh, 40px));
+    width: var(--side-backrow-width);
+    max-width: var(--side-backrow-width);
+    margin: 0;
+  }
+}
+
+/* Battle UI redesign step 4.6: enemy backrow belongs to the enemy HUD stack. */
+.game-shell .enemy-hud-corner {
+  overflow: visible;
+}
+
+.game-shell .enemy-hud-corner .enemy-backrow-zone {
+  position: static !important;
+  grid-area: auto !important;
+  width: min(var(--side-backrow-width), 100%) !important;
+  max-width: 100%;
+  margin: clamp(18px, 2.5vh, 32px) 0 0 !important;
+  pointer-events: auto;
+}
+
+/* Battle UI redesign step 4.7: keep the player hand clear of the table edge and HUD. */
+.game-shell {
+  --bottom-hand-height: clamp(232px, 25vh, 288px);
+  --hand-hud-clearance: max(36px, calc(var(--corner-hud-width) - var(--side-backrow-width) + var(--corner-hud-gap) + 34px));
+}
+
+.game-shell .hand-zone {
+  position: relative;
+  z-index: 36;
+  align-self: stretch;
+  min-height: 0 !important;
+  padding: clamp(14px, 2.1vh, 26px) var(--hand-hud-clearance) 10px 8px !important;
+  overflow: visible !important;
+}
+
+.game-shell .hand-zone .hand-row {
+  position: relative;
+  z-index: 1;
+  height: 100%;
+  min-height: calc(var(--bottom-hand-height) - 44px);
+  align-items: flex-end;
+  justify-content: flex-end;
+  padding: clamp(12px, 1.8vh, 22px) 4px 12px;
+  overflow-x: auto;
+  overflow-y: visible;
+  scroll-padding-right: var(--hand-hud-clearance);
+}
+
+.game-shell .hand-zone .hand-row > .card.framed-card {
+  position: relative;
+  z-index: 1;
+}
+
+.game-shell .hand-zone .hand-row > .card.framed-card:hover:not([aria-disabled="true"]),
+.hand-row .card.framed-card:hover:not([aria-disabled="true"]) {
+  z-index: 8;
+}
+
+@media (max-height: 860px) and (min-width: 1181px) {
+  .game-shell {
+    --bottom-hand-height: clamp(218px, 27vh, 244px);
+  }
+
+  .game-shell .hand-zone .hand-row > .card.framed-card {
+    width: clamp(124px, 6.6vw, 146px) !important;
+    flex-basis: clamp(124px, 6.6vw, 146px) !important;
+  }
+}
+
+@media (max-width: 1180px) {
+  .game-shell {
+    --bottom-hand-height: clamp(232px, 28vh, 292px);
+    --hand-hud-clearance: var(--corner-hud-reserve);
+  }
+
+  .game-shell .hand-zone {
+    padding-right: var(--hand-hud-clearance) !important;
+  }
+}
+
+@media (max-width: 700px) {
+  .game-shell {
+    --hand-hud-clearance: clamp(92px, 28vw, 176px);
+  }
+
+  .game-shell .hand-zone {
+    padding: clamp(14px, 2vh, 24px) var(--hand-hud-clearance) 218px 0 !important;
+  }
+
+  .game-shell .hand-zone .hand-row {
+    justify-content: flex-start;
+  }
+}
+
+/* Battle UI redesign step 4.8: card effect layers must not become flex items. */
+.game-shell .board-shell > .effect-layer {
+  position: absolute !important;
+  top: 18px;
+  left: 50%;
+  z-index: 48;
+  width: min(420px, calc(100% - 32px));
+  max-width: calc(100% - 24px);
+  flex: none;
+  pointer-events: none;
+  transform: translateX(-50%);
+}
+
+.game-shell .board-shell > .turn-seal {
+  position: absolute !important;
+  top: 50%;
+  left: 50%;
+  z-index: 2;
+  flex: none;
+  transform: translate(-50%, -50%);
+}
+
+/* Battle UI redesign step 4.9: cleaner battlefield chrome and centered player hand. */
+.game-shell .field-zone .section-title {
+  display: none !important;
+}
+
+.game-shell .field-zone .zone-header {
+  justify-content: flex-end;
+}
+
+.game-shell .hand-zone {
+  padding-left: var(--hand-hud-clearance) !important;
+  padding-right: var(--hand-hud-clearance) !important;
+}
+
+.game-shell .hand-zone .hand-row {
+  justify-content: center;
+  scroll-padding-left: var(--hand-hud-clearance);
+}
+
+/* Card JPG art framework: every card can resolve /cards/<card-id>.jpg. */
+.card-art.has-card-art {
+  background-image:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.06), rgba(255, 225, 244, 0.14)),
+    var(--card-art-image) !important;
+  background-position: center;
+  background-size: cover;
+}
+
+.card-art.has-card-art::before {
+  background:
+    linear-gradient(120deg, rgba(255, 255, 255, 0.28), transparent 30%, transparent 68%, rgba(255, 255, 255, 0.16)),
+    radial-gradient(circle at 18% 14%, rgba(255, 255, 255, 0.46), transparent 18%);
+}
+
+.card-art.has-card-art .card-art-spark {
+  opacity: 0.72;
+}
+
+/* Non-minion frames have no attack / defense / threat row. */
+.card.spell.framed-card > .stats-line,
+.card.persistent.framed-card > .stats-line,
+.card.trap.framed-card > .stats-line,
+.persistent-card.framed-card > .stats-line {
+  display: none !important;
+}
+
+.card.spell.framed-card > .card-art,
+.card.persistent.framed-card > .card-art,
+.card.trap.framed-card > .card-art,
+.persistent-card.framed-card > .card-art {
+  left: 12% !important;
+  right: 12% !important;
+  top: 14.2% !important;
+  height: 62.4% !important;
+  border-radius: 8%;
+}
+
+/* Cache-bust and pin the redesigned non-minion bitmap frames. */
+.card.spell.framed-card {
+  --card-frame-base: url("/card-frames/spell/frame.png?v=nonstat-20260429-2") !important;
+  background-image: var(--card-frame-base) !important;
+}
+
+.card.persistent.framed-card,
+.persistent-card.persistent.framed-card {
+  --card-frame-base: url("/card-frames/persistent/frame.png?v=nonstat-20260429-2") !important;
+  background-image: var(--card-frame-base) !important;
+}
+
+.card.trap.framed-card,
+.persistent-card.trap.framed-card {
+  --card-frame-base: url("/card-frames/trap/frame.png?v=nonstat-20260429-2") !important;
+  background-image: var(--card-frame-base) !important;
+}
+
+/* In-battle mulligan flow: select directly from the bottom hand row. */
+.game-shell .mulligan-hand-zone {
+  padding-right: var(--corner-hud-reserve) !important;
+}
+
+.game-shell .mulligan-hand-zone .mulligan-hand-toolbar {
+  position: relative;
+  z-index: 12;
+  justify-self: center;
+  align-self: end;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  margin: 0 0 8px;
+  pointer-events: auto;
+}
+
+.mulligan-hand-confirm {
+  min-width: clamp(148px, 10vw, 190px);
+  min-height: 46px;
+  font-size: 18px;
+  box-shadow: 0 14px 32px rgba(103, 52, 84, 0.22), var(--moe-glow);
+}
+
+.mulligan-hand-count {
+  color: var(--moe-ink);
+  background: rgba(255, 255, 255, 0.86);
+  border: 1px solid rgba(168, 87, 130, 0.22);
+  border-radius: 999px;
+  padding: 8px 12px;
+  font-size: 13px;
+  font-weight: 900;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.72);
+}
+
+.game-shell .mulligan-hand-zone .hand-row {
+  justify-content: center !important;
+  scroll-padding-right: 0;
+}
+
+.mulligan-choice-card.selected-for-mulligan {
+  outline: 3px solid rgba(244, 127, 170, 0.72);
+  outline-offset: 3px;
+  box-shadow:
+    0 0 0 6px rgba(255, 255, 255, 0.52),
+    0 18px 36px rgba(103, 52, 84, 0.2) !important;
+  transform: translateY(-4px);
+}
+
+.mulligan-choice-card .card-selection-mark {
+  position: absolute;
+  right: 12px;
+  bottom: 12px;
+  z-index: 8;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 54px;
+  padding: 6px 9px;
+  border-radius: 999px;
+  border: 1px solid rgba(244, 127, 170, 0.38);
+  color: #6f245d;
+  background: rgba(255, 255, 255, 0.92);
+  box-shadow: 0 10px 24px rgba(103, 52, 84, 0.18);
+  font-size: 12px;
+  font-weight: 900;
+  line-height: 1;
+  pointer-events: none;
+}
+
+/* Hand cards should stay opaque even when they are currently not playable. */
+.game-shell .hand-row > .card.framed-card,
+.game-shell .hand-row > .card.framed-card.disabled,
+.game-shell .hand-row > .card.framed-card[aria-disabled="true"] {
+  opacity: 1 !important;
+  filter: none !important;
+}
+
+.game-shell .hand-row > .card.framed-card.disabled::before,
+.game-shell .hand-row > .card.framed-card[aria-disabled="true"]::before {
+  opacity: 0 !important;
+}
+
+@media (max-width: 700px) {
+  .game-shell .mulligan-hand-zone .mulligan-hand-toolbar {
+    width: min(100%, 320px);
+    flex-wrap: wrap;
   }
 }

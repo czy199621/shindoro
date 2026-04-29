@@ -12,6 +12,9 @@ import type {
 
 let runtimeCounter = 0;
 
+export const MAX_MINION_SLOTS = 7;
+export const MAX_BACKROW_SLOTS = 7;
+
 export function createRuntimeId(prefix = "id"): string {
   runtimeCounter += 1;
   return `${prefix}_${runtimeCounter}`;
@@ -45,6 +48,7 @@ export function createMinionInstance(card: CardDefinition | RuntimeCard, ownerId
     ownerId,
     sourceCardId: card.id,
     name: card.name,
+    art: card.art,
     attack: card.attack ?? 0,
     health: card.health ?? 0,
     maxHealth: card.health ?? 0,
@@ -67,6 +71,7 @@ export function createPersistentInstance(
     ownerId,
     sourceCardId: card.id,
     name: card.name,
+    art: card.art,
     threat: card.threat ?? 0,
     description: card.description,
     effects: structuredClone(card.effects ?? []),
@@ -172,11 +177,24 @@ export function removeFirstMatching<T>(items: T[], predicate: (item: T) => boole
 
 export function canPlayCardForPlayer(card: RuntimeCard, player: PlayerState, turn: number): boolean {
   if (player.mana < card.currentCost) return false;
-  if (card.type === "minion" && player.board.length >= 7) return false;
+  if (!hasBattlefieldSlotForCard(card, player)) return false;
 
   const minTurn = card.playRestrictions?.minTurn;
   if (minTurn !== undefined && turn < minTurn) return false;
 
+  return true;
+}
+
+export function getBackrowSlotCount(player: Pick<PlayerState, "persistents" | "traps">): number {
+  return player.persistents.length + player.traps.length;
+}
+
+export function hasBattlefieldSlotForCard(
+  card: Pick<RuntimeCard, "type">,
+  player: Pick<PlayerState, "board" | "persistents" | "traps">
+): boolean {
+  if (card.type === "minion") return player.board.length < MAX_MINION_SLOTS;
+  if (card.type === "persistent" || card.type === "trap") return getBackrowSlotCount(player) < MAX_BACKROW_SLOTS;
   return true;
 }
 

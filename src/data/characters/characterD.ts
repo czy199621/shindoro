@@ -1,4 +1,5 @@
 import type { CharacterDefinition, PassiveAbility } from "../../types.js";
+import { createCharacterArt } from "../characterArt.js";
 
 export const CHARACTER_D_PASSIVE: PassiveAbility = {
   key: "loseHpAtTurnStart",
@@ -26,6 +27,7 @@ export const CHARACTER_D: CharacterDefinition = {
   baseHp: 20,
   talentPoints: 6,
   description: "通过处理高价值使魔把场面优势直接转成斩杀伤害。",
+  art: createCharacterArt("character_d", "孔德人角色卡图"),
   passive: CHARACTER_D_PASSIVE,
   slotAbilities: CHARACTER_D_SLOT_ABILITIES
 };

@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="360" height="220" viewBox="0 0 360 220" role="img" aria-label="Original cute minion card art">
+  <defs>
+    <linearGradient id="bg" x1="0" x2="1" y1="0" y2="1">
+      <stop offset="0" stop-color="#fff8fb"/>
+      <stop offset="0.45" stop-color="#ffd9ec"/>
+      <stop offset="1" stop-color="#cdefff"/>
+    </linearGradient>
+    <linearGradient id="hair" x1="0" x2="1" y1="0" y2="1">
+      <stop offset="0" stop-color="#b59cff"/>
+      <stop offset="1" stop-color="#f47faa"/>
+    </linearGradient>
+  </defs>
+  <rect width="360" height="220" rx="34" fill="url(#bg)"/>
+  <circle cx="60" cy="44" r="36" fill="#fff3a8" opacity="0.78"/>
+  <circle cx="310" cy="176" r="54" fill="#8ee8bd" opacity="0.42"/>
+  <path d="M18 170c62-34 114-42 157-24 54 22 99 16 167-34v90H18z" fill="#fff" opacity="0.38"/>
+  <g transform="translate(180 116)">
+    <path d="M-74-7c0-56 34-88 74-88s74 32 74 88c0 52-31 84-74 84S-74 45-74-7z" fill="#fff7fb"/>
+    <path d="M-84-6c11-58 42-96 84-96s73 38 84 96c-33-22-56-32-84-32s-51 10-84 32z" fill="url(#hair)"/>
+    <circle cx="-25" cy="4" r="8" fill="#4f3154"/>
+    <circle cx="25" cy="4" r="8" fill="#4f3154"/>
+    <circle cx="-29" cy="0" r="3" fill="#fff"/>
+    <circle cx="21" cy="0" r="3" fill="#fff"/>
+    <path d="M-15 32c12 11 25 11 38 0" fill="none" stroke="#8d3a66" stroke-width="5" stroke-linecap="round"/>
+    <circle cx="-48" cy="25" r="14" fill="#f47faa" opacity="0.3"/>
+    <circle cx="48" cy="25" r="14" fill="#f47faa" opacity="0.3"/>
+    <path d="M-68-69l-20-35 41 20M68-69l20-35-41 20" fill="#ffd9ec" stroke="#fff" stroke-width="5" stroke-linejoin="round"/>
+  </g>
+  <g fill="#fff" opacity="0.78">
+    <path d="M282 36l6 13 14 2-10 10 3 14-13-7-13 7 3-14-10-10 14-2z"/>
+    <path d="M72 148l5 10 11 2-8 8 2 11-10-5-10 5 2-11-8-8 11-2z"/>
+  </g>
+</svg>

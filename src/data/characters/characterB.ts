@@ -1,4 +1,5 @@
 import type { CharacterDefinition, PassiveAbility } from "../../types.js";
+import { createCharacterArt } from "../characterArt.js";
 
 export const CHARACTER_B_PASSIVE: PassiveAbility = {
   key: "extraGodDrawOnDisadvantage",
@@ -26,6 +27,7 @@ export const CHARACTER_B: CharacterDefinition = {
   baseHp: 20,
   talentPoints: 4,
   description: "擅长在劣势时堆高神抽槽，通过额外抓牌反打。",
+  art: createCharacterArt("character_b", "Kapipara角色卡图"),
   passive: CHARACTER_B_PASSIVE,
   slotAbilities: CHARACTER_B_SLOT_ABILITIES
 };

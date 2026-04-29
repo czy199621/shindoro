@@ -1,4 +1,5 @@
 import type { CharacterDefinition, PassiveAbility } from "../../types.js";
+import { createCharacterArt } from "../characterArt.js";
 
 export const CHARACTER_A_PASSIVE: PassiveAbility = {
   key: "bonusJumpOnGain",
@@ -26,6 +27,7 @@ export const CHARACTER_A: CharacterDefinition = {
   baseHp: 20,
   talentPoints: 5,
   description: "以跳脸槽滚雪球的爆发型角色，适合主动抢节奏。",
+  art: createCharacterArt("character_a", "钱陈飞扬角色卡图"),
   passive: CHARACTER_A_PASSIVE,
   slotAbilities: CHARACTER_A_SLOT_ABILITIES
 };

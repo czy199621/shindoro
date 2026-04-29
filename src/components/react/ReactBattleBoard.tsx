@@ -1,10 +1,10 @@
-import { useCallback, useState } from "react";
+﻿import { useCallback, useState } from "react";
+import type { ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { getCardDefinition } from "../../data/cards.js";
-import { getAdvantageBreakdown } from "../../engine/rules.js";
+import { getAdvantageBreakdown, getBackrowSlotCount, MAX_BACKROW_SLOTS, MAX_MINION_SLOTS } from "../../engine/rules.js";
 import type { CardFxState, GameStore } from "../../store/useGameStore.js";
 import type {
-  AdvantageBreakdown,
   BuffTarget,
   DestroyTarget,
   DiscardTarget,
@@ -12,8 +12,10 @@ import type {
   EffectAction,
   GamePhase,
   GameState,
-  LastAdvantage,
+  MinionInstance,
   PendingChoice,
+  PersistentInstance,
+  PlayerState,
   RuntimeCard,
   SlotType
 } from "../../types.js";
@@ -22,6 +24,35 @@ import { PlayerHUD } from "./PlayerHUDView.js";
 
 function classNames(...values: Array<string | false | null | undefined>): string {
   return values.filter(Boolean).join(" ");
+}
+
+const MINION_SLOT_INDEXES = Array.from({ length: MAX_MINION_SLOTS }, (_, index) => index);
+const BACKROW_SLOT_INDEXES = Array.from({ length: MAX_BACKROW_SLOTS }, (_, index) => index);
+const CENTERED_MINION_SLOT_ORDER = createCenteredSlotOrder(MAX_MINION_SLOTS);
+
+type BackrowEntry = {
+  card: PersistentInstance;
+  tone: "persistent" | "trap";
+  concealed: boolean;
+};
+
+function createCenteredSlotOrder(slotCount: number): number[] {
+  const center = Math.floor(slotCount / 2);
+  const order = [center];
+
+  for (let offset = 1; order.length < slotCount; offset += 1) {
+    const left = center - offset;
+    const right = center + offset;
+    if (left >= 0) order.push(left);
+    if (right < slotCount) order.push(right);
+  }
+
+  return order;
+}
+
+function getCenteredMinionForSlot(board: readonly MinionInstance[], slotIndex: number): MinionInstance | undefined {
+  const boardIndex = CENTERED_MINION_SLOT_ORDER.indexOf(slotIndex);
+  return boardIndex >= 0 ? board[boardIndex] : undefined;
 }
 
 function formatSigned(value: number): string {
@@ -225,17 +256,6 @@ function formatEffect(effect: Effect): string {
   return `${trigger}${condition}：${formatAction(effect.action)}`;
 }
 
-function isPlayableFromHand(card: RuntimeCard, state: GameState, player: GameState["players"]["P1"]): boolean {
-  if (state.currentPlayer !== "P1" || state.phase !== "mainTurn" || state.winner || state.pendingChoice) return false;
-  if (player.mana < card.currentCost) return false;
-  if (card.type === "minion" && player.board.length >= 7) return false;
-
-  const minTurn = card.playRestrictions?.minTurn;
-  if (minTurn !== undefined && state.turn < minTurn) return false;
-
-  return true;
-}
-
 function getHandCardDisabledReason(
   card: RuntimeCard,
   state: GameState,
@@ -250,109 +270,13 @@ function getHandCardDisabledReason(
 
   const minTurn = card.playRestrictions?.minTurn;
   if (minTurn !== undefined && state.turn < minTurn) return `第 ${minTurn} 回合后可用`;
-  if (card.type === "minion" && player.board.length >= 7) return "战场已满";
+  if (card.type === "minion" && player.board.length >= MAX_MINION_SLOTS) return "随从区已满";
+  if ((card.type === "persistent" || card.type === "trap") && getBackrowSlotCount(player) >= MAX_BACKROW_SLOTS) {
+    return "后场区已满";
+  }
   if (player.mana < card.currentCost) return `费用不足，还差 ${card.currentCost - player.mana}`;
 
   return null;
-}
-
-function getActionHint(
-  state: GameState,
-  player: GameState["players"]["P1"],
-  selectedAttackerId: string | null,
-  isAttackAnimating: boolean
-): { title: string; detail: string; tone: "ready" | "wait" | "choice" | "done" } {
-  if (state.winner) {
-    return {
-      title: state.winner === "P1" ? "胜利达成" : "对局结束",
-      detail: "可以重新开始，再试一套角色、天赋或卡组节奏。",
-      tone: "done"
-    };
-  }
-
-  if (state.pendingChoice) {
-    return {
-      title: "先处理选择",
-      detail: "屏幕中央有一个待选择效果，确认后对局会继续。",
-      tone: "choice"
-    };
-  }
-
-  if (isAttackAnimating) {
-    return {
-      title: "正在结算攻击",
-      detail: "伤害会跟随动画完成，稍等一下即可继续操作。",
-      tone: "wait"
-    };
-  }
-
-  if (state.currentPlayer !== "P1") {
-    return {
-      title: "等待 AI 行动",
-      detail: "AI 正在思考并出牌，轮到你时手牌会恢复可操作状态。",
-      tone: "wait"
-    };
-  }
-
-  if (selectedAttackerId) {
-    return {
-      title: "选择攻击目标",
-      detail: "请选择一个合法目标完成攻击。",
-      tone: "choice"
-    };
-  }
-
-  const readyAttackers = player.board.filter((minion) => minion.canAttack).length;
-  const playableCards = player.hand.filter((card) => isPlayableFromHand(card, state, player)).length;
-
-  if (state.phase === "mainTurn") {
-    if (playableCards && readyAttackers) {
-      return {
-        title: "可以出牌或攻击",
-        detail: `你有 ${playableCards} 张手牌可打出，另有 ${readyAttackers} 个随从可以攻击。`,
-        tone: "ready"
-      };
-    }
-    if (playableCards) {
-      return {
-        title: "可以出牌",
-        detail: `当前有 ${playableCards} 张手牌费用足够，打出后再观察战场变化。`,
-        tone: "ready"
-      };
-    }
-    if (readyAttackers) {
-      return {
-        title: "可以攻击",
-        detail: `当前有 ${readyAttackers} 个随从可以行动，也可以直接结束回合保留节奏。`,
-        tone: "ready"
-      };
-    }
-    return {
-      title: "可以结束回合",
-      detail: "现在没有可用手牌或可攻击随从，结束回合会进入结算。",
-      tone: "wait"
-    };
-  }
-
-  if (state.phase === "combat") {
-    return readyAttackers
-      ? {
-          title: "战斗阶段",
-          detail: `还有 ${readyAttackers} 个随从可以攻击。`,
-          tone: "ready"
-        }
-      : {
-          title: "战斗已无可动随从",
-          detail: "可以结束回合，让槽位和回合效果继续结算。",
-          tone: "wait"
-        };
-  }
-
-  return {
-    title: getPhaseLabel(state.phase),
-    detail: "当前阶段会自动推进，稍等片刻就会回到可操作时机。",
-    tone: "wait"
-  };
 }
 
 function getEffectTone(kind: CardFxState["kind"]): "summon" | "persistent" | "spell" | "trap" {
@@ -485,131 +409,169 @@ function CardDetailTooltip({ detail }: { detail: { info: CardDetailInfo; point: 
   );
 }
 
-function MomentumRow({ label, value, extraClass = "" }: { label: string; value: number; extraClass?: string }) {
-  return (
-    <div className={classNames("momentum-row", extraClass)}>
-      <span className="momentum-label">{label}</span>
-      <strong className="momentum-value">{formatSigned(value)}</strong>
-    </div>
-  );
-}
-
-function MomentumSide({
-  title,
-  breakdown,
-  tone
-}: {
-  title: string;
-  breakdown: AdvantageBreakdown;
-  tone: "player" | "enemy";
-}) {
-  const detailText = breakdown.details.length ? breakdown.details.join(" / ") : "暂无特殊修正";
-
-  return (
-    <section className={classNames("momentum-side", tone)}>
-      <div className="flex-between">
-        <div>
-          <h3 className="momentum-side-title">{title}</h3>
-          <p className="small-note">当前总势能 {formatSigned(breakdown.total)}</p>
-        </div>
-        <span className={classNames("pill momentum-total", tone)}>{formatSigned(breakdown.total)}</span>
-      </div>
-      <div className="momentum-rows">
-        <MomentumRow label="手牌分" value={breakdown.handScore} />
-        <MomentumRow label="血量分" value={breakdown.hpScore} />
-        <MomentumRow label="威胁分" value={breakdown.threatScore} />
-        <MomentumRow label="特殊分" value={breakdown.specialScore} />
-        <MomentumRow label="总势能" value={breakdown.total} extraClass="total" />
-      </div>
-      <p className="small-note momentum-detail">特殊明细：{detailText}</p>
-    </section>
-  );
-}
-
-function LastSettlement({ lastAdvantage }: { lastAdvantage: LastAdvantage | null }) {
-  if (!lastAdvantage) return null;
-
-  const breakdown = lastAdvantage.p1Breakdown;
-  const summary = [
-    `手牌 ${formatSigned(breakdown.handScore)}`,
-    `血量 ${formatSigned(breakdown.hpScore)}`,
-    `威胁 ${formatSigned(breakdown.threatScore)}`,
-    `特殊 ${formatSigned(breakdown.specialScore)}`
-  ].join(" / ");
-
-  return (
-    <div className="momentum-settlement">
-      <div className="flex-between">
-        <span className="small-note">上次结算</span>
-        <span className="pill momentum-settlement-pill">
-          V = {formatSigned(lastAdvantage.value)} / 槽位新增 {lastAdvantage.gain}
-        </span>
-      </div>
-      <p className="small-note">{summary}</p>
-    </div>
-  );
-}
-
-function MomentumPanel({
-  playerBreakdown,
-  enemyBreakdown,
-  lastAdvantage
-}: {
-  playerBreakdown: AdvantageBreakdown;
-  enemyBreakdown: AdvantageBreakdown;
-  lastAdvantage: LastAdvantage | null;
-}) {
-  const currentValue = playerBreakdown.total;
-  const toneClass = currentValue > 0 ? "player" : currentValue < 0 ? "enemy" : "neutral";
-  const outlook =
-    currentValue > 0
-      ? "当前玩家势能更高，回合结算时更容易获得跳跃槽。"
-      : currentValue < 0
-        ? "当前 AI 势能更高，回合结算时玩家更容易获得神抽槽补偿。"
-        : "双方势能接近，结算会保持相对中性。";
-
-  return (
-    <div className="sidebar-card momentum-panel">
-      <div className="flex-between momentum-header">
-        <div>
-          <h2 className="section-title">势能面板</h2>
-        </div>
-        <span className={classNames("pill momentum-pill", toneClass)}>当前 V {formatSigned(currentValue)}</span>
-      </div>
-      <div className="momentum-grid">
-        <MomentumSide title="玩家" breakdown={playerBreakdown} tone="player" />
-        <MomentumSide title="AI" breakdown={enemyBreakdown} tone="enemy" />
-      </div>
-      <p className="small-note momentum-outlook">{outlook}</p>
-      <LastSettlement lastAdvantage={lastAdvantage} />
-    </div>
-  );
-}
-
 function BattleLogPanel({ state }: { state: GameState }) {
   return (
-    <section className="log-card battle-log-panel">
-      <div className="flex-between battle-log-header">
-        <h2 className="section-title">战斗日志</h2>
-        <span className="small-note">回合 {state.turn}</span>
-      </div>
-      <div className="log-list">
-        {state.actionLog.map((item) => (
-          <div key={item.id} className="log-item">
-            {item.message}
-          </div>
-        ))}
-      </div>
-    </section>
+    <details className="battle-log-drawer">
+      <summary>
+        <span>战斗日志</span>
+        <strong>回合 {state.turn}</strong>
+      </summary>
+      <section className="log-card battle-log-panel">
+        <div className="log-list">
+          {state.actionLog.map((item) => (
+            <div key={item.id} className="log-item">
+              {item.message}
+            </div>
+          ))}
+        </div>
+      </section>
+    </details>
   );
 }
 
-function FieldCounts({ persistents, traps }: { persistents: number; traps: number }) {
+function BattleControlDock({
+  state,
+  hasSelectedAttacker,
+  isAttackAnimating,
+  onRestart,
+  onCancelAttacker
+}: {
+  state: GameState;
+  hasSelectedAttacker: boolean;
+  isAttackAnimating: boolean;
+  onRestart: () => void;
+  onCancelAttacker: () => void;
+}) {
   return (
-    <div className="field-counts" aria-label={`持续物 ${persistents} 张，盖伏 ${traps} 张`}>
-      <span className="field-count-badge persistent">持续 {persistents}</span>
+    <aside className="battle-control-dock" aria-label="战斗控制">
+      <BattleLogPanel state={state} />
+      <div className="game-toolbar hand-controls battle-action-stack">
+        <button type="button" className="ghost-btn" onClick={onRestart}>
+          重新开始
+        </button>
+        <button type="button" className="ghost-btn" disabled={!hasSelectedAttacker || isAttackAnimating} onClick={onCancelAttacker}>
+          取消攻击选择
+        </button>
+      </div>
+    </aside>
+  );
+}
+
+function FieldCounts({ minions, persistents, traps }: { minions: number; persistents: number; traps: number }) {
+  const backrow = persistents + traps;
+  return (
+    <div
+      className="field-counts"
+      aria-label={`随从 ${minions}/${MAX_MINION_SLOTS} 个，后场 ${backrow}/${MAX_BACKROW_SLOTS} 张，其中持续物 ${persistents} 张，盖伏 ${traps} 张`}
+    >
+      <span className="field-count-badge minion">随从 {minions}/{MAX_MINION_SLOTS}</span>
+      <span className="field-count-badge persistent">后场 {backrow}/{MAX_BACKROW_SLOTS}</span>
       <span className={classNames("field-count-badge trap", traps > 0 && "active")}>盖伏 {traps}</span>
     </div>
+  );
+}
+
+function BattlefieldSlot({
+  kind,
+  index,
+  occupied,
+  children
+}: {
+  kind: "minion" | "backrow";
+  index: number;
+  occupied: boolean;
+  children?: ReactNode;
+}) {
+  return (
+    <div className={classNames("battlefield-slot", `${kind}-slot`, occupied && "occupied")} aria-label={`${kind} slot ${index + 1}`}>
+      {children ?? (
+        <>
+          <span className="battlefield-slot-spark" aria-hidden="true" />
+          <span className="battlefield-slot-index" aria-hidden="true">
+            {index + 1}
+          </span>
+          <span className="battlefield-slot-label">{kind === "minion" ? "随从槽" : "后场槽"}</span>
+        </>
+      )}
+    </div>
+  );
+}
+
+function HiddenBackrowCard({ ownership }: { ownership: "player" | "enemy" }) {
+  return (
+    <div className="backrow-secret-card" aria-label={ownership === "enemy" ? "敌方盖伏" : "盖伏"}>
+      <span className="backrow-secret-gem" aria-hidden="true" />
+      <span>{ownership === "enemy" ? "盖伏" : "陷阱"}</span>
+    </div>
+  );
+}
+
+function EnemyHandBack({ index }: { index: number }) {
+  return (
+    <div className="enemy-hand-card" aria-label={`敌方手牌 ${index + 1}，伏牌`}>
+      <span className="enemy-hand-card-mark" aria-hidden="true" />
+      <span className="enemy-hand-card-glow" aria-hidden="true" />
+    </div>
+  );
+}
+
+function getBackrowEntries(player: Pick<PlayerState, "persistents" | "traps">, concealTraps: boolean): BackrowEntry[] {
+  return [
+    ...player.persistents.map((card) => ({ card, tone: "persistent" as const, concealed: false })),
+    ...player.traps.map((card) => ({ card, tone: "trap" as const, concealed: concealTraps }))
+  ].slice(0, MAX_BACKROW_SLOTS);
+}
+
+function BackrowSideZone({
+  title,
+  ownership,
+  entries,
+  rowClass,
+  onInspect,
+  onClearInspect,
+  footer
+}: {
+  title: string;
+  ownership: "player" | "enemy";
+  entries: BackrowEntry[];
+  rowClass: string;
+  onInspect: (info: CardDetailInfo, point: InspectPoint) => void;
+  onClearInspect: () => void;
+  footer?: ReactNode;
+}) {
+  return (
+    <aside
+      className={classNames("side-backrow-zone", `${ownership}-backrow-zone`, rowClass)}
+      aria-label={`${title} ${entries.length}/${MAX_BACKROW_SLOTS}`}
+    >
+      <div className={classNames("side-backrow-lane", "slot-lane", rowClass)}>
+        <div className="side-zone-header">
+          <span>{title}</span>
+          <strong>{entries.length}/{MAX_BACKROW_SLOTS}</strong>
+        </div>
+        {BACKROW_SLOT_INDEXES.map((slotIndex) => {
+          const entry = entries[slotIndex];
+          return (
+            <BattlefieldSlot key={`${ownership}_side_backrow_${slotIndex}`} kind="backrow" index={slotIndex} occupied={Boolean(entry)}>
+              {entry ? (
+                entry.concealed ? (
+                  <HiddenBackrowCard ownership={ownership} />
+                ) : (
+                  <PersistentCard
+                    card={entry.card}
+                    pixiEntityId={entry.card.instanceId}
+                    cardTone={entry.tone}
+                    onInspect={onInspect}
+                    onClearInspect={onClearInspect}
+                  />
+                )
+              ) : null}
+            </BattlefieldSlot>
+          );
+        })}
+      </div>
+      {footer ? <div className="side-backrow-footer">{footer}</div> : null}
+    </aside>
   );
 }
 
@@ -727,6 +689,8 @@ export function ReactBattleBoard({
   const targetSet = isAttackAnimating ? new Set<string>() : store.buildTargetSet();
   const canPlayCards =
     state.currentPlayer === "P1" && state.phase === "mainTurn" && !state.winner && !state.pendingChoice && !isAttackAnimating;
+  const isMulligan = state.screen === "mulligan";
+  const selectedMulliganCount = store.uiState.mulliganSelection.size;
   const canControlBattle =
     state.currentPlayer === "P1" && (state.phase === "mainTurn" || state.phase === "combat") && !state.winner && !isAttackAnimating;
   const canEndTurn = canControlBattle && !state.pendingChoice;
@@ -741,19 +705,13 @@ export function ReactBattleBoard({
     cardFx && cardFx.ownerId === "P1" && (cardFx.kind === "placeTrap" || cardFx.kind === "trapTrigger") ? "row-fx trap" : "";
   const enemyZoneMetaClass =
     cardFx && cardFx.ownerId === "P2" && (cardFx.kind === "placeTrap" || cardFx.kind === "trapTrigger") ? "zone-fx trap" : "";
-  const attackStatus = isAttackAnimating ? "攻击演出中" : store.uiState.selectedAttackerId ? "已选择随从" : "未选择";
-  const phaseLabel = getPhaseLabel(state.phase);
-  const actionHint = getActionHint(state, player, store.uiState.selectedAttackerId, isAttackAnimating);
-  const statusText = state.winner
-    ? state.winner === "P1"
-      ? "你已经赢得胜利。"
-      : "AI 已经赢得胜利。"
-    : isAttackAnimating
-      ? "攻击特效播放中，伤害会在动画中结算。"
-      : state.currentPlayer === "P1"
-        ? `当前由你行动，阶段：${phaseLabel}。`
-        : `当前由 AI 行动，阶段：${phaseLabel}。`;
-
+  const enemyBackrowRowClass = classNames(
+    enemyPersistentRowClass,
+    cardFx && cardFx.ownerId === "P2" && (cardFx.kind === "placeTrap" || cardFx.kind === "trapTrigger") ? "row-fx trap" : ""
+  );
+  const playerBackrowRowClass = classNames(playerPersistentRowClass, playerTrapRowClass);
+  const enemyBackrowEntries = getBackrowEntries(enemy, true);
+  const playerBackrowEntries = getBackrowEntries(player, false);
   const showCardDetail = useCallback((info: CardDetailInfo, point: InspectPoint): void => {
     setCardDetail({ info, point });
   }, []);
@@ -812,6 +770,18 @@ export function ReactBattleBoard({
     }
   }
 
+  function toggleMulliganCard(runtimeId: string): void {
+    clearCardDetail();
+    store.toggleMulliganCard(runtimeId);
+    onChange();
+  }
+
+  function confirmMulligan(): void {
+    clearCardDetail();
+    store.confirmMulligan();
+    onChange();
+  }
+
   function resolvePendingUse(cardId?: string): void {
     clearCardDetail();
     store.resolvePendingChoice({ action: "use", cardId: cardId ?? null });
@@ -825,61 +795,111 @@ export function ReactBattleBoard({
   }
 
   return (
-    <div className="app-shell game-shell">
-      <section className="hero game-hero">
-        <div className="hero-copy">
-          <h1>Shin Doro 对局中</h1>
-          <p>{statusText}</p>
-        </div>
-        <div className="hero-stats battle-hero-stats">
-          <div className="pill">
-            <strong>回合数</strong>
-            <br />
-            {state.turn}
-          </div>
-          <div className="pill">
-            <strong>当前行动方</strong>
-            <br />
-            {state.currentPlayer === "P1" ? "玩家" : "AI"}
-          </div>
-          <div className="pill">
-            <strong>阶段</strong>
-            <br />
-            {phaseLabel}
-          </div>
-          <div className="pill">
-            <strong>攻击选择</strong>
-            <br />
-            {attackStatus}
-          </div>
-        </div>
-        <div className={classNames("action-hint", actionHint.tone)} aria-live="polite">
-          <span className="action-hint-label">当前建议</span>
-          <strong>{actionHint.title}</strong>
-          <p>{actionHint.detail}</p>
-        </div>
-      </section>
-
+    <div className="app-shell game-shell moe-table">
       <section className="board-shell">
+        <div className="arcana-table-art" aria-hidden="true" />
+        <div className={classNames("turn-seal", state.currentPlayer === "P1" ? "player" : "enemy")} aria-hidden="true">
+          <span>{state.turn}</span>
+        </div>
         <EffectLayer fx={cardFx} />
+        <div className="hud-corner enemy-hud-corner">
+          <PlayerHUD
+            player={enemy}
+            character={store.getCharacter(enemy.character)}
+            ownership="enemy"
+            targetableHero={legalHeroTarget}
+            momentumBreakdown={enemyMomentum}
+            pixiEntityId="P2_hero"
+            onAttackHero={() => attackHero("P2_hero")}
+          />
+          <BackrowSideZone
+            title="敌方后场"
+            ownership="enemy"
+            entries={enemyBackrowEntries}
+            rowClass={enemyBackrowRowClass}
+            onInspect={showCardDetail}
+            onClearInspect={clearCardDetail}
+          />
+        </div>
+
+        <div className="hud-corner player-hud-corner">
+          <PlayerHUD
+            player={player}
+            character={store.getCharacter(player.character)}
+            ownership="player"
+            targetableHero={false}
+            momentumBreakdown={playerMomentum}
+            pixiEntityId="P1_hero"
+          />
+        </div>
+
         <div className="battle-layout">
           <div className="battle-main">
-            <section className="battlefield-half enemy-half">
-              <PlayerHUD
-                player={enemy}
-                character={store.getCharacter(enemy.character)}
-                ownership="enemy"
-                targetableHero={legalHeroTarget}
-                pixiEntityId="P2_hero"
-                onAttackHero={() => attackHero("P2_hero")}
-              />
+            <section className="enemy-hand-zone" aria-label="敌方手牌">
+              <div className="enemy-hand-meta">
+                <span>敌方手牌</span>
+                <strong>{enemy.hand.length}</strong>
+              </div>
+              <div className="enemy-hand-row">
+                {enemy.hand.length ? (
+                  enemy.hand.map((card, index) => <EnemyHandBack key={card.runtimeId} index={index} />)
+                ) : (
+                  <span className="enemy-hand-empty">无手牌</span>
+                )}
+              </div>
+            </section>
 
-              <section className={classNames("zone field-zone", enemyBoardZoneClass, enemyZoneMetaClass)}>
+            <section className="battlefield-half enemy-half">
+              <section className={classNames("zone field-zone battlefield-v2", enemyBoardZoneClass, enemyZoneMetaClass)}>
                 <div className="zone-header">
                   <h2 className="section-title">敌方战场</h2>
-                  <FieldCounts persistents={enemy.persistents.length} traps={enemy.traps.length} />
+                  <FieldCounts minions={enemy.board.length} persistents={enemy.persistents.length} traps={enemy.traps.length} />
                 </div>
                 <div className="zone-stack">
+                  <div className={classNames("shared-backrow-row persistent-row zone-lane slot-lane", enemyBackrowRowClass)}>
+                    {BACKROW_SLOT_INDEXES.map((slotIndex) => {
+                      const entry = enemyBackrowEntries[slotIndex];
+                      return (
+                        <BattlefieldSlot key={`enemy_backrow_${slotIndex}`} kind="backrow" index={slotIndex} occupied={Boolean(entry)}>
+                          {entry ? (
+                            entry.concealed ? (
+                              <HiddenBackrowCard ownership="enemy" />
+                            ) : (
+                              <PersistentCard
+                                card={entry.card}
+                                pixiEntityId={entry.card.instanceId}
+                                cardTone={entry.tone}
+                                onInspect={showCardDetail}
+                                onClearInspect={clearCardDetail}
+                              />
+                            )
+                          ) : null}
+                        </BattlefieldSlot>
+                      );
+                    })}
+                  </div>
+                  <div className="minion-row zone-lane slot-lane">
+                    {MINION_SLOT_INDEXES.map((slotIndex) => {
+                      const minion = getCenteredMinionForSlot(enemy.board, slotIndex);
+                      return (
+                        <BattlefieldSlot key={`enemy_minion_${slotIndex}`} kind="minion" index={slotIndex} occupied={Boolean(minion)}>
+                          {minion ? (
+                            <MinionCard
+                              minion={minion}
+                              ownership="enemy"
+                              selectedAttackerId={store.uiState.selectedAttackerId}
+                              targetable={targetSet.has(minion.instanceId)}
+                              pixiEntityId={minion.instanceId}
+                              summoning={cardFx?.kind === "summonMinion" && cardFx.targetId === minion.instanceId}
+                              onInspect={showCardDetail}
+                              onClearInspect={clearCardDetail}
+                              onClick={attackMinion}
+                            />
+                          ) : null}
+                        </BattlefieldSlot>
+                      );
+                    })}
+                  </div>
                   <div className={classNames("persistent-row zone-lane", enemyPersistentRowClass)}>
                     {enemy.persistents.length ? (
                       enemy.persistents.map((card) => (
@@ -919,13 +939,66 @@ export function ReactBattleBoard({
               </section>
             </section>
 
+            <BackrowSideZone
+              title="我方后场"
+              ownership="player"
+              entries={playerBackrowEntries}
+              rowClass={playerBackrowRowClass}
+              onInspect={showCardDetail}
+              onClearInspect={clearCardDetail}
+              footer={
+                <button type="button" className="primary-btn side-end-turn-btn" disabled={!canEndTurn} onClick={endTurn}>
+                  结束回合
+                </button>
+              }
+            />
+
             <section className="battlefield-half player-half">
-              <section className={classNames("zone field-zone", playerBoardZoneClass)}>
+              <section className={classNames("zone field-zone battlefield-v2", playerBoardZoneClass)}>
                 <div className="zone-header">
                   <h2 className="section-title">你的战场</h2>
-                  <FieldCounts persistents={player.persistents.length} traps={player.traps.length} />
+                  <FieldCounts minions={player.board.length} persistents={player.persistents.length} traps={player.traps.length} />
                 </div>
                 <div className="zone-stack zone-stack-player">
+                  <div className={classNames("shared-backrow-row persistent-row zone-lane slot-lane", playerBackrowRowClass)}>
+                    {BACKROW_SLOT_INDEXES.map((slotIndex) => {
+                      const entry = playerBackrowEntries[slotIndex];
+                      return (
+                        <BattlefieldSlot key={`player_backrow_${slotIndex}`} kind="backrow" index={slotIndex} occupied={Boolean(entry)}>
+                          {entry ? (
+                            <PersistentCard
+                              card={entry.card}
+                              pixiEntityId={entry.card.instanceId}
+                              cardTone={entry.tone}
+                              onInspect={showCardDetail}
+                              onClearInspect={clearCardDetail}
+                            />
+                          ) : null}
+                        </BattlefieldSlot>
+                      );
+                    })}
+                  </div>
+                  <div className="minion-row zone-lane slot-lane">
+                    {MINION_SLOT_INDEXES.map((slotIndex) => {
+                      const minion = getCenteredMinionForSlot(player.board, slotIndex);
+                      return (
+                        <BattlefieldSlot key={`player_minion_${slotIndex}`} kind="minion" index={slotIndex} occupied={Boolean(minion)}>
+                          {minion ? (
+                            <MinionCard
+                              minion={minion}
+                              ownership="player"
+                              selectedAttackerId={store.uiState.selectedAttackerId}
+                              pixiEntityId={minion.instanceId}
+                              summoning={cardFx?.kind === "summonMinion" && cardFx.targetId === minion.instanceId}
+                              onInspect={showCardDetail}
+                              onClearInspect={clearCardDetail}
+                              onClick={selectAttacker}
+                            />
+                          ) : null}
+                        </BattlefieldSlot>
+                      );
+                    })}
+                  </div>
                   <div className={classNames("persistent-row zone-lane", playerPersistentRowClass)}>
                     {player.persistents.length ? (
                       player.persistents.map((card) => (
@@ -978,63 +1051,54 @@ export function ReactBattleBoard({
                   </div>
                 </div>
               </section>
-
-              <PlayerHUD
-                player={player}
-                character={store.getCharacter(player.character)}
-                ownership="player"
-                targetableHero={false}
-                pixiEntityId="P1_hero"
-              />
             </section>
 
-            <section className="zone hand-zone">
-              <div className="zone-header">
-                <h2 className="section-title">你的手牌</h2>
-                <div className="game-toolbar">
-                  <button type="button" className="ghost-btn" onClick={restart}>
-                    重新开始
+            <section className={classNames("hand-zone", isMulligan && "mulligan-hand-zone")} aria-label="手牌">
+              {isMulligan ? (
+                <div className="mulligan-hand-toolbar" aria-label="起手换牌">
+                  <button type="button" className="primary-btn mulligan-hand-confirm" onClick={confirmMulligan}>
+                    更换手牌
                   </button>
-                  <button
-                    type="button"
-                    className="ghost-btn"
-                    disabled={!store.uiState.selectedAttackerId || isAttackAnimating}
-                    onClick={cancelAttacker}
-                  >
-                    取消攻击选择
-                  </button>
-                  <button type="button" className="primary-btn" disabled={!canEndTurn} onClick={endTurn}>
-                    结束回合
-                  </button>
+                  <span className="mulligan-hand-count">已选 {selectedMulliganCount} 张</span>
                 </div>
-              </div>
+              ) : null}
               <div className="hand-row">
                 {player.hand.length ? (
-                  player.hand.map((card) => {
-                    const disabledReason = getHandCardDisabledReason(card, state, player, isAttackAnimating);
+                  player.hand.map((card, index) => {
+                    const selected = store.uiState.mulliganSelection.has(card.runtimeId);
+                    const disabledReason = isMulligan ? null : getHandCardDisabledReason(card, state, player, isAttackAnimating);
                     return (
                       <HandCard
                         key={card.runtimeId}
                         card={card}
-                        disabled={!canPlayCards || Boolean(disabledReason)}
+                        fanIndex={index}
+                        fanCount={player.hand.length}
+                        disabled={isMulligan ? false : !canPlayCards || Boolean(disabledReason)}
                         disabledReason={disabledReason ?? undefined}
+                        extraClass={classNames(isMulligan && "mulligan-choice-card", selected && "selected-for-mulligan")}
+                        selected={isMulligan && selected}
+                        selectionLabel="换掉"
                         onInspect={showCardDetail}
                         onClearInspect={clearCardDetail}
-                        onPlay={playCard}
+                        onSelect={isMulligan ? toggleMulliganCard : undefined}
+                        onPlay={isMulligan ? undefined : playCard}
                       />
                     );
                   })
                 ) : (
-                  <p className="empty-text">你的手牌为空；进入抽牌阶段后会补充。</p>
+                  <p className="empty-text">手牌为空；进入抽牌阶段后会补充。</p>
                 )}
               </div>
             </section>
           </div>
 
-          <aside className="sidebar">
-            <MomentumPanel playerBreakdown={playerMomentum} enemyBreakdown={enemyMomentum} lastAdvantage={state.lastAdvantage} />
-            <BattleLogPanel state={state} />
-          </aside>
+          <BattleControlDock
+            state={state}
+            hasSelectedAttacker={Boolean(store.uiState.selectedAttackerId)}
+            isAttackAnimating={isAttackAnimating}
+            onRestart={restart}
+            onCancelAttacker={cancelAttacker}
+          />
         </div>
       </section>
 
@@ -1049,3 +1113,4 @@ export function ReactBattleBoard({
     </div>
   );
 }
+

@@ -5,7 +5,16 @@ import { getCardDefinition } from "../.test-dist/data/cards.js";
 import { CHARACTERS } from "../.test-dist/data/characters.js";
 import { STARTING_DECKS } from "../.test-dist/data/decks.js";
 import { TALENT_LOOKUP, getTalentCost } from "../.test-dist/data/talents.js";
-import { calculateAdvantage, createRuntimeCard, getAdvantageBreakdown, getSlotGain } from "../.test-dist/engine/rules.js";
+import {
+  calculateAdvantage,
+  createPersistentInstance,
+  createRuntimeCard,
+  getAdvantageBreakdown,
+  getBackrowSlotCount,
+  getSlotGain,
+  MAX_BACKROW_SLOTS,
+  MAX_MINION_SLOTS,
+} from "../.test-dist/engine/rules.js";
 import { ShinDoroGame } from "../.test-dist/engine/gameState.js";
 import { chooseAiAction, chooseAiMulliganIndices, chooseAiTalentIds } from "../.test-dist/engine/ai.js";
 
@@ -667,6 +676,77 @@ test("Izumi Ameko overkill discards highest-cost cards first", () => {
   assert.deepEqual(state.players.P2.hand.map((card) => card.id), ["coin"]);
 });
 
+test("大奶十点跳脸不会在回合开始被自身被动扣没", () => {
+  const game = new ShinDoroGame({ rng: () => 0.42 });
+  game.setupMatch({
+    playerCharacterId: "character_c",
+    aiCharacterId: "character_a",
+    playerTalentIds: []
+  });
+
+  const state = game.getState();
+  state.currentPlayer = "P1";
+  state.players.P1.jumpSlot = 10;
+  state.players.P1.godDrawSlot = 0;
+  state.players.P1.deck = [createRuntimeCard(getCardDefinition("burn"))];
+  game.summonMinion("P1", getCardDefinition("ember_wolf"), { triggerOnPlay: false, canTriggerTrap: false });
+
+  game.beginTurn();
+
+  assert.equal(state.pendingChoice?.type, "optionalJump");
+  assert.equal(state.players.P1.jumpSlot, 10);
+
+  game.handlePendingChoice({ action: "use" });
+
+  assert.equal(state.pendingChoice, null);
+  assert.equal(state.players.P1.jumpSlot, 0);
+  assert.equal(state.players.P1.board[0].attack, 5);
+});
+
+test("大奶十三点跳脸会按 Overkill 释放而不是被扣成十二点", () => {
+  const game = new ShinDoroGame({ rng: () => 0.42 });
+  game.setupMatch({
+    playerCharacterId: "character_c",
+    aiCharacterId: "character_a",
+    playerTalentIds: []
+  });
+
+  const state = game.getState();
+  state.currentPlayer = "P1";
+  state.players.P1.jumpSlot = 13;
+  state.players.P1.godDrawSlot = 0;
+  state.players.P1.deck = [createRuntimeCard(getCardDefinition("burn"))];
+  game.summonMinion("P1", getCardDefinition("ember_wolf"), { triggerOnPlay: false, canTriggerTrap: false });
+
+  game.beginTurn();
+
+  assert.equal(state.pendingChoice, null);
+  assert.equal(state.players.P1.jumpSlot, 0);
+  assert.equal(state.players.P1.board[0].attack, 6);
+  assert.equal(state.players.P1.board[0].health, 5);
+});
+
+test("大奶的槽位耗散仍会扣除未到十点的最高槽位", () => {
+  const game = new ShinDoroGame({ rng: () => 0.42 });
+  game.setupMatch({
+    playerCharacterId: "character_c",
+    aiCharacterId: "character_a",
+    playerTalentIds: []
+  });
+
+  const state = game.getState();
+  state.currentPlayer = "P1";
+  state.players.P1.jumpSlot = 9;
+  state.players.P1.godDrawSlot = 4;
+  state.players.P1.deck = [createRuntimeCard(getCardDefinition("burn"))];
+
+  game.beginTurn();
+
+  assert.equal(state.players.P1.jumpSlot, 8);
+  assert.equal(state.players.P1.godDrawSlot, 4);
+  assert.equal(state.pendingChoice, null);
+});
+
 test("AI mulligan keeps profile cards and replaces slow cards", () => {
   const game = new ShinDoroGame({ rng: () => 0.42 });
   game.setupMatch({
@@ -800,6 +880,61 @@ test("public play API rejects cards from the non-current player", () => {
   assert.equal(game.playCardAtIndex("P2", 0), false);
   assert.equal(ai.hand.length, handSizeBefore);
   assert.equal(ai.board.length, boardSizeBefore);
+});
+
+test("battlefield caps minions at seven and shared backrow at seven", () => {
+  const game = new ShinDoroGame({ rng: () => 0.42 });
+  game.setupMatch({
+    playerCharacterId: "character_a",
+    aiCharacterId: "character_b",
+    playerTalentIds: []
+  });
+  game.completePlayerMulligan([]);
+
+  const state = game.getState();
+  const player = state.players.P1;
+  const minionCard = getCardDefinition("shield_doll");
+  const persistentCard = getCardDefinition("war_banner");
+  const trapCard = getCardDefinition("mirror_wall");
+  state.currentPlayer = "P1";
+  state.phase = "mainTurn";
+
+  for (let index = 0; index < MAX_MINION_SLOTS; index += 1) {
+    const minion = game.summonMinion("P1", minionCard, { canTriggerTrap: false });
+    assert.ok(minion);
+  }
+  assert.equal(game.summonMinion("P1", minionCard, { canTriggerTrap: false }), null);
+  assert.equal(player.board.length, MAX_MINION_SLOTS);
+
+  player.hand = [createRuntimeCard(minionCard)];
+  player.mana = 10;
+  assert.equal(game.playCardAtIndex("P1", 0), false);
+  assert.equal(player.hand.length, 1);
+  assert.equal(player.board.length, MAX_MINION_SLOTS);
+
+  player.persistents = Array.from({ length: MAX_BACKROW_SLOTS }, () => createPersistentInstance(persistentCard, "P1"));
+  player.hand = [createRuntimeCard(persistentCard)];
+  player.mana = 10;
+  assert.equal(game.playCardAtIndex("P1", 0), false);
+  assert.equal(player.hand.length, 1);
+  assert.equal(player.persistents.length, MAX_BACKROW_SLOTS);
+
+  player.persistents = Array.from({ length: 3 }, () => createPersistentInstance(persistentCard, "P1"));
+  player.traps = Array.from({ length: MAX_BACKROW_SLOTS - 3 }, () => createPersistentInstance(trapCard, "P1"));
+  player.hand = [createRuntimeCard(trapCard)];
+  player.mana = 10;
+  assert.equal(getBackrowSlotCount(player), MAX_BACKROW_SLOTS);
+  assert.equal(game.playCardAtIndex("P1", 0), false);
+  assert.equal(player.hand.length, 1);
+  assert.equal(getBackrowSlotCount(player), MAX_BACKROW_SLOTS);
+
+  player.persistents = [];
+  player.traps = Array.from({ length: MAX_BACKROW_SLOTS }, () => createPersistentInstance(trapCard, "P1"));
+  player.hand = [createRuntimeCard(trapCard)];
+  player.mana = 10;
+  assert.equal(game.playCardAtIndex("P1", 0), false);
+  assert.equal(player.hand.length, 1);
+  assert.equal(player.traps.length, MAX_BACKROW_SLOTS);
 });
 
 test("invalid attack targets do not consume the attack or change phase", () => {
@@ -978,7 +1113,11 @@ test("AI ends its turn instead of retrying an unplayable minion on a full board"
 
   const state = game.getState();
   const ai = state.players.P2;
-  ai.board = Array.from({ length: 7 }, () => game.summonMinion("P2", getCardDefinition("shield_doll"), { canTriggerTrap: false }));
+  ai.board = [];
+  for (let index = 0; index < MAX_MINION_SLOTS; index += 1) {
+    const minion = game.summonMinion("P2", getCardDefinition("shield_doll"), { canTriggerTrap: false });
+    assert.ok(minion);
+  }
   for (const minion of ai.board) {
     minion.canAttack = false;
   }

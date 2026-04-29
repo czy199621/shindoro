@@ -1,0 +1,37 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="360" height="220" viewBox="0 0 360 220" role="img" aria-label="Original cute spell card art">
+  <defs>
+    <linearGradient id="sky" x1="0" x2="1" y1="0" y2="1">
+      <stop offset="0" stop-color="#eefbff"/>
+      <stop offset="0.48" stop-color="#cdefff"/>
+      <stop offset="1" stop-color="#e8ddff"/>
+    </linearGradient>
+    <radialGradient id="gem" cx="35%" cy="28%" r="70%">
+      <stop offset="0" stop-color="#ffffff"/>
+      <stop offset="0.4" stop-color="#76d8f5"/>
+      <stop offset="1" stop-color="#8d68e8"/>
+    </radialGradient>
+    <filter id="glow" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="5" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+  <rect width="360" height="220" rx="34" fill="url(#sky)"/>
+  <circle cx="285" cy="48" r="48" fill="#fff3a8" opacity="0.42"/>
+  <path d="M36 168c62-56 120-67 174-34 43 26 82 26 118-2v70H36z" fill="#ffffff" opacity="0.36"/>
+  <g filter="url(#glow)">
+    <path d="M180 42l52 72-52 72-52-72z" fill="url(#gem)" stroke="#ffffff" stroke-width="7" stroke-linejoin="round"/>
+    <path d="M180 42v144M128 114h104M153 76l54 76M207 76l-54 76" fill="none" stroke="#ffffff" stroke-width="3" opacity="0.64"/>
+  </g>
+  <g fill="none" stroke-linecap="round">
+    <path d="M66 69c38 0 48 28 74 28" stroke="#76d8f5" stroke-width="5" opacity="0.74"/>
+    <path d="M220 132c34 0 47 27 78 27" stroke="#b59cff" stroke-width="5" opacity="0.7"/>
+    <path d="M72 135c22-22 43-23 61-2" stroke="#f47faa" stroke-width="5" opacity="0.52"/>
+  </g>
+  <g fill="#ffffff">
+    <path d="M82 38l6 13 14 2-10 10 3 14-13-7-13 7 3-14-10-10 14-2z"/>
+    <path d="M300 138l5 10 11 2-8 8 2 11-10-5-10 5 2-11-8-8 11-2z"/>
+  </g>
+</svg>

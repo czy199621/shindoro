@@ -1,6 +1,532 @@
 # Progress
 
+## 2026-04-29
+
+### 战场标题隐藏、手牌居中与中心展开召唤
+- 影响文件：
+  - `src/components/react/ReactBattleBoard.tsx`
+  - `src/components/Board.tsx`
+  - `src/style.css`
+  - `dist/`
+  - `memory-bank/progress.md`
+  - `memory-bank/architecture.md`
+- 本次改动：
+  - 隐藏敌我中央前场的“敌方战场 / 你的战场”标题文字，只保留计数信息。
+  - 我方手牌改为与敌方手牌一致的居中展示，并保留 HUD 安全区。
+  - 随从槽显示改为中间优先：第 1 个随从显示在 7 格中央，之后按左、右、再左、再右逐渐向两边展开。
+  - 该顺序只影响 UI 视觉槽位；规则层 `player.board` 仍保持紧凑数组，避免影响攻击、AI 与已有测试。
+- 验证：
+  - `npm.cmd run build` 通过，并同步生成新版 `dist/`。
+  - `npm.cmd run test` 通过（49/49）。
+
+### 召唤特效层不再挤压战斗布局
+- 影响文件：
+  - `src/style.css`
+  - `dist/`
+  - `memory-bank/progress.md`
+  - `memory-bank/architecture.md`
+- 本次改动：
+  - 定位召唤随从时战场和手牌被横向挤压的原因：`board-shell > .effect-layer` 被后续高优先级规则改成了 `position: relative`，导致 `cardFx` 挂载时作为 flex 子项占据宽度。
+  - 在最终覆盖层将 `effect-layer` 和 `turn-seal` 恢复为绝对定位浮层，确保召唤、放置、法术和陷阱提示不会参与 `board-shell` 的 flex 布局计算。
+- 验证：
+  - `npm.cmd run build` 通过，并同步生成新版 `dist/`。
+  - `npm.cmd run test` 通过（49/49）。
+
+### 手牌边界与 HUD 安全区修正
+- 影响文件：
+  - `src/style.css`
+  - `dist/`
+  - `memory-bank/progress.md`
+  - `memory-bank/architecture.md`
+- 本次改动：
+  - 修正图片式卡框变高后，底部手牌行仍沿用旧高度，导致卡牌上缘被裁切 / 被桌面视觉层压住的问题。
+  - 恢复并收敛手牌右侧 HUD 安全区，避免右下玩家 HUD 遮住最右侧手牌。
+  - 提高手牌区层级与纵向可见空间；矮屏桌面端会适当缩小手牌卡，优先保证完整可见。
+- 验证：
+  - `npm.cmd run build` 通过，并同步生成新版 `dist/`。
+  - `npm.cmd run test` 通过（49/49）。
+
+### 敌方后场挂入敌方 HUD 栈
+- 影响文件：
+  - `src/components/react/ReactBattleBoard.tsx`
+  - `src/components/Board.tsx`
+  - `src/style.css`
+  - `dist/`
+  - `memory-bank/progress.md`
+  - `memory-bank/architecture.md`
+- 本次改动：
+  - 将敌方后场从 `battle-main` 中移出，直接渲染到 `.enemy-hud-corner` 内，位于敌方 HUD 下方。
+  - 敌方后场现在与敌方 HUD 共用同一个角落定位容器，天然使用同一左边缘基准，不再受 `battle-main` 响应式 grid 分支影响。
+  - 保留后场 2x4 紧凑矩阵与敌方盖伏隐藏规则；旧字符串模板 `Board.tsx` 同步相同结构。
+  - 前一次“桌面端在 battle-main 内绝对定位”的方案仅能覆盖宽屏，已由 HUD 栈内渲染替代。
+- 验证：
+  - `npm.cmd run build` 通过，并同步生成新版 `dist/`。
+  - `npm.cmd run test` 通过（49/49）。
+
+### 敌方后场改为桌面端边缘锚定
+- 影响文件：
+  - `src/style.css`
+  - `dist/`
+  - `memory-bank/progress.md`
+  - `memory-bank/architecture.md`
+- 本次改动：
+  - 修正敌方后场仍然没有跟敌方 HUD 左边缘对齐的问题。
+  - 原因是敌方后场仍参与 `battle-main` 的 `enemySide` 网格区域布局，`margin-left` 只相对网格列生效，不是相对棋盘边缘 / HUD 生效。
+  - 桌面端将 `.enemy-backrow-zone` 改为在 `.battle-main` 内绝对定位，并直接使用 `--enemy-hud-gap` 作为 `left`，确保和敌方 HUD 左边缘使用同一定位基准。
+- 验证：
+  - `npm.cmd run build` 通过，并同步生成新版 `dist/`。
+  - `npm.cmd run test` 通过（49/49）。
+
+### 敌方后场对齐与结束回合按钮归位
+- 影响文件：
+  - `src/components/react/ReactBattleBoard.tsx`
+  - `src/components/Board.tsx`
+  - `src/style.css`
+  - `dist/`
+  - `memory-bank/progress.md`
+  - `memory-bank/architecture.md`
+- 本次改动：
+  - 敌方后场左边缘改为跟敌方 HUD 左边缘对齐，避免左侧视觉基准漂移。
+  - “结束回合”从右上日志控制组移出，改为固定在我方后场面板下方。
+  - 右上战斗控制组现在只保留“重新开始”和“取消攻击选择”。
+  - 旧字符串模板 `Board.tsx` 同步移动 `data-action="end-turn"`，保持兼容路径可点击。
+- 验证：
+  - `npm.cmd run build` 通过，并同步生成新版 `dist/`。
+  - `npm.cmd run test` 通过（49/49）。
+
+### 战斗布局精修：HUD、空槽和敌方手牌
+- 影响文件：
+  - `src/style.css`
+  - `dist/`
+  - `memory-bank/progress.md`
+  - `memory-bank/architecture.md`
+- 本次改动：
+  - 敌方 HUD 改为和我方一样保留棋盘边距，不再贴到视口边缘。
+  - 左右后场面板分别向敌方 / 我方 HUD 靠近，保持紧凑但避免长期占用中央战场空间。
+  - 敌方战场与我方战场的 `field-zone` 底框改为透明，中央区域只保留实际卡牌和显现后的槽位。
+  - 随从槽与后场槽在空槽时隐藏边框、背景、编号和标签；只有有卡牌占用时才显现。
+  - 敌方手牌卡背放大到接近我方手牌尺寸，并隐藏“敌方手牌”标题与数量牌。
+- 验证：
+  - `npm.cmd run build` 通过，并同步生成新版 `dist/`。
+  - `npm.cmd run test` 通过（49/49）。
+
+### 战斗操作按钮移到日志下方竖排
+- 影响文件：
+  - `src/components/react/ReactBattleBoard.tsx`
+  - `src/components/Board.tsx`
+  - `src/style.css`
+  - `dist/`
+  - `memory-bank/progress.md`
+  - `memory-bank/architecture.md`
+- 本次改动：
+  - 将“重新开始 / 取消攻击选择 / 结束回合”从手牌区移出。
+  - 新增右上 `battle-control-dock`，战斗日志入口在顶部，操作按钮在其下方竖排放置。
+  - React 战斗界面与旧字符串模板 `Board.tsx` 同步同一结构，避免兼容路径仍在手牌区显示按钮。
+  - 手牌区现在只保留手牌本身，减少底部拥挤和按钮遮挡卡牌的风险。
+- 验证：
+  - `npm.cmd run build` 通过，并同步生成新版 `dist/`。
+  - `npm.cmd run test` 通过（49/49）。
+
+### 后场紧凑 2x4 矩阵
+- 影响文件：
+  - `src/components/react/ReactBattleBoard.tsx`
+  - `src/components/Board.tsx`
+  - `src/style.css`
+  - `dist/`
+  - `memory-bank/progress.md`
+  - `memory-bank/architecture.md`
+- 本次改动：
+  - 左右后场从单列 7 格改为 2 列 x 4 行紧凑矩阵。
+  - 矩阵第一格用于显示“敌方/我方 x/7”计数，其余 7 格为持续物 + 陷阱共享后场槽。
+  - 缩短后场面板高度并居中摆放，减少与左上敌方 HUD、右下玩家 HUD 的重叠风险。
+  - 旧字符串模板 `Board.tsx` 同步相同结构，兼容路径不会回到单列后场。
+- 验证：
+  - `npm.cmd run build` 通过，并同步生成新版 `dist/`。
+  - `npm.cmd run test` 通过（49/49）。
+
+### 标注图战斗区重排：中央前场、左右后场
+- 影响文件：
+  - `src/components/react/ReactBattleBoard.tsx`
+  - `src/components/Board.tsx`
+  - `src/style.css`
+  - `dist/`
+  - `memory-bank/progress.md`
+  - `memory-bank/architecture.md`
+- 本次改动：
+  - 按用户标注图重新规划战斗区：敌方 HUD 保持左上，玩家 HUD 保持右下。
+  - 敌方手牌固定在中央顶部；中央区域只承载敌方前场和我方前场，前场随从槽保持 7 格。
+  - 敌方后场从中央战场抽到左侧纵向侧栏；我方后场抽到右侧纵向侧栏；两侧后场都使用持续物 + 陷阱共享 7 格。
+  - 中央战场隐藏原先内嵌的共享后场行，避免后场重复占用前场空间；旧字符串模板 `Board.tsx` 同步侧栏后场结构。
+- 验证：
+  - `npm.cmd run build` 通过，并同步生成新版 `dist/`。
+  - `npm.cmd run test` 通过（49/49）。
+
+### 敌方伏牌手牌与等尺寸战场槽位
+- 影响文件：
+  - `src/components/react/ReactBattleBoard.tsx`
+  - `src/components/Board.tsx`
+  - `src/style.css`
+  - `dist/`
+  - `memory-bank/progress.md`
+  - `memory-bank/architecture.md`
+- 本次改动：
+  - 敌方增加顶部手牌带，按敌方手牌数量显示伏牌卡背，不暴露卡名、费用和效果。
+  - 战斗主区域改为四行：敌方手牌、敌方战场、我方战场、我方手牌。
+  - 因敌方手牌占用纵向空间，双方战场槽位统一缩小；敌方与我方的随从槽、后场槽使用同一套尺寸规则。
+  - 旧字符串模板 `Board.tsx` 同步渲染敌方伏牌手牌，保持兼容路径一致。
+- 验证：
+  - `npm.cmd run build` 通过，并同步生成新版 `dist/`。
+  - `npm.cmd run test` 通过（49/49）。
+
+### Figma 战场区 V2 落回代码
+- 影响文件：
+  - `src/components/react/ReactBattleBoard.tsx`
+  - `src/components/Board.tsx`
+  - `src/style.css`
+  - `dist/`
+  - `memory-bank/progress.md`
+  - `memory-bank/architecture.md`
+- 本次改动：
+  - 将 Figma 稿 `ShinDoro 战场区 V2 - 7 随从 + 7 共享后场` 的核心结构落回战斗界面。
+  - React 战场区新增固定槽位渲染：随从行固定 7 格，后场行固定 7 格。
+  - 持续物和陷阱合并显示在共享后场行；玩家陷阱可检视，敌方陷阱只显示盖伏占位，不暴露卡名和效果。
+  - 旧字符串模板 `Board.tsx` 同步渲染固定槽位，避免兼容路径仍使用旧的持续物/陷阱分行结构。
+  - CSS 新增 `.battlefield-v2`、`.slot-lane`、`.battlefield-slot`、`.backrow-secret-card`，并隐藏旧的非槽位战场行。
+- 验证：
+  - `npm.cmd run build` 通过，并同步生成新版 `dist/`。
+  - `npm.cmd run test` 通过（49/49）。
+
+### 战场区域上限改为随从 7、共享后场 7
+- 影响文件：
+  - `src/engine/rules.ts`
+  - `src/engine/effects.ts`
+  - `src/engine/ai.ts`
+  - `src/components/react/ReactBattleBoard.tsx`
+  - `src/components/Board.tsx`
+  - `tests/engine.test.js`
+  - `design/game_rule.md`
+  - `design/game_design.md`
+  - `dist/`
+  - `memory-bank/progress.md`
+  - `memory-bank/architecture.md`
+- 本次改动：
+  - 随从区上限改为 `MAX_MINION_SLOTS = 7`。
+  - 持续物与陷阱改为共享后场容量 `MAX_BACKROW_SLOTS = 7`，通过 `getBackrowSlotCount()` 统一计算。
+  - 出牌、召唤、AI 评估和手牌禁用提示都改为读取统一规则；后场满时持续物和陷阱都会被禁止打出。
+  - 战场计数 UI 改为显示 `随从 x/7` 与 `后场 x/7`，盖伏数量作为后场细分信息显示。
+- 验证：
+  - `npm.cmd run build` 通过，并同步生成新版 `dist/`。
+  - `npm.cmd run test` 通过（49/49）。
+
+### 战场区域上限统一为 6
+- 影响文件：
+  - `src/engine/rules.ts`
+  - `src/engine/effects.ts`
+  - `src/engine/ai.ts`
+  - `src/components/react/ReactBattleBoard.tsx`
+  - `src/components/Board.tsx`
+  - `src/style.css`
+  - `tests/engine.test.js`
+  - `design/game_rule.md`
+  - `design/game_design.md`
+  - `dist/`
+  - `memory-bank/progress.md`
+  - `memory-bank/architecture.md`
+- 本次改动：
+  - 新增场上区域上限常量：随从 6、持续物 6、陷阱 6。
+  - `canPlayCardForPlayer()` 统一检查三类战场槽位；持续物和陷阱满区时不再能继续打出。
+  - 召唤随从的硬上限从 7 改为 6，并把满区日志改为“随从区已满”。
+  - React 手牌禁用提示细分为“随从区已满 / 持续物区已满 / 陷阱区已满”，战场计数改为显示 `随从/持续/盖伏 x/6`。
+  - AI 评估与旧版模板同步使用新上限，避免 AI 尝试打出已满区域的卡牌。
+- 验证：
+  - `npm.cmd run build` 通过，并同步生成新版 `dist/`。
+  - `npm.cmd run test` 通过（49/49）。
+
+### 角落 HUD 与无框手牌带
+- 影响文件：
+  - `src/components/react/ReactBattleBoard.tsx`
+  - `src/components/Board.tsx`
+  - `src/style.css`
+  - `dist/`
+  - `memory-bank/progress.md`
+  - `memory-bank/architecture.md`
+- 本次改动：
+  - 将敌方人物信息从战场行内移到棋盘左上角，将玩家人物信息移到棋盘右下角。
+  - 角落 HUD 改由 `board-shell` 直接定位；敌方 HUD 轻微压住内框，并缩小敌方战场左侧避让，减少左侧空带。
+  - 手牌区去掉 `zone` 底框和“你的手牌”标题，改为贴近右下玩家 HUD 的无框手牌带。
+  - 手牌工具按钮保留在手牌带上方，不再依赖原来的手牌标题栏。
+- 验证：
+  - `npm.cmd run build` 通过，并同步生成新版 `dist/`。
+  - `npm.cmd run test` 通过（48/48）。
+
+### 势能并入 HUD 与日志抽屉
+- 影响文件：
+  - `src/components/react/ReactBattleBoard.tsx`
+  - `src/components/react/PlayerHUDView.tsx`
+  - `src/components/Board.tsx`
+  - `src/components/PlayerHUD.tsx`
+  - `src/components/MomentumPanel.tsx`
+  - `src/style.css`
+  - `dist/`
+  - `memory-bank/progress.md`
+  - `memory-bank/architecture.md`
+- 本次改动：
+  - 移除战斗界面常驻右侧势能面板，玩家与敌方的势能总分及手/血/威/特分项改由各自 HUD 内部展示。
+  - 战斗日志改为右侧悬浮 `details.battle-log-drawer`，默认收起，只保留一个可展开的日志入口，展开时覆盖在战场右侧查看。
+  - 主战斗布局从“战场 + 固定侧栏”改回单列战场，避免右侧面板挤压场地和手牌。
+- 验证：
+  - `npm.cmd run build` 通过，并同步生成新版 `dist/`。
+  - `npm.cmd run test` 通过（48/48）。
+
+### 战斗界面移除 Header
+- 影响文件：
+  - `src/components/react/ReactBattleBoard.tsx`
+  - `src/components/Board.tsx`
+  - `src/style.css`
+  - `dist/`
+  - `memory-bank/progress.md`
+  - `memory-bank/architecture.md`
+- 本次改动：
+  - 移除对局顶部 `game-hero` header，不再显示标题、Moe Arcana 徽标、回合/阶段信息条和当前建议条。
+  - React 战斗界面与旧字符串模板都同步移除 header，避免兼容路径残留旧布局。
+  - `game-shell` 改为单行战斗布局，`board-shell` 直接占满整个战斗视口，为后续大幅重构棋盘区域留空间。
+- 验证：
+  - `npm.cmd run build` 通过，并同步生成新版 `dist/`。
+
+### 卡牌底框图片第一版
+- 影响文件：
+  - `src/style.css`
+  - `public/card-frames/README.md`
+  - `public/card-frames/common/frame.png`
+  - `public/card-frames/minion/frame.png`
+  - `public/card-frames/spell/frame.png`
+  - `public/card-frames/persistent/frame.png`
+  - `public/card-frames/trap/frame.png`
+  - `memory-bank/progress.md`
+  - `memory-bank/architecture.md`
+- 本次改动：
+  - 新增 720x1040 透明 PNG 卡牌底框第一版，包含粉蓝渐变底、圆角外框、费用托座、卡图窗、底部三属性托盘和星光装饰。
+  - 将同一底框同步到 `common/minion/spell/persistent/trap` 的 `frame.png`，让所有卡牌类型先共用同一套可见底框。
+  - 在 `src/style.css` 追加卡框应用规则：卡牌本体背景透明化，`frame.png` 成为可见底框，费用定位到左上托座，卡图与攻防威定位到图片预留窗口。
+  - 重写 `public/card-frames/README.md`，明确底框资源命名、推荐尺寸和替换规则。
+- 验证：
+  - 已检查所有 `frame.png` 尺寸均为 `720 x 1040`。
+  - `npm.cmd run build` 通过，并同步生成新版 `dist/`。
+
+### 卡牌框根节点重构
+- 影响文件：
+  - `src/components/Card.tsx`
+  - `src/components/react/CardView.tsx`
+  - `src/style.css`
+  - `dist/`
+  - `memory-bank/progress.md`
+  - `memory-bank/architecture.md`
+- 本次改动：
+  - 所有手牌、换牌、随从、持续物和陷阱卡牌根节点新增 `framed-card` 类。
+  - 底框图片不再依赖内部 `card-frame-layers` 子层显示，改为由卡牌根节点直接使用 `frame.png` 作为背景图，降低旧样式层级覆盖风险。
+  - CSS 重新定义 `framed-card` 的费用、卡图、攻防威插槽，类型差异仍通过 `public/card-frames/<type>/frame.png` 替换。
+- 验证：
+  - `npm.cmd run build` 通过，并确认 `dist` 中包含 `framed-card` 与新版 CSS。
+
+### 卡牌数值图标化
+- 影响文件：
+  - `src/components/Card.tsx`
+  - `src/components/react/CardView.tsx`
+  - `src/style.css`
+  - `dist/`
+  - `memory-bank/progress.md`
+  - `memory-bank/architecture.md`
+- 本次改动：
+  - 卡牌正面的攻、防、威胁从文字标签改为图标加数字。
+  - 攻击使用剑图案，防御使用盾图案，威胁使用闪电图案；图标当前由 CSS 绘制，后续可以替换为正式图片资产。
+  - 数值徽章保留 `aria-label`，悬停详情和规则数据不受影响。
+- 验证：
+  - `npm.cmd run build` 通过，并同步生成新版 `dist/`。
+
+## 2026-04-29
+
+### 极简数值卡面样式
+
+- 涉及文件：
+  - `src/components/Card.tsx`
+  - `src/components/react/CardView.tsx`
+  - `src/style.css`
+  - `dist/`
+  - `memory-bank/progress.md`
+  - `memory-bank/architecture.md`
+- 本次改动：
+  - 卡牌正面不再渲染卡名、类型、关键词、简介、效果文本和状态提示。
+  - 卡牌正面只保留费用、攻、防、威胁四类数值信息；缺失的数值使用 `-` 占位，避免布局跳动。
+  - React 卡牌继续通过悬停 / 聚焦详情展示完整卡名、类型、描述、关键词、效果和状态。
+  - 旧字符串模板卡牌补充 `title` / `aria-label`，用于在起手换牌等兼容界面悬停查看基础说明。
+  - CSS 新增极简卡面覆盖规则，保证手牌、起手换牌、场上随从、持续物和陷阱都遵守同一数值卡面口径。
+- 验证：
+  - `npm.cmd run build` 通过，并同步生成新的 Vite `dist/` 产物。
+  - `npm.cmd run test` 通过，48/48。
+- 外行说明：
+  - 现在卡面更像“美术框 + 数值 HUD”，文字说明不再占据卡面空间。
+  - 详细效果仍然可以通过鼠标悬停查看，不影响理解和操作。
+
+### 图片式卡牌框架资源层
+
+- 涉及文件：
+  - `src/components/Card.tsx`
+  - `src/components/react/CardView.tsx`
+  - `src/style.css`
+  - `public/card-frames/`
+  - `dist/`
+  - `memory-bank/progress.md`
+  - `memory-bank/architecture.md`
+- 本次改动：
+  - 新增 `public/card-frames/` 资源目录，按 `common / minion / spell / persistent / trap` 拆分卡框图片。
+  - 新增 `public/card-frames/README.md`，记录完整卡框、卡图窗、标题牌、文本框、费用宝石、攻血威徽章的命名和尺寸建议。
+  - 为旧字符串卡牌模板与 React 卡牌组件都加入 `card-frame-layers` 图片层插槽。
+  - 在 `src/style.css` 中按卡牌类型定义卡框图片变量，支持类型专属图片优先、通用图片回退。
+  - 补充 1x1 透明 PNG 占位资源，保证资源替换前构建也不会出现缺图片 warning。
+- 验证：
+  - `npm.cmd run build` 通过，并同步生成新的 Vite `dist/` 产物。
+  - `npm.cmd run test` 通过，48/48。
+- 外行说明：
+  - 现在卡牌可以按“图片框架 + 动态文字”方式继续设计。
+  - 以后替换 `public/card-frames/<type>/frame.png` 等图片，就能逐步把卡牌外框变成正式美术。
+
+### 起手换牌费用宝石对齐
+
+- 涉及文件：
+  - `src/style.css`
+  - `dist/`
+  - `memory-bank/progress.md`
+- 本次改动：
+  - 将起手换牌卡限定在 `.mulligan-grid` 内单独调整，避免影响对局手牌卡。
+  - 费用宝石固定到卡面右上角，并提高层级、统一尺寸和边框。
+  - 卡名区域增加左右避让和最小高度，避免费用、标题和装饰横条互相叠压。
+  - 补充更靠后的 `.mulligan-grid .card > .card-cost` 覆盖，避免通用 `.card > *` 层级规则把费用宝石重新放回普通排版流。
+- 验证：
+  - `npm.cmd run build` 通过，并同步生成新的 Vite `dist/` 产物。
+  - `npm.cmd run test` 通过，48/48。
+- 外行说明：
+  - 这次只修起手换牌界面里卡牌费用显示偏移的问题，不改卡牌费用、规则或 AI。
+
+## 2026-04-28
+
+### 原创二次元商业卡牌桌面 UI 升级
+
+- 涉及文件：
+  - `src/App.tsx`
+  - `src/components/react/CardView.tsx`
+  - `src/components/react/PlayerHUDView.tsx`
+  - `src/components/react/ReactBattleBoard.tsx`
+  - `src/style.css`
+  - `public/ui/`
+  - `dist/`
+  - `memory-bank/architecture.md`
+  - `memory-bank/progress.md`
+- 本次改动：
+  - 加入原创 Moe Arcana 视觉方向，保留原创表达，不直接复刻炉石素材或商标元素。
+  - 新增 `public/ui/moe-arcana-table.svg` 作为战斗桌面背景，并新增四类卡面插画占位：随从、法术、持续、陷阱。
+  - `ReactBattleBoard` 增加战斗桌图层、中央回合纹章、Moe Arcana 徽章和战斗品牌锁定结构。
+  - `CardView` 增加 `CardArt` 插画窗、卡面扫光元素，以及手牌扇形排列参数 `fanIndex / fanCount`。
+  - `PlayerHUDView` 增加萌系头像徽章结构，用于角色面板的二次元风格识别。
+  - `style.css` 补充星光背景、玻璃战区、费用宝石、卡框高光、手牌悬停放大、目标脉冲、HUD 高光和响应式约束。
+- 验证：
+  - `npm.cmd run build` 通过，并同步生成新的 Vite `dist/` 产物。
+  - `npm.cmd run test` 通过，48/48。
+  - 本地预览服务 `http://localhost:4173/` 返回 HTTP 200。
+- 外行说明：
+  - 这次不是规则改动，而是把战斗画面从普通面板推进到更接近商业卡牌游戏的原创视觉原型。
+  - 真正的最终成品仍需要持续补充角色立绘、音效、粒子和更细的动效，但当前架构已经承载了桌面层、卡框层和卡牌插画层。
+
+### UI 越界与布局稳定修正
+
+- 涉及文件：
+  - `src/style.css`
+  - `dist/`
+  - `memory-bank/progress.md`
+  - `memory-bank/architecture.md`
+- 本次改动：
+  - 移除手牌卡牌扇形旋转和负边距对布局边界的影响，改为稳定宽度、内部横向滚动和轻量悬停反馈。
+  - 为战斗画面补充 `.game-shell` 范围内的最大宽度、最小宽度、内部滚动和装饰层裁切规则，避免卡牌、回合纹章、特效层或长文本把画面撑到视口外。
+  - 为设置页和换牌页补充全局响应式护栏，让标题、信息格、按钮行、角色卡、天赋卡和多列网格在窄屏下自动收缩或换行。
+  - 移动端把首屏信息格改为更保守的单列回退，并限制标题字号，避免 390px 级别截图和手机宽度出现右侧裁切。
+- 验证：
+  - `npm.cmd run build` 通过，并同步生成新的 Vite `dist/` 产物。
+  - `npm.cmd run test` 通过，48/48。
+  - 已用本地 Vite 服务在 `1440x900` 与 `390x844` 截图检查，首屏不再向屏幕右侧越界。
+- 外行说明：
+  - 这次是把“好看但容易歪出去”的装饰和卡牌排布收进真实屏幕边界内。
+  - 对局规则、卡牌数据、AI 和引擎流程没有变化。
+
+### 手牌区可见性补修
+
+- 涉及文件：
+  - `src/style.css`
+  - `dist/`
+  - `memory-bank/progress.md`
+- 本次改动：
+  - 修正上一轮边界治理后手牌区高度不足的问题：桌面端战斗主区第三行改为优先保留手牌高度，不再把手牌当作可裁切区域。
+  - 为 `.hand-zone` 和 `.hand-row` 设置明确的最小可见高度，并让手牌卡使用固定可读高度，避免只露出卡面上半截。
+  - 针对 940px 以下矮屏增加压缩规则：收紧顶部状态条、棋盘间距和手牌卡内容，而不是隐藏手牌卡底部。
+- 验证：
+  - `npm.cmd run build` 通过，并同步生成新的 Vite `dist/` 产物。
+  - `npm.cmd run test` 通过，48/48。
+- 外行说明：
+  - 这次专门修的是“对局里手牌看不到”的问题，优先保证底部手牌完整露出。
+
+### 角色 JPG 图片框架
+
+- 涉及文件：
+  - `src/types.ts`
+  - `src/data/characterArt.ts`
+  - `src/data/characters/characterA.ts`
+  - `src/data/characters/characterB.ts`
+  - `src/data/characters/characterC.ts`
+  - `src/data/characters/characterD.ts`
+  - `src/data/characters/characterE.ts`
+  - `src/data/characters/characterF.ts`
+  - `src/data/characters/characterG.ts`
+  - `src/App.tsx`
+  - `src/components/PlayerHUD.tsx`
+  - `src/components/react/PlayerHUDView.tsx`
+  - `src/style.css`
+  - `public/characters/`
+  - `dist/`
+- 本次改动：
+  - 为 `CharacterDefinition` 增加 `art` 字段，支持 `card / avatar / banner / alt` 四类角色美术配置。
+  - 新增 `src/data/characterArt.ts`，统一生成 `/characters/<character_id>/card.jpg`、`avatar.jpg`、`banner.jpg` 的默认路径。
+  - 每个现有角色都接入默认图片路径，以后按角色 ID 放 JPG 就能被设置页和对局 HUD 读取。
+  - 设置页角色选项新增角色卡图槽；对局 HUD 新增头像图片槽，图片缺失时仍保留占位视觉，不影响操作。
+  - 新增 `public/characters/README.md` 和各角色目录占位，说明后续图片放置方式。
+- 验证：
+  - `npm.cmd run build` 通过，并同步生成新的 Vite `dist/` 产物。
+  - `npm.cmd run test` 通过，48/48。
+- 外行说明：
+  - 以后给角色加图的默认方式是把 JPG 放到 `public/characters/character_x/card.jpg` 和 `avatar.jpg`。
+  - 如果想用不同文件名或格式，可以直接改角色数据里的 `art` 字段。
+
 ## 2026-04-27
+
+### 大奶跳脸大招释放修正
+
+- 涉及文件：
+  - `src/engine/phases.ts`
+  - `tests/engine.test.js`
+  - `design/角色图鉴.md`
+  - `design/game_rule.md`
+  - `design/game_design.md`
+  - `memory-bank/architecture.md`
+  - `memory-bank/progress.md`
+- 本次改动：
+  - 大奶的 `槽位耗散` 改为只扣 1 到 9 点的未就绪槽位。
+  - 已经达到 10 / 13 点的跳脸槽或神抽槽，会先保留给回合开始的大招宣告与释放流程。
+  - 新增三条测试，覆盖 10 点跳脸能弹出、13 点跳脸能按 Overkill 释放，以及未满 10 点时被动仍会正常扣槽。
+- 验证：
+  - `npm.cmd test` 通过，48/48。
+  - `npm.cmd run build` 通过，并已同步 `dist/` 构建产物。
+- 外行说明：
+  - 以前大奶刚攒满 10 点或 13 点时，自己的被动会先把点数扣掉，导致大招还没来得及出现就消失。
+  - 现在只要槽位已经够发动，大招会先正常进入发动流程；还没攒满的槽位仍然会按大奶的负面被动少 1 点。
+- 文档同步：
+  - 已同步角色图鉴、规则文档、设计文档和架构记忆中的大奶槽位耗散口径。
 
 ### 抽牌判负规则修正
 
@@ -833,3 +1359,180 @@
 - 验证：
   - `npm.cmd run typecheck` 通过。
   - `npm.cmd test` 通过：44/44。
+
+## 2026-04-29
+
+### Card JPG illustrations and resource framework
+
+- Touched files:
+  - `src/types.ts`
+  - `src/data/cardArt.ts`
+  - `src/data/cards.ts`
+  - `src/engine/rules.ts`
+  - `src/components/react/CardView.tsx`
+  - `src/components/Card.tsx`
+  - `src/style.css`
+  - `public/cards/README.md`
+  - `scripts/generate-card-art.ps1`
+  - `public/cards/*.jpg`
+  - `dist/cards/*.jpg`
+- Changes:
+  - Added card-level `art` support and automatic `/cards/<card-id>.jpg` mapping.
+  - Propagated card art into runtime hand cards, summoned minions, and persistent/trap instances.
+  - Updated React and legacy card renderers so the framed card art window uses JPG illustrations when available.
+  - Generated 56 simple anime-style JPG card illustrations from card id/type/effect signals.
+  - Documented the asset convention for replacing or regenerating card art.
+- Verification:
+  - `npm.cmd run build` passed.
+  - `npm.cmd run test` passed, 49/49 tests.
+- Notes:
+  - Did not start a Vite dev server; user requested manual server startup.
+
+### Non-minion card frame redesign
+
+- Touched files:
+  - `src/components/react/CardView.tsx`
+  - `src/components/Card.tsx`
+  - `src/style.css`
+  - `scripts/generate-card-frames.ps1`
+  - `public/card-frames/spell/frame.png`
+  - `public/card-frames/persistent/frame.png`
+  - `public/card-frames/trap/frame.png`
+  - `dist/card-frames/spell/frame.png`
+  - `dist/card-frames/persistent/frame.png`
+  - `dist/card-frames/trap/frame.png`
+- Changes:
+  - Rebuilt spell, persistent, and trap frames as visually distinct no-stat-slot card frames.
+  - Removed attack / defense / threat rendering from spell, trap, and persistent cards.
+  - Expanded non-minion card art windows to use the freed space.
+- Verification:
+  - `npm.cmd run build` passed.
+  - `npm.cmd run test` passed, 49/49 tests.
+- Notes:
+  - Did not start a Vite dev server.
+
+### Non-minion frame cache fix
+
+- Touched files:
+  - `src/style.css`
+- Changes:
+  - Added final CSS overrides with versioned frame URLs for spell, persistent, and trap frames.
+  - This forces browsers/dev servers to fetch the redesigned non-stat frames instead of reusing old cached `frame.png` files.
+- Verification:
+  - `npm.cmd run build` passed.
+  - `npm.cmd run test` passed, 49/49 tests.
+  - Confirmed built CSS contains `?v=nonstat-20260429-2`.
+
+### In-battle mulligan prompt and opaque hand cards
+
+- Touched files:
+  - `src/store/useGameStore.ts`
+  - `src/App.tsx`
+  - `src/components/react/ReactBattleBoard.tsx`
+  - `src/style.css`
+  - `dist/assets/index-CZSEy7OI.css`
+  - `dist/assets/index-BqXz0-K2.js`
+- Changes:
+  - Removed the separate opening mulligan screen from the active flow.
+  - The game now enters the main battle UI immediately during mulligan and asks whether to replace the opening hand.
+  - If the player chooses to replace, an in-board modal lets them select cards and confirm the redraw.
+  - Hand cards in the battle hand row are now opaque instead of semi-transparent while disabled.
+- Verification:
+  - `npm.cmd run build` passed.
+  - `npm.cmd run test` passed, 49/49 tests.
+- Notes:
+  - Did not start a Vite dev server.
+
+### Mulligan prompt positioning and selection fix
+
+- Touched files:
+  - `src/components/react/CardView.tsx`
+  - `src/components/react/ReactBattleBoard.tsx`
+  - `src/style.css`
+  - `dist/assets/index-BjdMsNvy.css`
+  - `dist/assets/index-C94A4Bs7.js`
+- Changes:
+  - Centered the opening mulligan prompt on the playmat instead of biasing it toward the lower/edge UI.
+  - Added `HandCard.onSelect` for mulligan selection so opening cards can be toggled independently of normal playability.
+  - Added a small selected-state marker on mulligan cards for clearer feedback.
+- Verification:
+  - `npm.cmd run build` passed.
+  - `npm.cmd run test` passed, 49/49 tests.
+- Notes:
+  - Did not start a Vite dev server.
+
+### Removed legacy mulligan screen framework
+
+- Touched files:
+  - `src/App.tsx`
+  - `src/components/Card.tsx`
+  - `src/style.css`
+  - `dist/assets/index-CDnVGKzo.css`
+  - `dist/assets/index-B4hGXCPz.js`
+- Changes:
+  - Deleted the old standalone `renderMulliganScreen()` path from `App.tsx`.
+  - Deleted the old `onMulliganAction()` click protocol and removed the `screen === "mulligan"` legacy action branch.
+  - Deleted the old HTML `renderMulliganCard()` helper and its `data-action="toggle-mulligan"` entry point.
+  - Removed the old `.mulligan-grid` CSS rules so only the in-battle React mulligan overlay remains.
+  - Verified `src` and `dist` contain no `mulligan-grid`, `renderMulliganCard`, `renderMulliganScreen`, `onMulliganAction`, or `toggle-mulligan` matches.
+- Verification:
+  - `npm.cmd run build` passed.
+  - `npm.cmd run test` passed, 49/49 tests.
+- Notes:
+  - Did not start a Vite dev server.
+
+### Direct hand-row mulligan flow
+
+- Touched files:
+  - `src/store/useGameStore.ts`
+  - `src/components/react/ReactBattleBoard.tsx`
+  - `src/style.css`
+  - `dist/assets/index-Zu22pRTb.css`
+  - `dist/assets/index-Dw6jRUZb.js`
+- Changes:
+  - Removed the modal-style `MulliganOverlay` flow.
+  - During `screen: "mulligan"`, the bottom hand row becomes the selection surface.
+  - Players click cards in hand to mark them for replacement, then click the always-available `更换手牌` button.
+  - Selecting zero cards and clicking `更换手牌` keeps the current hand and enters the first turn.
+  - Removed `uiState.mulliganMode`; the store now only tracks `mulliganSelection`.
+  - Verified `src` and `dist` contain no `mulligan-overlay`, `mulligan-modal`, `mulligan-card-row`, `mulliganMode`, `beginMulliganSelection`, or `clearMulliganSelection` matches.
+- Verification:
+  - `npm.cmd run build` passed.
+  - `npm.cmd run test` passed, 49/49 tests.
+- Notes:
+  - Did not start a Vite dev server.
+
+### Global code audit and legacy renderer cleanup
+
+- Touched files:
+  - `.gitignore`
+  - `src/App.tsx`
+  - `src/components/Board.tsx` (deleted)
+  - `src/components/Card.tsx` (deleted)
+  - `src/components/EffectLayer.tsx` (deleted)
+  - `src/components/PlayerHUD.tsx` (deleted)
+  - `src/components/ResolutionPanel.tsx` (deleted)
+  - `src/components/SlotMeter.tsx` (deleted)
+  - `src/components/MomentumPanel.tsx` (already removed)
+  - `dist/assets/index-Zu22pRTb.css`
+  - `dist/assets/index-CCqyjkNw.js`
+  - `dist/assets/PixiBattlefieldHost-D9S2aSa3.js`
+  - `memory-bank/architecture.md`
+  - `memory-bank/progress.md`
+  - `design/game_design.md`
+- Changes:
+  - Removed the confirmed-unused string-rendered battle UI stack from `src/components`.
+  - Removed the now-unreachable battle `data-action` click handler from `App.tsx`; setup actions remain supported.
+  - Removed temporary `.vite-*` log files from the workspace.
+  - Broadened `.gitignore` so future `.vite-server*.log` and `.vite-node*.log` files stay out of version control.
+  - Regenerated `dist/` through the normal build pipeline after source cleanup.
+- Verification:
+  - `npm.cmd run typecheck -- --noUnusedLocals --noUnusedParameters` passed.
+  - Local import graph check from `src/main.tsx` found `0` unreachable source files.
+  - `npm.cmd run build` passed.
+  - `npm.cmd run test` passed, 49/49 tests.
+- Notes:
+  - Did not start a Vite dev server.
+  - Remaining cleanup target: `src/style.css` is large and should be modularized in a later UI refactor.
+  - Remaining cleanup target: `ReactBattleBoard.tsx` is large but still active/cohesive; split it later by hand, lanes, side backrow, and log/control dock.
+  - Remaining cleanup target: setup still uses the legacy string-template path and can later move to React.

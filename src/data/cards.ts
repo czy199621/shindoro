@@ -1,13 +1,14 @@
 import type { CardDefinition } from "../types.js";
-import { MINION_CARDS } from "./cards/minions.js";
-import { SPELL_CARDS } from "./cards/spells.js";
-import { PERSISTENT_CARDS } from "./cards/persistents.js";
-import { TRAP_CARDS } from "./cards/traps.js";
+import { attachCardArt } from "./cardArt.js";
+import { MINION_CARDS as RAW_MINION_CARDS } from "./cards/minions.js";
+import { SPELL_CARDS as RAW_SPELL_CARDS } from "./cards/spells.js";
+import { PERSISTENT_CARDS as RAW_PERSISTENT_CARDS } from "./cards/persistents.js";
+import { TRAP_CARDS as RAW_TRAP_CARDS } from "./cards/traps.js";
 
-export { MINION_CARDS } from "./cards/minions.js";
-export { SPELL_CARDS } from "./cards/spells.js";
-export { PERSISTENT_CARDS } from "./cards/persistents.js";
-export { TRAP_CARDS } from "./cards/traps.js";
+export const MINION_CARDS: CardDefinition[] = RAW_MINION_CARDS.map(attachCardArt);
+export const SPELL_CARDS: CardDefinition[] = RAW_SPELL_CARDS.map(attachCardArt);
+export const PERSISTENT_CARDS: CardDefinition[] = RAW_PERSISTENT_CARDS.map(attachCardArt);
+export const TRAP_CARDS: CardDefinition[] = RAW_TRAP_CARDS.map(attachCardArt);
 
 export const CARD_LIBRARY: CardDefinition[] = [
   ...MINION_CARDS,

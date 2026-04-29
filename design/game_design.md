@@ -228,6 +228,7 @@ v1.2 首发角色为 A–F 六名，当前数字原型已追加第 7 名角色 G
 - `src/data/characters.ts` 需要从 3 角色扩展为 7 角色。
 - 角色被动不再只覆盖当前三种 `PassiveKey`。
 - 角色跳脸技能需要覆盖 10 点与 13 点两档。
+- 大奶的 `槽位耗散` 只扣未到 10 点的槽位；已经达到 10 / 13 点的槽位必须先进入大招宣告队列，避免玩家攒满后在发动前被自身被动扣没。
 - 若某些角色技能涉及当前引擎没有的动作类型，需要扩展 `EffectAction`。
 
 ### 3.7 泉亚猫与大后期 / 破坏流更新
@@ -402,6 +403,7 @@ type GamePhase =
 - 战场区显示：
   - 使魔攻击 / 血量 / 威胁值
   - 关键关键词
+  - 使魔当前数量与 7 个上限；持续魔法和触发魔法共用后场，显示后场当前数量与 7 张上限
 - 结算区显示：
   - 势能差明细
   - 槽位变化
@@ -494,6 +496,18 @@ type GamePhase =
 **© 2026 神どろ (Shin Doro) | 游戏设计文档 v1.2**
 
 ---
+
+## 2026-04-29 Implementation Cleanup Design Notes
+
+- Battle screen design is now React-only. The former string-rendered battle UI was removed so there is one active battle rendering path.
+- Current battle UI ownership:
+  - `src/components/react/ReactBattleBoard.tsx` owns the battle surface, mulligan hand selection, battlefield lanes, side backrow lanes, battle log drawer, and controls.
+  - `src/components/react/CardView.tsx` owns card art, frame selection, and visible card stats.
+  - `src/components/react/PlayerHUDView.tsx` owns corner character HUDs and momentum/slot summary information.
+- Opening hand replacement design: the player stays on the battle mat, clicks cards directly in the bottom hand row to mark replacements, then clicks `更换手牌`. Selecting zero cards and clicking the same button means "keep hand and start".
+- Removed design paths: the standalone mulligan page, modal mulligan card row, and string-rendered battle components are no longer part of the product design.
+- Remaining design-system debt: the battle surface CSS is visually functional but too centralized. A future polish pass should split the CSS by card frame, battle board, side backrow, hand row, HUD, and log/control dock.
+- No gameplay rule changes were made in this cleanup pass.
 
 ## v1.2.1 更新设计落地记录
 

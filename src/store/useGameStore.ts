@@ -72,7 +72,6 @@ export interface GameStore {
   removeTalent(talentId: string): void;
   startGame(): void;
   toggleMulliganCard(runtimeId: string): void;
-  clearMulliganSelection(): void;
   confirmMulligan(): void;
   restart(): void;
   resolvePendingChoice(payload: PendingChoicePayload): void;
@@ -397,14 +396,12 @@ export function createGameStore({ game = new ShinDoroGame() }: { game?: ShinDoro
       clearCardFx();
     },
     toggleMulliganCard(runtimeId: string): void {
+      if (game.getState().screen !== "mulligan") return;
       if (uiState.mulliganSelection.has(runtimeId)) {
         uiState.mulliganSelection.delete(runtimeId);
       } else {
         uiState.mulliganSelection.add(runtimeId);
       }
-    },
-    clearMulliganSelection(): void {
-      uiState.mulliganSelection.clear();
     },
     confirmMulligan(): void {
       const player = game.getState().players.P1;

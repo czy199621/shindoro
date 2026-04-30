@@ -134,9 +134,26 @@ test("starting decks use legal card ids, 50-card main decks, public sideboards, 
   }
 });
 
+test("v1.3 card balance patch updates key card stats and removes great mana gem", () => {
+  assert.equal(getCardDefinition("landmine_girl").health, 3);
+  assert.equal(getCardDefinition("landmine_girl").threat, 2);
+  assert.equal(getCardDefinition("grave_knight").health, 6);
+  assert.equal(getCardDefinition("grave_knight").threat, 6);
+  assert.equal(getCardDefinition("miracle_guardian").attack, 4);
+  assert.equal(getCardDefinition("miracle_guardian").health, 5);
+  assert.equal(getCardDefinition("iron_colossus").health, 8);
+  assert.equal(getCardDefinition("iron_colossus").threat, 9);
+  assert.equal(getCardDefinition("mirror_wall").effects[0].action.amount, 4);
+  assert.equal(getCardDefinition("ambush_sigil").effects[0].action.amount, 3);
+  assert.equal(getCardDefinition("mana_drain").effects[0].action.amount, 2);
+  assert.throws(() => getCardDefinition("great_mana_gem"), /Unknown card id/);
+});
+
 test("talents use dynamic first/second pricing", () => {
   assert.equal(getTalentCost(TALENT_LOOKUP.opening_insight, "first"), 4);
   assert.equal(getTalentCost(TALENT_LOOKUP.opening_insight, "second"), 2);
+  assert.equal(getTalentCost(TALENT_LOOKUP.tactical_coin, "first"), 4);
+  assert.equal(getTalentCost(TALENT_LOOKUP.tactical_coin, "second"), 1);
   assert.equal(getTalentCost(TALENT_LOOKUP.first_guardrail, "first"), 1);
   assert.equal(getTalentCost(TALENT_LOOKUP.first_guardrail, "second"), null);
   assert.equal(getTalentCost(TALENT_LOOKUP.second_counterpush, "first"), null);
@@ -305,6 +322,35 @@ test("michael purges magic cards and all other minions then heals", () => {
   assert.equal(state.players.P1.persistents.length, 0);
   assert.equal(state.players.P2.traps.length, 0);
   assert.equal(state.players.P1.hp, 14);
+  assert.equal(state.players.P1.temporaryFlags.skipCombatThisTurn, true);
+  assert.equal(state.players.P1.graveyard.some((card) => card.fromZone === "backrow" && card.reason === "destroyed"), true);
+});
+
+test("v1.3 heavy pressure finishers skip combat while shun keeps combat access", () => {
+  const game = new ShinDoroGame({ rng: () => 0.42 });
+  game.setupMatch({
+    playerCharacterId: "character_a",
+    aiCharacterId: "character_b",
+    playerTalentIds: []
+  });
+  game.completePlayerMulligan([]);
+
+  const state = game.getState();
+  const chaos = game.summonMinion("P1", getCardDefinition("chaos_imaginary_shadow"), {
+    triggerOnPlay: true,
+    canTriggerTrap: false
+  });
+  chaos.canAttack = true;
+  assert.equal(state.players.P1.temporaryFlags.skipCombatThisTurn, true);
+  assert.equal(game.attackWith("P1", chaos.instanceId, "P2_hero", "hero"), false);
+
+  state.players.P1.temporaryFlags.skipCombatThisTurn = false;
+  const shun = game.summonMinion("P1", getCardDefinition("shun_shadow_assassin"), {
+    triggerOnPlay: true,
+    canTriggerTrap: false
+  });
+  assert.equal(state.players.P1.temporaryFlags.skipCombatThisTurn, false);
+  assert.equal(game.attackWith("P1", shun.instanceId, "P2_hero", "hero"), true);
 });
 
 test("ouroboros grants one risky extra turn", () => {
@@ -409,33 +455,47 @@ test("time usurpation grants an extra turn with twelve mana", () => {
   assert.equal(state.players.P1.mana, 12);
 });
 
-test("great mana gem is locked before turn five and scales on turn seven", () => {
+test("tactical coin creates a scaling coin and removes unspent coins on turn nine", () => {
   const game = new ShinDoroGame({ rng: () => 0.42 });
   game.setupMatch({
     playerCharacterId: "character_a",
     aiCharacterId: "character_b",
-    playerTalentIds: []
+    playerTalentIds: ["tactical_coin"]
   });
-  game.completePlayerMulligan([]);
 
   const state = game.getState();
-  state.players.P1.hand = [createRuntimeCard(getCardDefinition("great_mana_gem"))];
-  state.players.P1.mana = 0;
-  state.phase = "mainTurn";
-  state.turn = 4;
-  assert.equal(game.playCardAtIndex("P1", 0), false);
-  assert.equal(state.players.P1.mana, 0);
+  assert.equal(state.players.P1.hand.some((card) => card.id === "coin"), true);
+  assert.equal(state.players.P2.hand.length, 4);
 
-  state.players.P1.hand = [createRuntimeCard(getCardDefinition("great_mana_gem"))];
-  state.turn = 5;
+  game.completePlayerMulligan([]);
+
+  state.players.P1.hand = [createRuntimeCard(getCardDefinition("coin"))];
+  state.players.P1.mana = 0;
+  state.players.P1.maxMana = 1;
+  state.phase = "mainTurn";
+  state.turn = 3;
+  assert.equal(game.playCardAtIndex("P1", 0), true);
+  assert.equal(state.players.P1.mana, 1);
+
+  state.players.P1.hand = [createRuntimeCard(getCardDefinition("coin"))];
+  state.players.P1.mana = 0;
+  state.players.P1.maxMana = 2;
+  state.turn = 4;
   assert.equal(game.playCardAtIndex("P1", 0), true);
   assert.equal(state.players.P1.mana, 2);
 
-  state.players.P1.hand = [createRuntimeCard(getCardDefinition("great_mana_gem"))];
+  state.players.P1.hand = [createRuntimeCard(getCardDefinition("coin"))];
   state.players.P1.mana = 0;
+  state.players.P1.maxMana = 3;
   state.turn = 7;
   assert.equal(game.playCardAtIndex("P1", 0), true);
   assert.equal(state.players.P1.mana, 3);
+
+  state.players.P1.hand = [createRuntimeCard(getCardDefinition("coin"))];
+  state.currentPlayer = "P1";
+  state.turn = 9;
+  game.beginTurn();
+  assert.equal(state.players.P1.hand.some((card) => card.id === "coin"), false);
 });
 
 test("mana drain trap fires when enemy current mana equals five", () => {
@@ -465,7 +525,7 @@ test("mana drain trap fires when enemy current mana equals five", () => {
   game.beginTurn();
 
   assert.equal(state.players.P1.maxMana, 5);
-  assert.equal(state.players.P1.mana, 2);
+  assert.equal(state.players.P1.mana, 3);
   assert.equal(state.players.P2.traps.length, 0);
   assert.equal(state.players.P2.graveyard.some((card) => card.id === "mana_drain"), true);
 });
@@ -858,6 +918,31 @@ test("landmine girl damages the attacking hero when attacked by a minion", () =>
 
   assert.equal(game.getState().players.P1.hp, 18);
   assert.equal(game.getState().players.P2.hp, 26);
+});
+
+test("graveyard dragger destroys the minion that combat-destroyed it", () => {
+  const game = new ShinDoroGame({ rng: () => 0.42 });
+  game.setupMatch({
+    playerCharacterId: "character_a",
+    aiCharacterId: "character_b",
+    playerTalentIds: []
+  });
+  game.completePlayerMulligan([]);
+
+  const state = game.getState();
+  const dragger = game.summonMinion("P1", getCardDefinition("graveyard_dragger"), { canTriggerTrap: false });
+  const attacker = game.summonMinion("P2", getCardDefinition("blade_dancer"), { canTriggerTrap: false });
+  attacker.canAttack = true;
+  attacker.summonedThisTurn = false;
+  state.currentPlayer = "P2";
+  state.phase = "mainTurn";
+
+  assert.equal(game.attackWith("P2", attacker.instanceId, dragger.instanceId, "minion"), true);
+
+  const entry = state.players.P1.graveyard.find((card) => card.cardId === "graveyard_dragger");
+  assert.equal(Boolean(entry?.wasCombatDestroyed), true);
+  assert.equal(entry?.combatKillerInstanceId, attacker.instanceId);
+  assert.equal(state.players.P2.board.some((minion) => minion.instanceId === attacker.instanceId), false);
 });
 
 test("public play API rejects cards from the non-current player", () => {

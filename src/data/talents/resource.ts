@@ -12,14 +12,14 @@ export const RESOURCE_TALENTS: TalentDefinition[] = [
     effect: { type: "bonusDraw", amount: 1 }
   },
   {
-    id: "mana_favor",
-    name: "法力眷顾",
+    id: "tactical_coin",
+    name: "战术硬币",
     category: "resource",
     pricing: { first: 4, second: 1 },
     availableFor: "both",
     repeatLimit: 1,
-    description: "初始法力上限 +1。",
-    effect: { type: "bonusMana", amount: 1 }
+    description: "游戏开始时，将 1 张 0 费魔法卡“硬币”置入你的手牌。",
+    effect: { type: "addOpeningCard", cardId: "coin" }
   },
   {
     id: "wide_grip",

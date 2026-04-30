@@ -17,6 +17,8 @@ export type SlotType = "jump" | "godDraw";
 export type EffectTrigger = "onPlay" | "onDeath" | "onTurnStart" | "onTriggerMet" | "onAttacked";
 export type TriggerConditionType = "enemyCastsSpell" | "enemySummonsMinion" | "enemyManaEquals";
 export type SlotTier = "jump10" | "jump13";
+export type GraveyardFromZone = "battlefield" | "hand" | "deck" | "backrow" | "stack";
+export type GraveyardReason = "destroyed" | "used" | "discarded" | "milled" | "sacrificed";
 export type TalentCategory =
   | "survival"
   | "resource"
@@ -132,6 +134,10 @@ export interface GainManaAction {
     turn: number;
     amount: number;
   };
+  scaleByTurn?: Array<{
+    turn: number;
+    amount: number;
+  }>;
 }
 
 export interface ReduceManaAction {
@@ -222,6 +228,14 @@ export interface DestroyEnemyTrapsAction {
   type: "destroyEnemyTraps";
 }
 
+export interface SkipCombatThisTurnAction {
+  type: "skipCombatThisTurn";
+}
+
+export interface DestroyCombatKillerAction {
+  type: "destroyCombatKiller";
+}
+
 export type EffectAction =
   | DamageAction
   | HealAction
@@ -252,7 +266,9 @@ export type EffectAction =
   | DestroyAllMinionsAction
   | DestroyAllEnemyMinionsAction
   | DestroyPersistentsAction
-  | DestroyEnemyTrapsAction;
+  | DestroyEnemyTrapsAction
+  | SkipCombatThisTurnAction
+  | DestroyCombatKillerAction;
 
 export interface Effect {
   trigger: EffectTrigger;
@@ -302,6 +318,8 @@ export interface MinionInstance {
   canAttack: boolean;
   summonedThisTurn: boolean;
   attacksThisTurn: number;
+  wasCombatDestroyed?: boolean;
+  combatKillerInstanceId?: string;
 }
 
 export interface PersistentInstance {
@@ -357,6 +375,7 @@ export type TalentEffect =
   | { type: "setTopDeckByRule"; rule: "lowestCostSpell" | "lowestCostCard" }
   | { type: "modifySlotGain"; slot: SlotType; amount: number }
   | { type: "bonusMana"; amount: number }
+  | { type: "addOpeningCard"; cardId: string; count?: number }
   | { type: "setManaCap"; amount: number }
   | { type: "bonusDraw"; amount: number }
   | { type: "giveRushToLowCostMinions"; maxCost: number }
@@ -402,8 +421,15 @@ export interface DeckChoice {
 
 export interface GraveyardEntry {
   id: string;
+  cardId: string;
   name: string;
   runtimeId: string;
+  ownerId: PlayerId;
+  fromZone: GraveyardFromZone;
+  reason: GraveyardReason;
+  turn: number;
+  wasCombatDestroyed?: boolean;
+  combatKillerInstanceId?: string;
 }
 
 export interface TemporaryFlags {
@@ -424,6 +450,7 @@ export interface TemporaryFlags {
   nextTurnManaMultiplier: number;
   nextTurnManaOverride: number | null;
   ignoreGuardThisTurn: boolean;
+  skipCombatThisTurn: boolean;
   millOnDamageTaken: number;
   damageTakenThisTurn: number;
   extraTurnPending: boolean;
@@ -533,6 +560,8 @@ export interface EffectContext {
   sourceCard?: RuntimeCard;
   triggeredMinion?: MinionInstance;
   triggeredMana?: number;
+  wasCombatDestroyed?: boolean;
+  combatKillerInstanceId?: string;
 }
 
 export interface PendingChoicePayload {

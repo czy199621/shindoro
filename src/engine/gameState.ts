@@ -125,7 +125,6 @@ export class ShinDoroGame implements GameAiAdapter {
 
     this.drawOpeningHand(this.state.players[PLAYER_ID], 3);
     this.drawOpeningHand(this.state.players[AI_ID], 4);
-    this.addCoinToSecondPlayer();
     this.performMulligan(AI_ID, this.getRecommendedMulliganIndices(AI_ID));
 
     this.log("对局已创建。选择你要替换的起手牌，然后开始战斗。");
@@ -171,6 +170,13 @@ export class ShinDoroGame implements GameAiAdapter {
           break;
         case "bonusMana":
           player.temporaryFlags.openingBonusMana += effect.amount;
+          break;
+        case "addOpeningCard":
+          for (let index = 0; index < (effect.count ?? 1); index += 1) {
+            const card = createRuntimeCard(getCardDefinition(effect.cardId));
+            player.hand.push(card);
+            this.log(`${this.getCharacter(player.character).name} 因天赋获得了 ${card.name}。`);
+          }
           break;
         case "setManaCap":
           player.temporaryFlags.maxManaCap = Math.max(player.temporaryFlags.maxManaCap, effect.amount);
@@ -256,10 +262,6 @@ export class ShinDoroGame implements GameAiAdapter {
   drawOpeningHand(player: PlayerState, count: number): void {
     const total = count + player.temporaryFlags.openingBonusDraw;
     this.drawCards(player.id, total, "起手抽牌");
-  }
-
-  addCoinToSecondPlayer(): void {
-    this.state.players[AI_ID].hand.push(createRuntimeCard(getCardDefinition("coin")));
   }
 
   getRecommendedMulliganIndices(playerId: PlayerId): number[] {

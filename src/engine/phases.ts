@@ -30,8 +30,19 @@ function getTurnStartSlotToReduce(player: PlayerState): TurnStartReducibleSlot |
 
 function resetTurnScopedFlags(player: PlayerState): void {
   player.temporaryFlags.ignoreGuardThisTurn = false;
+  player.temporaryFlags.skipCombatThisTurn = false;
   player.temporaryFlags.millOnDamageTaken = 0;
   player.temporaryFlags.damageTakenThisTurn = 0;
+}
+
+function removeExpiredCoins(game: ShinDoroGame, player: PlayerState): void {
+  if (game.state.turn < 9) return;
+  const before = player.hand.length;
+  player.hand = player.hand.filter((card) => card.id !== "coin");
+  const removed = before - player.hand.length;
+  if (removed > 0) {
+    game.log(`${game.getCharacter(player.character).name} 的 ${removed} 张硬币在第 9 回合开始时移出游戏。`, "alert");
+  }
 }
 
 function applyTurnStartPassives(game: ShinDoroGame, playerId: PlayerId): void {
@@ -161,6 +172,7 @@ export function beginTurn(game: ShinDoroGame): void {
 
   const player = game.getCurrentPlayer();
   resetTurnScopedFlags(player);
+  removeExpiredCoins(game, player);
 
   game.state.phase = "turnStart";
   game.state.pendingChoice = null;

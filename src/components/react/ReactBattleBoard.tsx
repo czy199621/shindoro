@@ -60,7 +60,7 @@ function formatSigned(value: number): string {
 }
 
 const KEYWORD_LABELS: Record<string, string> = {
-  rush: "冲锋",
+  rush: "疾风",
   guard: "护卫",
   menace: "威慑",
   magicRes: "魔抗",
@@ -199,10 +199,13 @@ function formatAction(action: EffectAction): string {
     case "addCardToHand":
       return `加入 ${action.count ?? 1} 张 ${formatCardName(action.cardId)} 到手牌`;
     case "gainMana": {
+      const scaled = action.scaleByTurn?.length
+        ? `；${action.scaleByTurn.map((entry) => `第 ${entry.turn} 回合后 ${entry.amount} 点`).join("，")}`
+        : "";
       const later = action.amountIfTurnAtLeast
         ? `；第 ${action.amountIfTurnAtLeast.turn} 回合后改为 ${action.amountIfTurnAtLeast.amount} 点`
         : "";
-      return `获得 ${action.amount} 点法力${later}`;
+      return `获得 ${action.amount} 点法力${later}${scaled}`;
     }
     case "reduceMana":
       return `${formatTarget(action.target)}减少 ${action.amount} 点法力`;
@@ -243,6 +246,10 @@ function formatAction(action: EffectAction): string {
       return `破坏${formatTarget(action.target)}持续物`;
     case "destroyEnemyTraps":
       return "破坏敌方所有盖伏陷阱";
+    case "skipCombatThisTurn":
+      return "本回合跳过战斗阶段";
+    case "destroyCombatKiller":
+      return "若被敌方使魔战斗破坏，则破坏那名使魔";
   }
 }
 

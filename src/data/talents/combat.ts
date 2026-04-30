@@ -8,7 +8,7 @@ export const COMBAT_TALENTS: TalentDefinition[] = [
     pricing: { first: 5, second: 3 },
     availableFor: "both",
     repeatLimit: 1,
-    description: "费用不高于 2 的使魔获得冲锋。",
+    description: "费用不高于 2 的使魔获得疾风。",
     effect: { type: "giveRushToLowCostMinions", maxCost: 2 }
   },
   {

@@ -9,15 +9,15 @@ export const CHARACTER_F_PASSIVE: PassiveAbility = {
 
 export const CHARACTER_F_SLOT_ABILITIES: CharacterDefinition["slotAbilities"] = {
   jump10: {
-    name: "十连磨牌",
-    description: "令对手从牌库顶失去 10 张牌。",
-    effects: [{ type: "millDeck", target: "opponent", count: 10 }]
+    name: "六连磨牌",
+    description: "令对手从牌库顶失去 6 张牌。",
+    effects: [{ type: "millDeck", target: "opponent", count: 6 }]
   },
   jump13: {
     name: "反伤磨尽",
-    description: "先磨对手 10 张牌，并在本回合把你受到的伤害转化为额外磨牌。",
+    description: "先磨对手 9 张牌，并在本回合把你受到的伤害转化为额外磨牌。",
     effects: [
-      { type: "millDeck", target: "opponent", count: 10 },
+      { type: "millDeck", target: "opponent", count: 9 },
       { type: "setMillOnDamageTaken", amount: 1 }
     ]
   }

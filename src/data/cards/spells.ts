@@ -84,17 +84,13 @@ export const SPELL_CARDS: CardDefinition[] = [
     name: "硬币",
     cost: 0,
     type: "spell",
-    description: "本回合获得 1 点法力。",
-    effects: [{ trigger: "onPlay", action: { type: "gainMana", amount: 1 } }]
-  },
-  {
-    id: "great_mana_gem",
-    name: "大魔力宝石",
-    cost: 0,
-    type: "spell",
-    description: "第 5 回合后才能使用。本回合获得 2 点可用费用；第 7 回合后改为获得 3 点。",
-    playRestrictions: { minTurn: 5 },
-    effects: [{ trigger: "onPlay", action: { type: "gainMana", amount: 2, amountIfTurnAtLeast: { turn: 7, amount: 3 } } }]
+    description: "本回合获得临时费用。第 1～3 回合获得 1 点，第 4～6 回合获得 2 点，第 7～8 回合获得 3 点；第 9 回合开始时若仍在手牌中则移出游戏。",
+    effects: [
+      {
+        trigger: "onPlay",
+        action: { type: "gainMana", amount: 1, scaleByTurn: [{ turn: 4, amount: 2 }, { turn: 7, amount: 3 }] }
+      }
+    ]
   },
   {
     id: "divine_intervention",

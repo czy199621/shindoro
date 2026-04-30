@@ -235,6 +235,7 @@ export function createEmptyPlayerState(playerId: PlayerId, characterId: string):
       nextTurnManaMultiplier: 1,
       nextTurnManaOverride: null,
       ignoreGuardThisTurn: false,
+      skipCombatThisTurn: false,
       millOnDamageTaken: 0,
       damageTakenThisTurn: 0,
       extraTurnPending: false,

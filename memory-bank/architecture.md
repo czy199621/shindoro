@@ -1,10 +1,23 @@
 # 架构
 
+## 2026-04-30 v1.3 规则与内容层
+
+- 当前规则基准升级为 `design/game_rule.md` v1.3，补丁来源为 `design/shindoro_v1_3_patch_summary.md`。
+- 硬币系统已从“默认后手补偿”改为天赋投资：`src/data/talents/resource.ts` 的 `tactical_coin` 会在游戏开始时把 1 张 `coin` 放入手牌；`src/engine/gameState.ts` 不再默认给 P2 塞硬币。
+- `coin` 仍是法术卡，但效果随回合成长：第 1～3 回合 +1，第 4～6 回合 +2，第 7～8 回合 +3；`src/engine/phases.ts` 会在第 9 回合开始时把未使用的硬币移出游戏。
+- `great_mana_gem` 已从 `src/data/cards/spells.ts` 删除，并且不进入任何 v1.3 预组主卡组。
+- `src/data/decks.ts` 已按 v1.3 草案重排 7 套 50 张预组；公共备牌仍为 5 张终结者，且不进入主卡组。
+- 新增测试使魔 `graveyard_dragger`（坟场拖拽者），用于验证战斗破坏同归于尽亡语。
+- 墓地记录在 `src/types.ts` 中扩展为带 `cardId / ownerId / fromZone / reason / turn / wasCombatDestroyed / combatKillerInstanceId` 的结构，便于后续墓地主题卡池读取。
+- `src/engine/effects.ts` 现在统一通过墓地记录 helper 处理被使用、破坏、弃置和磨掉的卡牌；战斗破坏会记录破坏者。
+- 公共终结者规制已落地：卡奥斯、米迦勒、尤斯蒂娅通过 `skipCombatThisTurn` 表达“重压”，进场后本回合不能继续战斗；瞬和乌洛波洛斯不受该限制。
+- 寒尘已按 v1.3 削弱为 10 点磨 6、13 点基础磨 9。
+
 ## 2026-04-29 卡牌底框资源
 - 战斗界面当前采用无 header 布局：`ReactBattleBoard` 与旧 `Board` 都不再渲染顶部 `game-hero`，`board-shell` 直接占满 `game-shell` 的主视口。
 - 战斗 HUD 采用 `board-shell` 角落定位：敌方 HUD 贴近棋盘左上并轻微压住内框，玩家 HUD 位于右下；手牌区是无 `zone` 底框的底部手牌带，并在右侧为玩家 HUD 预留空间。
 - 场上区域上限由 `src/engine/rules.ts` 的常量维护：随从 `MAX_MINION_SLOTS = 7`，持续物与陷阱共享后场 `MAX_BACKROW_SLOTS = 7`，并通过 `getBackrowSlotCount()` 统一计算占用；出牌、召唤、AI 和战场计数都应读取这些常量与 helper。
-- 战场区 UI 已按 Figma V2 落回代码：`ReactBattleBoard.tsx` 和旧 `Board.tsx` 都渲染固定槽位，随从行固定 7 格，后场行固定 7 格；玩家持续物与陷阱合并在后场行，敌方陷阱只显示盖伏占位，不泄露卡面信息。
+- 战场区 UI 已按 Figma V2 落回 React 代码：`ReactBattleBoard.tsx` 渲染固定槽位，随从行固定 7 格，后场行固定 7 格；玩家持续物与陷阱合并在后场行，敌方陷阱只显示盖伏占位，不泄露卡面信息。
 - 敌方手牌现在作为顶部伏牌手牌带显示，只展示卡背和数量；战斗主区域为敌方手牌 / 敌方战场 / 我方战场 / 我方手牌四行结构。因顶部手牌占用纵向空间，双方战场槽位必须保持同一套缩小尺寸，避免敌我战场密度不一致。
 - 最新战斗布局按标注图改为三列四行：左列保留敌方 HUD 与敌方后场，中央列依次是敌方手牌、敌方前场、我方前场、我方手牌，右列保留日志入口、我方后场与玩家 HUD。中央 `field-zone` 只展示前场随从槽，左右 `side-backrow-zone` 承载持续物 + 陷阱共享后场 7 格。
 - 中央随从槽是视觉映射，不改变规则数组：`player.board` 仍为紧凑顺序，UI 渲染时按 7 格中心优先顺序展示，依次为中央、左一、右一、左二、右二、最左、最右。
@@ -36,7 +49,7 @@
   - `public/characters/<character_id>/card.jpg` 和 `avatar.jpg` 是角色图片默认约定路径，由 `src/data/characterArt.ts` 生成并提供给设置页角色卡与对局 HUD。
   - 这些资产只承担 UI 美术表现，不参与规则、数据或 AI 判定。
 - 卡牌框架图片层：
-  - `src/components/Card.tsx` 和 `src/components/react/CardView.tsx` 都会在卡牌根节点内渲染 `card-frame-layers`。
+  - `src/components/react/CardView.tsx` 会在卡牌根节点内渲染 `card-frame-layers`。
   - `src/style.css` 通过 `--card-frame-*` 变量按卡牌类型选择图片资源；类型专属资源优先，缺省时可回退到 `public/card-frames/common/`。
   - 当前 `public/card-frames/` 内放有透明 PNG 占位，后续设计正式卡框时直接替换同名文件即可。
 - 极简卡面口径：
@@ -226,7 +239,7 @@
 ## 当前项目状态
 
 - 项目类型：TypeScript 卡牌对战原型
-- 规则基准：`design/game_rule.md` v1.2
+- 规则基准：`design/game_rule.md` v1.3
 - 角色数量：7 名角色，编号 A-G
 - 卡组结构：`50` 张主卡组 + `5` 张公共备牌库
 - 天赋体系：先后手动态定价，支持座位限制
@@ -380,34 +393,18 @@
 
 ## 组件层 `src/components/`
 
-- `Board.tsx`
-  - 棋盘与战场区展示
-  - 组装主要对局战场、HUD 内势能摘要与右侧折叠日志抽屉
-- `Card.tsx`
-  - 单卡渲染
-  - 使魔统一展示攻击力、血量与威胁值三项属性
-- `EffectLayer.tsx`
-  - 渲染法术、陷阱、召唤、放置等卡牌演出的中央效果横幅
-- `PlayerHUD.tsx`
-  - 玩家面板、生命、法力、手牌、牌库与势能摘要信息
-- `ResolutionPanel.tsx`
-  - 槽位与额外选择的提示面板
-- `SlotMeter.tsx`
-  - 槽位进度展示
+- `src/components/html.ts`
+  - 只保留设置页所需的安全 HTML 辅助函数。
+- `src/components/react/ReactBattleBoard.tsx`
+  - 当前唯一活跃的对战画面渲染器，负责战斗桌、换牌手牌、前场、左右后场、日志抽屉、操作按钮和待处理选择弹窗。
+- `src/components/react/CardView.tsx`
+  - 负责手牌卡、场上使魔、持续物和陷阱的图片式卡框、美术窗、数值与悬停详情。
+- `src/components/react/PlayerHUDView.tsx`
+  - 负责角落玩家 HUD、生命、法力、势能摘要、手牌/牌库与槽位状态。
+- `src/game-view/pixi/PixiBattlefieldHost.tsx`
+  - 只负责非交互战斗特效，不参与规则判定。
 
-当前攻击撞击特效也在这一层完成：
-
-- 攻击方前冲
-- 受击方抖动与闪光
-- 由 `store.uiState.attackFx` 驱动
-- 不影响引擎层的真实伤害与战斗规则
-
-当前卡牌特效也在这一层完成：
-
-- 召唤使魔时的新卡入场动画
-- 放置持续物 / 盖伏陷阱时的卡片落位动画
-- 法术发动 / 陷阱触发时的中央效果横幅
-- 由 `store.uiState.cardFx` 和 `cardFxQueue` 驱动
+旧的字符串战斗组件 `Board.tsx / Card.tsx / EffectLayer.tsx / PlayerHUD.tsx / ResolutionPanel.tsx / SlotMeter.tsx` 已移除；不要再把新战斗 UI 写回旧模板栈。
 
 ## 运行链路
 

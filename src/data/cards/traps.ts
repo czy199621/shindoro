@@ -6,12 +6,12 @@ export const TRAP_CARDS: CardDefinition[] = [
     name: "镜像之墙",
     cost: 2,
     type: "trap",
-    description: "触发：当敌方施放法术后，对敌方角色造成 3 点伤害。",
+    description: "触发：当敌方施放法术后，对敌方角色造成 4 点伤害。",
     effects: [
       {
         trigger: "onTriggerMet",
         condition: { type: "enemyCastsSpell" },
-        action: { type: "damage", target: "enemyHero", amount: 3 }
+        action: { type: "damage", target: "enemyHero", amount: 4 }
       }
     ]
   },
@@ -20,12 +20,12 @@ export const TRAP_CARDS: CardDefinition[] = [
     name: "伏击印记",
     cost: 2,
     type: "trap",
-    description: "触发：当敌方召唤使魔后，对该使魔造成 2 点伤害。",
+    description: "触发：当敌方召唤使魔后，对该使魔造成 3 点伤害。",
     effects: [
       {
         trigger: "onTriggerMet",
         condition: { type: "enemySummonsMinion" },
-        action: { type: "damage", target: "triggeredMinion", amount: 2 }
+        action: { type: "damage", target: "triggeredMinion", amount: 3 }
       }
     ]
   },
@@ -34,12 +34,12 @@ export const TRAP_CARDS: CardDefinition[] = [
     name: "魔力干涸",
     cost: 2,
     type: "trap",
-    description: "触发：当对手当前可用费用正好为 5 点时，立刻减少其 3 点当前可用费用。",
+    description: "触发：当对手当前可用费用正好为 5 点时，立刻减少其 2 点当前可用费用。",
     effects: [
       {
         trigger: "onTriggerMet",
         condition: { type: "enemyManaEquals", mana: 5 },
-        action: { type: "reduceMana", target: "opponent", amount: 3 }
+        action: { type: "reduceMana", target: "opponent", amount: 2 }
       }
     ]
   }

@@ -20,7 +20,7 @@ export const LOW_COST_MINIONS: CardDefinition[] = [
     attack: 2,
     health: 1,
     threat: 2,
-    description: "冲锋。",
+    description: "疾风。",
     tags: ["rush"],
     effects: []
   },

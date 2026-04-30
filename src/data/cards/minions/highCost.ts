@@ -7,8 +7,8 @@ export const HIGH_COST_MINIONS: CardDefinition[] = [
     cost: 5,
     type: "minion",
     attack: 5,
-    health: 5,
-    threat: 7,
+    health: 6,
+    threat: 6,
     description: "战吼：己方角色恢复 2 点生命。",
     effects: [{ trigger: "onPlay", action: { type: "heal", target: "selfHero", amount: 2 } }]
   },
@@ -18,8 +18,8 @@ export const HIGH_COST_MINIONS: CardDefinition[] = [
     cost: 6,
     type: "minion",
     attack: 7,
-    health: 7,
-    threat: 10,
+    health: 8,
+    threat: 9,
     description: "朴素而沉重的终结者。",
     effects: []
   },
@@ -28,9 +28,9 @@ export const HIGH_COST_MINIONS: CardDefinition[] = [
     name: "奇迹守护者",
     cost: 5,
     type: "minion",
-    attack: 5,
-    health: 6,
-    threat: 8,
+    attack: 4,
+    health: 5,
+    threat: 7,
     description: "战吼：抽 1 张牌。",
     effects: [{ trigger: "onPlay", action: { type: "draw", count: 1 } }]
   }

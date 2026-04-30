@@ -56,9 +56,20 @@ export const MID_COST_MINIONS: CardDefinition[] = [
     attack: 4,
     health: 4,
     threat: 6,
-    description: "冲锋。",
+    description: "疾风。",
     tags: ["rush"],
     effects: []
+  },
+{
+    id: "graveyard_dragger",
+    name: "坟场拖拽者",
+    cost: 3,
+    type: "minion",
+    attack: 1,
+    health: 2,
+    threat: 2,
+    description: "亡语：若此使魔是被敌方使魔通过战斗破坏，破坏造成这次战斗破坏的敌方使魔。",
+    effects: [{ trigger: "onDeath", action: { type: "destroyCombatKiller" } }]
   },
 {
     id: "mirror_sage",

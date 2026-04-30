@@ -1,5 +1,56 @@
 # Progress
 
+## 2026-04-30
+
+### v1.3 实战平衡性大修补丁落地
+
+- 涉及文件：
+  - `src/types.ts`
+  - `src/engine/gameState.ts`
+  - `src/engine/phases.ts`
+  - `src/engine/effects.ts`
+  - `src/engine/ai.ts`
+  - `src/engine/rules.ts`
+  - `src/data/cards/spells.ts`
+  - `src/data/cards/traps.ts`
+  - `src/data/cards/minions/lowCost.ts`
+  - `src/data/cards/minions/midCost.ts`
+  - `src/data/cards/minions/highCost.ts`
+  - `src/data/cards/minions/guardPackage.ts`
+  - `src/data/cards/minions/sideboardFinishers.ts`
+  - `src/data/talents/resource.ts`
+  - `src/data/talents/combat.ts`
+  - `src/data/characters/characterF.ts`
+  - `src/data/decks.ts`
+  - `src/components/react/ReactBattleBoard.tsx`
+  - `tests/engine.test.js`
+  - `design/game_rule.md`
+  - `design/game_design.md`
+  - `design/minion.md`
+  - `design/spells.md`
+  - `design/traps.md`
+  - `design/persistents.md`
+  - `design/角色图鉴.md`
+  - `memory-bank/architecture.md`
+  - `memory-bank/progress.md`
+- 本次改动：
+  - 按 `design/shindoro_v1_3_patch_summary.md` 将规则基准升级到 v1.3。
+  - 默认后手不再自动获得硬币；新增 `战术硬币` 天赋，按先手 4 点 / 后手 1 点生成 1 张 `硬币`。
+  - `硬币` 改为 1～3 回合 +1、4～6 回合 +2、7～8 回合 +3，并在第 9 回合开始时移出手牌。
+  - 删除普通法术 `大魔力宝石`，并确保 v1.3 预组不再包含硬币或大魔力宝石。
+  - 更新地雷女、墓誓骑士、奇迹守护者、铁律巨像、镜像之墙、伏击印记、魔力干涸和寒尘的大招数值。
+  - 新增 `skipCombatThisTurn` 表达公共终结者“重压”；卡奥斯、米迦勒、尤斯蒂娅进场后本回合无法继续战斗，瞬和乌洛波洛斯保持原定位。
+  - 墓地记录扩展为带来源、原因、回合、战斗破坏标记和战斗破坏者的结构。
+  - 新增 `坟场拖拽者` 和 `destroyCombatKiller` 亡语机制，用于测试战斗破坏同归于尽。
+  - 7 套预组卡组按 v1.3 草案重排，并把 `万雷天引`、`时空篡夺`纳入各家高费曲线。
+  - 文档同步更新规则事实源、设计说明、角色图鉴、使魔/法术/陷阱/持续物分类文档。
+- 验证：
+  - `npm.cmd run typecheck -- --noUnusedLocals --noUnusedParameters` 通过。
+  - `npm.cmd run test` 通过，52/52。
+- 外行说明：
+  - 这次主要是玩法平衡和规则底层同步，不是 UI 布局改动。
+  - 以后墓地主题卡牌可以直接读取更完整的墓地记录，而不需要重新改墓地基础结构。
+
 ## 2026-04-29
 
 ### 战场标题隐藏、手牌居中与中心展开召唤
@@ -1536,3 +1587,42 @@
   - Remaining cleanup target: `src/style.css` is large and should be modularized in a later UI refactor.
   - Remaining cleanup target: `ReactBattleBoard.tsx` is large but still active/cohesive; split it later by hand, lanes, side backrow, and log/control dock.
   - Remaining cleanup target: setup still uses the legacy string-template path and can later move to React.
+
+### Card design documentation split
+
+- Touched files:
+  - `design/minion.md`
+  - `design/spells.md`
+  - `design/persistents.md`
+  - `design/traps.md`
+  - `memory-bank/progress.md`
+- Changes:
+  - Verified `design/minion.md` already records all 28 current minions from `src/data/cards/minions.ts`.
+  - Added English-named category files for non-minion cards, with Chinese content and English `cardId` as the primary index.
+  - Documented all 22 spell cards, 3 persistent cards, and 3 trap cards.
+  - Added a note that `coin` exists as a spell definition but should not represent opening extra mana as a hand card under the latest rule interpretation.
+- Verification:
+  - Local documentation coverage script confirmed:
+    - `design/minion.md`: 28/28 documented.
+    - `design/spells.md`: 22/22 documented.
+    - `design/persistents.md`: 3/3 documented.
+    - `design/traps.md`: 3/3 documented.
+- Notes:
+  - Documentation-only change; did not start a Vite dev server.
+
+### Card documentation Chinese-name completion
+
+- Touched files:
+  - `design/minion.md`
+  - `memory-bank/progress.md`
+- Changes:
+  - Rewrote `design/minion.md` into a clean Chinese table with explicit `cardId` and Chinese name columns for every minion.
+  - Kept spell, persistent, and trap docs unchanged because they already had Chinese name columns.
+- Verification:
+  - Local documentation coverage script confirmed every current card has both its English `cardId` and Chinese name recorded:
+    - `design/minion.md`: ids 28/28, names 28/28.
+    - `design/spells.md`: ids 22/22, names 22/22.
+    - `design/persistents.md`: ids 3/3, names 3/3.
+    - `design/traps.md`: ids 3/3, names 3/3.
+- Notes:
+  - Documentation-only change; did not start a Vite dev server.

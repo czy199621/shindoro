@@ -1,5 +1,15 @@
 import { getCardDefinition } from "../data/cards.js";
-import type { CardDefinition, Effect, EffectAction, EffectContext, MinionInstance, PlayerId, RuntimeCard } from "../types.js";
+import type {
+  CardDefinition,
+  Effect,
+  EffectAction,
+  EffectContext,
+  GraveyardFromZone,
+  GraveyardReason,
+  MinionInstance,
+  PlayerId,
+  RuntimeCard
+} from "../types.js";
 import {
   canPlayCardForPlayer,
   createMinionInstance,
@@ -15,6 +25,31 @@ const AI_ID: PlayerId = "P2";
 
 function getBaseCost(card: CardDefinition | RuntimeCard): number {
   return "baseCost" in card ? card.baseCost : card.cost;
+}
+
+function moveToGraveyard(
+  game: ShinDoroGame,
+  ownerId: PlayerId,
+  card: { id?: string; sourceCardId?: string; name: string; runtimeId?: string; instanceId?: string },
+  fromZone: GraveyardFromZone,
+  reason: GraveyardReason,
+  extras: { wasCombatDestroyed?: boolean; combatKillerInstanceId?: string } = {}
+): void {
+  const cardId = card.id ?? card.sourceCardId;
+  const runtimeId = card.runtimeId ?? card.instanceId;
+  if (!cardId || !runtimeId) return;
+
+  game.getPlayer(ownerId).graveyard.push({
+    id: cardId,
+    cardId,
+    name: card.name,
+    runtimeId,
+    ownerId,
+    fromZone,
+    reason,
+    turn: game.state.turn,
+    ...extras
+  });
 }
 
 function getSpellDamageBonus(game: ShinDoroGame, playerId: PlayerId, context: EffectContext): number {
@@ -63,7 +98,7 @@ function millCards(game: ShinDoroGame, sourcePlayerId: PlayerId, target: "self" 
   if (!milled.length) return;
 
   for (const card of milled) {
-    targetPlayer.graveyard.push({ id: card.id, name: card.name, runtimeId: card.runtimeId });
+    moveToGraveyard(game, targetPlayer.id, card, "deck", "milled");
   }
 
   game.log(`${game.getCharacter(targetPlayer.character).name} 被磨掉了 ${milled.length} 张牌。`);
@@ -124,7 +159,7 @@ function discardCardsFromHand(
 
     const [removed] = targetPlayer.hand.splice(cardIndex, 1);
     if (!removed) continue;
-    targetPlayer.graveyard.push({ id: removed.id, name: removed.name, runtimeId: removed.runtimeId });
+    moveToGraveyard(game, targetPlayerId, removed, "hand", "discarded");
     discarded += 1;
   }
 
@@ -148,6 +183,11 @@ function triggerOverflowConsequences(game: ShinDoroGame, playerId: PlayerId): vo
 }
 
 function getManaGainAmount(game: ShinDoroGame, action: Extract<EffectAction, { type: "gainMana" }>): number {
+  const scaledByTurn = [...(action.scaleByTurn ?? [])]
+    .sort((left, right) => right.turn - left.turn)
+    .find((entry) => game.state.turn >= entry.turn);
+  if (scaledByTurn) return scaledByTurn.amount;
+
   const scaled = action.amountIfTurnAtLeast;
   if (scaled && game.state.turn >= scaled.turn) {
     return scaled.amount;
@@ -160,7 +200,7 @@ function addCardToHand(game: ShinDoroGame, playerId: PlayerId, cardId: string): 
   const card = createRuntimeCard(getCardDefinition(cardId));
 
   if (player.hand.length >= player.handLimit) {
-    player.graveyard.push({ id: card.id, name: card.name, runtimeId: card.runtimeId });
+    moveToGraveyard(game, playerId, card, "stack", "discarded");
     game.log(`${game.getCharacter(player.character).name} 因手牌已满烧掉了 ${card.name}。`);
     triggerOverflowConsequences(game, playerId);
     return;
@@ -176,11 +216,7 @@ function resolvePriorityExile(game: ShinDoroGame, playerId: PlayerId, mode: "hea
   if (!target) return;
 
   opponent.board = opponent.board.filter((minion) => minion.instanceId !== target.instanceId);
-  opponent.graveyard.push({
-    id: target.sourceCardId,
-    name: target.name,
-    runtimeId: target.instanceId
-  });
+  moveToGraveyard(game, opponent.id, target, "battlefield", "destroyed");
 
   const damage = mode === "health" ? Math.max(0, target.health) : Math.max(0, target.attack + target.health);
   dealHeroDamage(game, game.getOpponentId(playerId), damage);
@@ -224,7 +260,7 @@ export function drawCards(game: ShinDoroGame, playerId: PlayerId, count: number,
     }
 
     if (player.hand.length >= player.handLimit) {
-      player.graveyard.push({ id: drawn.id, name: drawn.name, runtimeId: drawn.runtimeId });
+      moveToGraveyard(game, playerId, drawn, "deck", "discarded");
       game.log(`${game.getCharacter(player.character).name} 因手牌已满烧掉了 ${drawn.name}。`);
       triggerOverflowConsequences(game, playerId);
       continue;
@@ -259,7 +295,7 @@ export function playCardAtIndex(game: ShinDoroGame, playerId: PlayerId, index: n
     game.summonMinion(playerId, card, { triggerOnPlay: true, canTriggerTrap: true });
   } else if (card.type === "spell") {
     game.resolveEffects(playerId, card.effects, { sourceCard: card });
-    player.graveyard.push({ id: card.id, name: card.name, runtimeId: card.runtimeId });
+    moveToGraveyard(game, playerId, card, "stack", "used");
     game.triggerTraps(game.getOpponentId(playerId), "enemyCastsSpell", { sourceCard: card });
   } else if (card.type === "persistent") {
     player.persistents.push(createPersistentInstance(card, playerId));
@@ -338,7 +374,7 @@ export function triggerTraps(
         game.resolveAction(ownerId, effect.action, { ...context, source: trap });
       }
     }
-    owner.graveyard.push({ id: trap.sourceCardId, name: trap.name, runtimeId: trap.instanceId });
+    moveToGraveyard(game, ownerId, trap, "backrow", "used");
   }
 }
 
@@ -493,6 +529,13 @@ export function resolveAction(
     case "destroyEnemyTraps":
       resolveDestroyEnemyTraps(game, playerId);
       break;
+    case "skipCombatThisTurn":
+      player.temporaryFlags.skipCombatThisTurn = true;
+      game.log(`${game.getCharacter(player.character).name} 本回合跳过战斗阶段。`, "alert");
+      break;
+    case "destroyCombatKiller":
+      resolveDestroyCombatKiller(game, context);
+      break;
     default:
       break;
   }
@@ -589,6 +632,12 @@ function resolvePurgeAllMagicAndOtherMinions(
   for (const targetPlayerId of [PLAYER_ID, AI_ID]) {
     const targetPlayer = game.getPlayer(targetPlayerId);
     removed += targetPlayer.persistents.length + targetPlayer.traps.length;
+    for (const card of targetPlayer.persistents) {
+      moveToGraveyard(game, targetPlayer.id, card, "backrow", "destroyed");
+    }
+    for (const card of targetPlayer.traps) {
+      moveToGraveyard(game, targetPlayer.id, card, "backrow", "destroyed");
+    }
     targetPlayer.persistents = [];
     targetPlayer.traps = [];
     removed += resolveDestroyPlayerMinions(targetPlayer, sourceId);
@@ -606,7 +655,7 @@ function resolveDestroyPersistents(game: ShinDoroGame, playerId: PlayerId, targe
   let destroyed = 0;
   for (const targetPlayer of targetPlayers) {
     for (const card of targetPlayer.persistents) {
-      targetPlayer.graveyard.push({ id: card.sourceCardId, name: card.name, runtimeId: card.instanceId });
+      moveToGraveyard(game, targetPlayer.id, card, "backrow", "destroyed");
       destroyed += 1;
     }
     targetPlayer.persistents = [];
@@ -618,7 +667,7 @@ function resolveDestroyEnemyTraps(game: ShinDoroGame, playerId: PlayerId): void 
   const opponent = game.getOpponent(playerId);
   const destroyed = opponent.traps.length;
   for (const card of opponent.traps) {
-    opponent.graveyard.push({ id: card.sourceCardId, name: card.name, runtimeId: card.instanceId });
+    moveToGraveyard(game, opponent.id, card, "backrow", "destroyed");
   }
   opponent.traps = [];
   game.log(`破坏了 ${destroyed} 张敌方触发魔法。`);
@@ -722,6 +771,19 @@ function resolveSetTopDeck(game: ShinDoroGame, playerId: PlayerId, cardId: strin
   if (card) player.deck.unshift(card);
 }
 
+function resolveDestroyCombatKiller(game: ShinDoroGame, context: EffectContext): void {
+  if (!context.source || "type" in context.source) return;
+  if (!context.wasCombatDestroyed || !context.combatKillerInstanceId) return;
+
+  for (const player of Object.values(game.state.players)) {
+    const killer = player.board.find((minion) => minion.instanceId === context.combatKillerInstanceId);
+    if (!killer || killer.ownerId === context.source.ownerId) continue;
+    killer.health = 0;
+    game.log(`${context.source.name} 的亡语拖垮了 ${killer.name}。`, "alert");
+    return;
+  }
+}
+
 export function attack(game: ShinDoroGame, attackerId: string, targetId: string, targetType: "hero" | "minion"): boolean {
   const player = game.getCurrentPlayer();
   if (player.id !== PLAYER_ID || (game.state.phase !== "mainTurn" && game.state.phase !== "combat")) return false;
@@ -744,6 +806,7 @@ export function attackWith(
   }
 
   const player = game.getPlayer(playerId);
+  if (player.temporaryFlags.skipCombatThisTurn) return false;
   const attacker = player.board.find((minion) => minion.instanceId === attackerId);
   const maxAttacks = attacker?.tags.includes("doubleStrike") ? 2 : 1;
   if (!attacker || !attacker.canAttack || attacker.attacksThisTurn >= maxAttacks) return false;
@@ -779,6 +842,10 @@ export function attackWith(
     if (game.state.phase === "mainTurn") {
       game.state.phase = "combat";
     }
+    delete attacker.wasCombatDestroyed;
+    delete attacker.combatKillerInstanceId;
+    delete defender.wasCombatDestroyed;
+    delete defender.combatKillerInstanceId;
     defender.health -= attacker.attack;
     attacker.health -= defender.attack;
     if (attacker.tags.includes("deadly") && attacker.attack > 0) {
@@ -792,6 +859,14 @@ export function attackWith(
     }
     if (defender.tags.includes("lifesteal")) {
       healHero(game, opponent.id, Math.max(0, defender.attack));
+    }
+    if (defender.health <= 0) {
+      defender.wasCombatDestroyed = true;
+      defender.combatKillerInstanceId = attacker.instanceId;
+    }
+    if (attacker.health <= 0) {
+      attacker.wasCombatDestroyed = true;
+      attacker.combatKillerInstanceId = defender.instanceId;
     }
     attacker.tags = attacker.tags.filter((tag) => tag !== "stealth");
     const attackedEffects = defender.effects.filter((effect) => effect.trigger === "onAttacked");
@@ -816,6 +891,7 @@ export function getAttackTargets(game: ShinDoroGame, attackerId: string, playerI
   }
 
   const player = game.getPlayer(playerId);
+  if (player.temporaryFlags.skipCombatThisTurn) return [];
   const attacker = player.board.find((minion) => minion.instanceId === attackerId);
   if (!attacker || !attacker.canAttack) return [];
 
@@ -849,7 +925,9 @@ export function getReadyAttackers(game: ShinDoroGame, playerId: PlayerId) {
   ) {
     return [];
   }
-  return game.getPlayer(playerId).board.filter((minion) => minion.canAttack);
+  const player = game.getPlayer(playerId);
+  if (player.temporaryFlags.skipCombatThisTurn) return [];
+  return player.board.filter((minion) => minion.canAttack);
 }
 
 export function getAIAttackTargets(game: ShinDoroGame, attackerId: string, playerId: PlayerId) {
@@ -867,15 +945,18 @@ export function checkForDeaths(game: ShinDoroGame): void {
       anyDeath = true;
       for (const minion of dead) {
         player.board = player.board.filter((item) => item.instanceId !== minion.instanceId);
-        player.graveyard.push({
-          id: minion.sourceCardId,
-          name: minion.name,
-          runtimeId: minion.instanceId
+        moveToGraveyard(game, playerId, minion, "battlefield", "destroyed", {
+          wasCombatDestroyed: minion.wasCombatDestroyed,
+          combatKillerInstanceId: minion.combatKillerInstanceId
         });
         game.log(`${minion.name} 被击破并进入墓地。`);
         const deathEffects = minion.effects.filter((effect) => effect.trigger === "onDeath");
         for (const effect of deathEffects) {
-          game.resolveAction(playerId, effect.action, { source: minion });
+          game.resolveAction(playerId, effect.action, {
+            source: minion,
+            wasCombatDestroyed: minion.wasCombatDestroyed,
+            combatKillerInstanceId: minion.combatKillerInstanceId
+          });
         }
       }
     }

@@ -7,8 +7,8 @@ export const GUARD_PACKAGE_MINIONS: CardDefinition[] = [
     cost: 2,
     type: "minion",
     attack: 1,
-    health: 4,
-    threat: 4,
+    health: 3,
+    threat: 2,
     description: "护卫。每当受到使魔攻击时，对敌方角色造成 2 点伤害。",
     tags: ["guard"],
     effects: [{ trigger: "onAttacked", action: { type: "damage", target: "enemyHero", amount: 2 } }]

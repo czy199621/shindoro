@@ -56,10 +56,19 @@ interface AiProfile {
 const PLAYER_ID: PlayerId = "P1";
 const AI_ID: PlayerId = "P2";
 
-const REMOVAL_IDS = new Set(["arc_bolt", "soul_shatter", "cinder_storm", "judgment_beam", "dusk_assassin"]);
+const REMOVAL_IDS = new Set([
+  "arc_bolt",
+  "soul_shatter",
+  "cinder_storm",
+  "judgment_beam",
+  "dusk_assassin",
+  "meteor_fire_rain",
+  "heavenly_thunder",
+  "wrath_of_god"
+]);
 const HEAL_IDS = new Set(["healing_prayer", "divine_intervention", "grave_knight", "dawn_healer", "shield_doll", "top_donor"]);
 const DRAW_IDS = new Set(["inspiration", "novice_mage", "archivist_owl", "mirror_sage", "sage_archive", "pact_weaver"]);
-const FACE_DAMAGE_IDS = new Set(["burn", "ashen_ranger", "judgment_beam"]);
+const FACE_DAMAGE_IDS = new Set(["burn", "ashen_ranger", "judgment_beam", "burst_flame_lance"]);
 const JUMP_IDS = new Set(["tactical_insight", "blade_dancer"]);
 const GOD_DRAW_IDS = new Set(["shrine_guard", "desperate_gamble", "pact_weaver", "underdog_shrine"]);
 const BOARD_BUFF_IDS = new Set(["battlefield_bard", "tactics_scroll", "war_banner"]);
@@ -72,7 +81,7 @@ const REQUIRED_AI_TALENTS: Record<string, string[]> = {
 const DEFAULT_PROFILE: AiProfile = {
   talentPriority: [
     "opening_insight",
-    "mana_favor",
+    "tactical_coin",
     "wide_grip",
     "grace_surge",
     "spell_focus",
@@ -111,7 +120,7 @@ const DEFAULT_PROFILE: AiProfile = {
 const AI_PROFILES: Record<string, AiProfile> = {
   character_a: {
     ...DEFAULT_PROFILE,
-    talentPriority: ["second_counterpush", "spell_focus", "opening_insight", "mana_favor", "vitality_ritual"],
+    talentPriority: ["second_counterpush", "spell_focus", "opening_insight", "tactical_coin", "vitality_ritual"],
     mulliganMaxCost: 3,
     mulliganKeepIds: ["ember_wolf", "burn", "tactical_insight", "blade_dancer", "storm_lancer", "arc_bolt"],
     keepRemovalCost: 2,
@@ -154,7 +163,7 @@ const AI_PROFILES: Record<string, AiProfile> = {
   },
   character_c: {
     ...DEFAULT_PROFILE,
-    talentPriority: ["mana_favor", "wide_grip", "burst_memory", "giant_stride", "second_counterpush"],
+    talentPriority: ["tactical_coin", "wide_grip", "burst_memory", "giant_stride", "second_counterpush"],
     mulliganMaxCost: 3,
     mulliganKeepIds: ["ember_wolf", "shrine_guard", "shield_doll", "novice_mage", "battlefield_bard", "war_banner", "tactics_scroll"],
     minionAttack: 1.2,
@@ -474,9 +483,12 @@ function scoreEffectAction(state: GameState, playerId: PlayerId, card: RuntimeCa
       return scoreSlotGain(state, playerId, action.slot, action.amount, profile);
     case "gainMana": {
       const amount =
-        action.amountIfTurnAtLeast && state.turn >= action.amountIfTurnAtLeast.turn
+        [...(action.scaleByTurn ?? [])]
+          .sort((left, right) => right.turn - left.turn)
+          .find((entry) => state.turn >= entry.turn)?.amount ??
+        (action.amountIfTurnAtLeast && state.turn >= action.amountIfTurnAtLeast.turn
           ? action.amountIfTurnAtLeast.amount
-          : action.amount;
+          : action.amount);
       const enabled = me.hand.some(
         (handCard) =>
           handCard.runtimeId !== card.runtimeId &&
@@ -517,6 +529,10 @@ function scoreEffectAction(state: GameState, playerId: PlayerId, card: RuntimeCa
       return profile.guard * Math.min(2, me.board.length) * 1.4;
     case "buffSelfIfHeroHpBelow":
       return me.hp < action.threshold ? ((action.atk ?? 0) * 1.5 + (action.hp ?? 0) * 1.1) : 0;
+    case "skipCombatThisTurn":
+      return -Math.max(1, boardAttack(me) * profile.attackFace);
+    case "destroyCombatKiller":
+      return 2.6;
     default:
       return 0;
   }

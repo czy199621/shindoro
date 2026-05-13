@@ -1,0 +1,37 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 1040" role="img" aria-label="Shindoro card back">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#132b61"/>
+      <stop offset="46%" stop-color="#08152f"/>
+      <stop offset="100%" stop-color="#211247"/>
+    </linearGradient>
+    <linearGradient id="edge" x1="0" x2="1">
+      <stop offset="0%" stop-color="#5ab6ff"/>
+      <stop offset="50%" stop-color="#f5d88f"/>
+      <stop offset="100%" stop-color="#a78bff"/>
+    </linearGradient>
+    <filter id="glow" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="10" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+  <rect x="18" y="18" width="684" height="1004" rx="54" fill="url(#bg)" stroke="url(#edge)" stroke-width="8"/>
+  <rect x="48" y="48" width="624" height="944" rx="38" fill="none" stroke="#8ec5ff" stroke-opacity=".35" stroke-width="3"/>
+  <rect x="72" y="72" width="576" height="896" rx="28" fill="none" stroke="#f5d88f" stroke-opacity=".22" stroke-width="2"/>
+  <g transform="translate(360 520)" filter="url(#glow)">
+    <circle r="154" fill="none" stroke="#5ab6ff" stroke-opacity=".38" stroke-width="7"/>
+    <circle r="92" fill="none" stroke="#a78bff" stroke-opacity=".5" stroke-width="5" stroke-dasharray="18 16"/>
+    <path d="M0 -178 44 -44 178 0 44 44 0 178 -44 44 -178 0 -44 -44Z" fill="#08152f" stroke="#f5d88f" stroke-width="6" stroke-linejoin="round"/>
+    <path d="M0 -92 23 -23 92 0 23 23 0 92 -23 23 -92 0 -23 -23Z" fill="#5ab6ff" fill-opacity=".18" stroke="#7ee1ff" stroke-width="4" stroke-linejoin="round"/>
+    <circle r="16" fill="#f5d88f"/>
+  </g>
+  <g opacity=".66">
+    <circle cx="144" cy="168" r="3" fill="#eef4ff"/>
+    <circle cx="586" cy="210" r="2" fill="#7ee1ff"/>
+    <circle cx="112" cy="790" r="2" fill="#f5d88f"/>
+    <circle cx="596" cy="844" r="3" fill="#eef4ff"/>
+  </g>
+</svg>

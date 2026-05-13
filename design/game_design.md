@@ -22,6 +22,17 @@
 3. **可解释性优先**：双槽、势能差、角色被动、天赋定价都必须能在 UI 和日志中解释清楚。
 4. **渐进式升级**：先完成规则骨架与数据模型升级，再逐步补齐关键词、角色、卡池与 UI 细节。
 
+### 0.4 UI 风格实现基准
+
+当前 UI 美术包装以 `design/shindoro_ui_style_spec.md` 为基准，目标是“星空幻想科技卡牌界面”：
+
+- 主色调采用深蓝、靛蓝、紫蓝与金色高光。
+- 全局背景使用星空、魔法阵、几何 HUD 与半透明发光面板。
+- 主按钮使用金色浮雕风格，次按钮使用深蓝底与蓝紫描边。
+- 对局内双槽系统是核心视觉组件：跳跃槽偏蓝色，神抽槽偏紫色，并显示 10 / 13 点阈值。
+- 卡牌、HUD、弹窗、日志、设置页基础面板统一走同一套发光边框与深色信息层。
+- 本风格层只改变视觉与交互反馈，不改变规则、卡牌数据、AI 行为或结算流程。
+
 ---
 
 ## 一、v1.3 规则下的目标产品定义
@@ -81,7 +92,7 @@
 
 - 全量关键词的完整动画表现
 - 更复杂的 AI 策略
-- 自定义构筑器
+- 更完整的卡组分享、导入导出与线上同步
 - 更丰富的卡池与数值平衡
 - PvP / 联机模式
 
@@ -508,6 +519,27 @@ type GamePhase =
 - Removed design paths: the standalone mulligan page, modal mulligan card row, and string-rendered battle components are no longer part of the product design.
 - Remaining design-system debt: the battle surface CSS is visually functional but too centralized. A future polish pass should split the CSS by card frame, battle board, side backrow, hand row, HUD, and log/control dock.
 - No gameplay rule changes were made in this cleanup pass.
+
+## 2026-05-01 Card Frame Visual Direction
+
+- Card frames use PNG as the single image format. This preserves transparent edges and lets the frame sit cleanly above any card illustration.
+- The shared frame language is dark star-tech fantasy: deep navy base, cyan luminous border, restrained gold accents, and gem-like sockets.
+- Minion cards keep the bottom stat area for attack, defense, and threat; spell, persistent, and trap frames keep the same family style but reserve more space for art and do not require stat sockets.
+- New frame variants should replace the existing files under `public/card-frames/<type>/frame.png` with the same dimensions and transparent canvas.
+
+## 2026-05-10 构筑器、衍生链与观星第一批落地
+
+- 卡组构筑第一阶段已接入设置页：玩家选择角色后，可以选择默认预组或本机保存的自定义卡组，再购买天赋并开始对局。
+- 构筑器本体采用独立子画面承载，设置页只保留卡组选择与入口，避免构筑信息密度干扰角色和天赋选择。
+- 自定义卡组保存使用 `localStorage`，保存键为 `shindoro.savedDecks.v1`；数据结构为 `version: 1` 加多组 `SavedDeck`。
+- `src/data/deckValidation.ts` 是构筑合法性检查入口，负责校验 50 张主卡组、同名最多 3 张、未知卡牌、公共备牌终结者、衍生卡、硬币和已删除的大魔力宝石。
+- 设置页构筑器支持从默认预组创建、复制、删除、重命名、保存、筛选、搜索、查看详情、加入和移除卡牌。
+- 对局创建时，`ShinDoroGame.setupMatch()` 可以接收 `playerMainDeck` 与 `playerDeckName`；引擎仍会在装载前再次校验卡组，避免 UI 漏检。
+- 墓地与衍生卡规则进入第一批可玩内容：防 mill 备份碎片体系、三叠链的备份体 / 回溯体 / 墓灯系列、污染垃圾卡体系已经加入卡池。
+- 新效果动作 `createCardOnTopDeck` 负责把新生成的衍生卡放到己方或对手牌库顶；衍生使魔进入墓地后照常参与墓地数量统计。
+- 新效果动作 `scryDeck` 负责观星 / 扰星。当前数字版采用费用从低到高的确定性整理，避免在第一阶段引入额外选择弹窗。
+- `错位星盘` 使用新的 `enemyDrawPhaseStarts` 触发条件，会在对手抽牌阶段开始、正式抽牌前触发扰星。
+- 普通卡牌仍不能从整副牌库检索指定卡牌；直接选择牌库中指定牌的能力继续由神抽槽独占。
 
 ## v1.3 实战平衡性大修设计落地记录
 

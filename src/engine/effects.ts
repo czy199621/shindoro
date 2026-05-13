@@ -210,6 +210,47 @@ function addCardToHand(game: ShinDoroGame, playerId: PlayerId, cardId: string): 
   game.log(`${game.getCharacter(player.character).name} 将 ${card.name} 加入手牌。`);
 }
 
+function createCardsOnTopDeck(
+  game: ShinDoroGame,
+  sourcePlayerId: PlayerId,
+  target: "self" | "opponent",
+  cardId: string,
+  count: number
+): void {
+  const targetPlayer = target === "self" ? game.getPlayer(sourcePlayerId) : game.getOpponent(sourcePlayerId);
+  const definition = getCardDefinition(cardId);
+  const created = Array.from({ length: Math.max(0, count) }, () => createRuntimeCard(definition));
+  if (!created.length) return;
+
+  targetPlayer.deck.unshift(...created);
+  game.log(`${game.getCharacter(targetPlayer.character).name} 的牌库顶被放入了 ${created.length} 张 ${definition.name}。`);
+}
+
+function resolveScryDeck(
+  game: ShinDoroGame,
+  sourcePlayerId: PlayerId,
+  target: "self" | "opponent",
+  count: number,
+  bottomCount = 0
+): void {
+  const targetPlayer = target === "self" ? game.getPlayer(sourcePlayerId) : game.getOpponent(sourcePlayerId);
+  const inspected = targetPlayer.deck.splice(0, Math.max(0, count));
+  if (!inspected.length) return;
+
+  inspected.sort((left, right) => {
+    if (left.currentCost !== right.currentCost) return left.currentCost - right.currentCost;
+    return left.name.localeCompare(right.name, "zh-Hans");
+  });
+
+  const bottomed = inspected.splice(Math.max(0, inspected.length - Math.max(0, bottomCount)));
+  targetPlayer.deck.unshift(...inspected);
+  targetPlayer.deck.push(...bottomed);
+
+  const actionName = target === "self" ? "观星" : "扰星";
+  const bottomText = bottomed.length ? `，其中 ${bottomed.length} 张被置于牌库底` : "";
+  game.log(`${game.getCharacter(targetPlayer.character).name} 被执行了 ${actionName} ${inspected.length + bottomed.length}${bottomText}。`);
+}
+
 function resolvePriorityExile(game: ShinDoroGame, playerId: PlayerId, mode: "health" | "attackAndHealth"): void {
   const opponent = game.getOpponent(playerId);
   const target = findPriorityEnemyMinion(game, playerId);
@@ -295,7 +336,11 @@ export function playCardAtIndex(game: ShinDoroGame, playerId: PlayerId, index: n
     game.summonMinion(playerId, card, { triggerOnPlay: true, canTriggerTrap: true });
   } else if (card.type === "spell") {
     game.resolveEffects(playerId, card.effects, { sourceCard: card });
-    moveToGraveyard(game, playerId, card, "stack", "used");
+    if (card.tags?.includes("exileOnResolve")) {
+      game.log(`${card.name} 结算后移出游戏。`);
+    } else {
+      moveToGraveyard(game, playerId, card, "stack", "used");
+    }
     game.triggerTraps(game.getOpponentId(playerId), "enemyCastsSpell", { sourceCard: card });
   } else if (card.type === "persistent") {
     player.persistents.push(createPersistentInstance(card, playerId));
@@ -356,7 +401,7 @@ export function resolveEffects(game: ShinDoroGame, playerId: PlayerId, effects: 
 export function triggerTraps(
   game: ShinDoroGame,
   ownerId: PlayerId,
-  conditionType: "enemyCastsSpell" | "enemySummonsMinion" | "enemyManaEquals",
+  conditionType: "enemyCastsSpell" | "enemySummonsMinion" | "enemyManaEquals" | "enemyDrawPhaseStarts",
   context: EffectContext
 ): void {
   const owner = game.getPlayer(ownerId);
@@ -380,7 +425,7 @@ export function triggerTraps(
 
 function isTrapConditionMet(
   effect: Effect,
-  conditionType: "enemyCastsSpell" | "enemySummonsMinion" | "enemyManaEquals",
+  conditionType: "enemyCastsSpell" | "enemySummonsMinion" | "enemyManaEquals" | "enemyDrawPhaseStarts",
   context: EffectContext
 ): boolean {
   if (effect.trigger !== "onTriggerMet" || effect.condition?.type !== conditionType) return false;
@@ -443,6 +488,17 @@ export function resolveAction(
       break;
     case "setTopDeck":
       resolveSetTopDeck(game, playerId, action.cardId);
+      break;
+    case "createCardOnTopDeck":
+      createCardsOnTopDeck(game, playerId, action.target, action.cardId, action.count ?? 1);
+      break;
+    case "scryDeck":
+      resolveScryDeck(game, playerId, action.target, action.count, action.bottomCount ?? 0);
+      break;
+    case "ifOwnGraveyardAtLeast":
+      if (player.graveyard.length >= action.count) {
+        game.resolveAction(playerId, action.action, context);
+      }
       break;
     case "discountNextDraw":
       player.temporaryFlags.nextDrawDiscount = Math.max(player.temporaryFlags.nextDrawDiscount, action.amount);

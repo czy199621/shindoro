@@ -21,15 +21,23 @@ function getSlotStateClass(current: number): "full" | "ready" | "charging" {
 function SlotMeter({ label, current, colorClass }: { label: string; current: number; colorClass: string }) {
   const percentage = Math.min((current / 13) * 100, 100);
   const slotState = getSlotStateClass(current);
+  const ariaLabel = `${label} 当前 ${current} 点，10 点阈值发动角色技能，13 点阈值发动强化效果`;
 
   return (
-    <div className={classNames("slot-card", slotState)}>
+    <div className={classNames("slot-card", colorClass, slotState)} aria-label={ariaLabel}>
       <div className="slot-card-header">
         <strong className="slot-card-label">{label}</strong>
         <span className="small-note slot-card-count">{current}/13</span>
       </div>
+      <div className={classNames("slot-orb", colorClass)} aria-hidden="true">
+        <span className="slot-orb-ring" />
+        <strong>{current}</strong>
+        <span>点</span>
+      </div>
       <div className="slot-bar" aria-hidden="true">
         <div className={classNames("slot-fill", colorClass)} style={{ width: `${percentage}%` }} />
+        <span className="slot-threshold ten">10</span>
+        <span className="slot-threshold thirteen">13</span>
       </div>
       <p className="slot-card-note">{getSlotNote(current)}</p>
     </div>

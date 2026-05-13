@@ -42,5 +42,19 @@ export const TRAP_CARDS: CardDefinition[] = [
         action: { type: "reduceMana", target: "opponent", amount: 2 }
       }
     ]
+  },
+  {
+    id: "misaligned_astrolabe",
+    name: "错位星盘",
+    cost: 2,
+    type: "trap",
+    description: "触发：对手抽牌阶段开始时，扰星 3。",
+    effects: [
+      {
+        trigger: "onTriggerMet",
+        condition: { type: "enemyDrawPhaseStarts" },
+        action: { type: "scryDeck", target: "opponent", count: 3 }
+      }
+    ]
   }
 ];

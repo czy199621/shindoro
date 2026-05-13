@@ -1,0 +1,61 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1920 1080" role="img" aria-label="Shindoro starry arcana table">
+  <defs>
+    <radialGradient id="bg" cx="50%" cy="42%" r="72%">
+      <stop offset="0%" stop-color="#17306a"/>
+      <stop offset="42%" stop-color="#0b1738"/>
+      <stop offset="100%" stop-color="#040816"/>
+    </radialGradient>
+    <radialGradient id="aurora" cx="48%" cy="50%" r="54%">
+      <stop offset="0%" stop-color="#7ecfff" stop-opacity=".22"/>
+      <stop offset="52%" stop-color="#8d61ff" stop-opacity=".12"/>
+      <stop offset="100%" stop-color="#020711" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="ring" x1="0" x2="1">
+      <stop offset="0%" stop-color="#5ab6ff" stop-opacity=".18"/>
+      <stop offset="46%" stop-color="#f5d88f" stop-opacity=".36"/>
+      <stop offset="100%" stop-color="#a78bff" stop-opacity=".18"/>
+    </linearGradient>
+    <filter id="softGlow" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="7" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+  <rect width="1920" height="1080" fill="url(#bg)"/>
+  <rect width="1920" height="1080" fill="url(#aurora)"/>
+  <g opacity=".55">
+    <circle cx="160" cy="128" r="1.7" fill="#eef4ff"/>
+    <circle cx="286" cy="238" r="1.2" fill="#7ee1ff"/>
+    <circle cx="438" cy="88" r="1.4" fill="#f5d88f"/>
+    <circle cx="638" cy="192" r="1.8" fill="#eef4ff"/>
+    <circle cx="874" cy="96" r="1.2" fill="#a78bff"/>
+    <circle cx="1080" cy="172" r="1.5" fill="#eef4ff"/>
+    <circle cx="1304" cy="104" r="1.3" fill="#7ee1ff"/>
+    <circle cx="1546" cy="214" r="1.8" fill="#eef4ff"/>
+    <circle cx="1748" cy="122" r="1.2" fill="#f5d88f"/>
+    <circle cx="180" cy="812" r="1.4" fill="#eef4ff"/>
+    <circle cx="372" cy="932" r="1.1" fill="#7ee1ff"/>
+    <circle cx="612" cy="786" r="1.6" fill="#eef4ff"/>
+    <circle cx="846" cy="972" r="1.2" fill="#f5d88f"/>
+    <circle cx="1116" cy="856" r="1.8" fill="#eef4ff"/>
+    <circle cx="1384" cy="946" r="1.3" fill="#a78bff"/>
+    <circle cx="1660" cy="822" r="1.7" fill="#eef4ff"/>
+  </g>
+  <g opacity=".34" filter="url(#softGlow)">
+    <ellipse cx="960" cy="552" rx="765" ry="296" fill="none" stroke="url(#ring)" stroke-width="28"/>
+    <ellipse cx="960" cy="552" rx="690" ry="242" fill="none" stroke="#7ee1ff" stroke-width="3" stroke-dasharray="42 35"/>
+    <ellipse cx="960" cy="552" rx="540" ry="190" fill="none" stroke="#f5d88f" stroke-width="2" stroke-dasharray="26 30"/>
+  </g>
+  <g transform="translate(960 552)" opacity=".26" filter="url(#softGlow)">
+    <circle r="150" fill="none" stroke="#eef4ff" stroke-width="4"/>
+    <path d="M0 -220 48 -66 210 -66 79 28 128 184 0 92 -128 184 -79 28 -210 -66 -48 -66Z" fill="none" stroke="#eef4ff" stroke-width="7" stroke-linejoin="round"/>
+    <circle r="54" fill="none" stroke="#7ee1ff" stroke-width="2"/>
+    <path d="M-18 0h36M0-18v36" stroke="#f5d88f" stroke-width="2" stroke-linecap="round"/>
+  </g>
+  <g opacity=".5">
+    <path d="M34 34h250M34 34v250M1886 34h-250M1886 34v250M34 1046h250M34 1046v-250M1886 1046h-250M1886 1046v-250" fill="none" stroke="#8ec5ff" stroke-width="2"/>
+    <path d="M58 58h92M58 58v92M1862 58h-92M1862 58v92M58 1022h92M58 1022v-92M1862 1022h-92M1862 1022v-92" fill="none" stroke="#f5d88f" stroke-width="2"/>
+  </g>
+</svg>

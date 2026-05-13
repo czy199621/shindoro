@@ -6212,26 +6212,12 @@ body,
 
 .game-shell .side-backrow-zone {
   display: grid;
-  grid-template-rows: var(--side-backrow-panel-height) auto;
-  gap: 8px;
+  grid-template-rows: var(--side-backrow-panel-height);
   height: auto;
 }
 
 .game-shell .side-backrow-lane {
   height: 100%;
-}
-
-.game-shell .side-backrow-footer {
-  display: flex;
-  justify-content: stretch;
-  min-width: 0;
-}
-
-.game-shell .side-end-turn-btn {
-  width: 100%;
-  min-height: 44px;
-  justify-content: center;
-  white-space: normal;
 }
 
 .game-shell .player-backrow-zone {
@@ -6250,7 +6236,7 @@ body,
   }
 
   .game-shell .side-backrow-zone {
-    grid-template-rows: clamp(154px, 23vh, 230px) auto;
+    grid-template-rows: clamp(154px, 23vh, 230px);
   }
 }
 
@@ -6392,11 +6378,45 @@ body,
 .game-shell .hand-zone {
   padding-left: var(--hand-hud-clearance) !important;
   padding-right: var(--hand-hud-clearance) !important;
+  padding-bottom: 0 !important;
+  row-gap: clamp(5px, 0.72vh, 10px);
 }
 
 .game-shell .hand-zone .hand-row {
   justify-content: center;
+  padding-top: clamp(6px, 1vh, 14px);
+  padding-bottom: 2px;
   scroll-padding-left: var(--hand-hud-clearance);
+}
+
+.game-shell .hand-end-turn-bar {
+  position: relative;
+  z-index: 12;
+  display: flex;
+  justify-content: center;
+  justify-self: center;
+  align-self: end;
+  width: min(100%, 360px);
+  pointer-events: auto;
+}
+
+.game-shell .hand-end-turn-btn {
+  min-width: clamp(150px, 10vw, 190px);
+  min-height: 44px;
+  justify-content: center;
+  font-size: 16px;
+  white-space: nowrap;
+}
+
+@media (max-width: 700px) {
+  .game-shell .hand-zone {
+    padding-bottom: 218px !important;
+  }
+
+  .game-shell .hand-end-turn-btn {
+    min-height: 40px;
+    font-size: 15px;
+  }
 }
 
 /* Card JPG art framework: every card can resolve /cards/<card-id>.jpg. */
@@ -6543,5 +6563,1105 @@ body,
   .game-shell .mulligan-hand-zone .mulligan-hand-toolbar {
     width: min(100%, 320px);
     flex-wrap: wrap;
+  }
+}
+
+/* Shindoro UI Style Spec：星空幻想科技主题覆盖层。
+   这层只改视觉表现，不接触规则、数据和出牌流程。 */
+:root {
+  --bg-0: #060b1a;
+  --bg-1: #0b1430;
+  --bg-2: #101c43;
+  --bg-3: #132454;
+  --panel-bg: rgba(9, 19, 48, 0.78);
+  --panel-bg-strong: rgba(8, 17, 44, 0.92);
+  --panel-inner: rgba(17, 31, 74, 0.85);
+  --panel-border: rgba(97, 156, 255, 0.52);
+  --panel-border-strong: rgba(142, 197, 255, 0.86);
+  --glow-blue: #5ab6ff;
+  --glow-cyan: #7ee1ff;
+  --glow-violet: #a78bff;
+  --glow-purple: #cc8dff;
+  --glow-gold: #f5d88f;
+  --glow-gold-strong: #ffd86b;
+  --text-main: #eef4ff;
+  --text-soft: #c8d6ff;
+  --text-dim: #96a9d8;
+  --text-gold: #f4ddab;
+  --text-accent-blue: #80cfff;
+  --text-accent-purple: #d3a9ff;
+  --success: #73e2b1;
+  --warning: #ffd36e;
+  --danger: #ff6d88;
+  --info: #73c8ff;
+  --shadow-panel: 0 10px 30px rgba(0, 0, 0, 0.35);
+  --shadow-blue-glow: 0 0 0 1px rgba(123, 198, 255, 0.25), 0 0 18px rgba(74, 157, 255, 0.18);
+  --shadow-purple-glow: 0 0 0 1px rgba(195, 146, 255, 0.22), 0 0 18px rgba(164, 102, 255, 0.16);
+  --shadow-gold-glow: 0 0 0 1px rgba(255, 220, 146, 0.22), 0 0 22px rgba(255, 214, 108, 0.18);
+  --radius-xs: 8px;
+  --radius-sm: 12px;
+  --radius-md: 16px;
+  --radius-lg: 22px;
+  --radius-xl: 28px;
+  --moe-pink: var(--glow-purple);
+  --moe-rose: rgba(126, 225, 255, 0.2);
+  --moe-lilac: var(--glow-violet);
+  --moe-cyan: var(--glow-cyan);
+  --moe-mint: var(--success);
+  --moe-ink: var(--text-main);
+  --moe-line: var(--panel-border);
+  --moe-glow: var(--shadow-blue-glow);
+}
+
+body {
+  color: var(--text-main);
+  background:
+    radial-gradient(circle at 50% 18%, rgba(65, 109, 255, 0.2), transparent 30%),
+    radial-gradient(circle at 82% 8%, rgba(152, 90, 255, 0.13), transparent 22%),
+    radial-gradient(circle at 14% 92%, rgba(126, 225, 255, 0.11), transparent 26%),
+    linear-gradient(180deg, var(--bg-1) 0%, #081022 48%, #040712 100%) !important;
+  font-family: "Noto Sans SC", "Source Han Sans SC", "Microsoft YaHei UI", "Segoe UI", system-ui, sans-serif;
+}
+
+body::before {
+  background-image:
+    radial-gradient(circle, rgba(238, 244, 255, 0.82) 0 1px, transparent 1.7px),
+    radial-gradient(circle, rgba(126, 225, 255, 0.48) 0 1px, transparent 1.8px),
+    radial-gradient(circle, rgba(245, 216, 143, 0.44) 0 1px, transparent 1.8px) !important;
+  background-position: 0 0, 34px 42px, 76px 18px !important;
+  background-size: 124px 124px, 168px 168px, 216px 216px !important;
+  opacity: 0.5 !important;
+  animation: shindoro-star-drift 26s linear infinite !important;
+}
+
+.app-shell,
+.legacy-app-root,
+.game-shell {
+  color: var(--text-main);
+}
+
+.app-shell {
+  max-width: 1500px;
+}
+
+/* 共通发光面板：用于 setup、战斗 HUD、日志、弹窗和卡牌详情。 */
+.hero,
+.setup-panel,
+.option-card,
+.board-shell,
+.zone,
+.hud,
+.side-backrow-zone,
+.log-card,
+.modal-card,
+.card-detail-tooltip,
+.battle-log-drawer summary,
+.battle-log-drawer .battle-log-panel,
+.slot-action-card {
+  color: var(--text-main) !important;
+  border: 1px solid var(--panel-border) !important;
+  background:
+    linear-gradient(145deg, rgba(22, 42, 94, 0.78), rgba(7, 16, 42, 0.84) 58%, rgba(20, 16, 56, 0.74)),
+    var(--panel-bg) !important;
+  box-shadow: var(--shadow-panel), var(--shadow-blue-glow) !important;
+  backdrop-filter: blur(10px);
+}
+
+.hero::before,
+.setup-panel::before,
+.option-card::before,
+.zone::before,
+.hud::before,
+.side-backrow-zone::before,
+.modal-card::before,
+.card-detail-tooltip::before {
+  content: "";
+  position: absolute;
+  inset: 7px;
+  border: 1px solid rgba(160, 206, 255, 0.14);
+  border-radius: calc(var(--radius-md) - 3px);
+  pointer-events: none;
+  background:
+    linear-gradient(90deg, rgba(126, 225, 255, 0.08), transparent 26%, transparent 74%, rgba(245, 216, 143, 0.08));
+}
+
+.hero,
+.setup-panel,
+.modal-card {
+  border-radius: var(--radius-lg) !important;
+}
+
+.option-card,
+.zone,
+.hud,
+.side-backrow-zone,
+.card-detail-tooltip {
+  border-radius: var(--radius-md) !important;
+}
+
+.hero > *,
+.setup-panel > *,
+.option-card > *,
+.zone > *,
+.hud > *,
+.side-backrow-zone > *,
+.modal-card > *,
+.card-detail-tooltip > * {
+  position: relative;
+  z-index: 1;
+}
+
+.hero h1,
+.setup-panel h2,
+.section-title,
+.modal-card h3,
+.card-detail-title {
+  color: transparent !important;
+  background: linear-gradient(180deg, #fff7da 0%, #f6df9e 45%, #d7ab47 100%);
+  background-clip: text;
+  -webkit-background-clip: text;
+  text-shadow: 0 0 20px rgba(255, 216, 107, 0.18);
+  letter-spacing: 0;
+}
+
+.hero p,
+.setup-panel p,
+.option-card p,
+.small-note,
+.card-detail-description,
+.card-detail-effects p,
+.card-detail-flavor {
+  color: var(--text-soft) !important;
+}
+
+.moe-mode-badge,
+.moe-ribbon span,
+.pill,
+.field-count-badge,
+.keyword-badge,
+.hud-stat,
+.mulligan-hand-count,
+.card-detail-type,
+.card-detail-status {
+  color: var(--text-main) !important;
+  border: 1px solid rgba(126, 225, 255, 0.32) !important;
+  background: linear-gradient(180deg, rgba(23, 48, 106, 0.82), rgba(8, 19, 48, 0.78)) !important;
+  box-shadow: inset 0 1px 0 rgba(238, 244, 255, 0.16), 0 0 14px rgba(90, 182, 255, 0.12) !important;
+}
+
+.pill strong,
+.hud-stat strong,
+.field-count-badge.minion,
+.field-count-badge.persistent,
+.field-count-badge.trap.active {
+  color: var(--text-gold) !important;
+}
+
+/* 按钮系统：金色主按钮、蓝紫次按钮，统一成教学页的仪式感。 */
+.primary-btn,
+.game-shell .primary-btn {
+  color: #4a3112 !important;
+  border: 1px solid rgba(255, 237, 182, 0.78) !important;
+  background:
+    linear-gradient(180deg, #fff8dc 0%, #f2d899 52%, #c99b4a 100%) !important;
+  box-shadow:
+    0 10px 24px rgba(0, 0, 0, 0.34),
+    0 0 0 1px rgba(255, 226, 145, 0.28),
+    0 0 24px rgba(255, 216, 107, 0.2) !important;
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.44);
+  font-weight: 900;
+}
+
+.secondary-btn,
+.ghost-btn,
+.game-shell .secondary-btn,
+.game-shell .ghost-btn {
+  color: var(--text-main) !important;
+  border: 1px solid rgba(114, 168, 255, 0.52) !important;
+  background:
+    linear-gradient(180deg, rgba(20, 47, 108, 0.94), rgba(10, 24, 61, 0.94)) !important;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.24), 0 0 16px rgba(90, 182, 255, 0.12) !important;
+}
+
+.primary-btn:hover:not(:disabled),
+.secondary-btn:hover:not(:disabled),
+.ghost-btn:hover:not(:disabled) {
+  filter: brightness(1.08);
+  transform: translateY(-2px);
+}
+
+/* 启动/设置页：从原型面板改成星空活动页质感。 */
+.hero {
+  position: relative;
+  overflow: hidden;
+  min-height: 230px;
+  background:
+    linear-gradient(90deg, rgba(8, 17, 44, 0.92), rgba(12, 28, 71, 0.74) 52%, rgba(23, 19, 67, 0.78)),
+    url("/ui/shindoro-starry-table.svg") center / cover no-repeat !important;
+}
+
+.hero::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    linear-gradient(90deg, rgba(245, 216, 143, 0.22), transparent 20%, transparent 80%, rgba(126, 225, 255, 0.16)),
+    radial-gradient(ellipse at 50% 110%, rgba(90, 182, 255, 0.18), transparent 52%);
+}
+
+.hero h1 {
+  font-size: clamp(42px, 5vw, 70px);
+}
+
+.setup-grid {
+  gap: clamp(16px, 1.8vw, 26px);
+}
+
+.option-card.selected {
+  border-color: rgba(255, 216, 107, 0.78) !important;
+  box-shadow: var(--shadow-panel), var(--shadow-gold-glow) !important;
+}
+
+.character-card-art {
+  border-color: rgba(142, 197, 255, 0.42) !important;
+  background-color: rgba(6, 11, 26, 0.7) !important;
+  box-shadow: inset 0 0 0 1px rgba(245, 216, 143, 0.12), 0 0 22px rgba(90, 182, 255, 0.12) !important;
+}
+
+/* 对局桌面：使用新的星空桌布 SVG，保留当前布局但换成幻想科技 HUD。 */
+.game-shell {
+  --corner-hud-gap: 14px;
+  --enemy-hud-gap: 14px;
+}
+
+.moe-table::before,
+.moe-table::after {
+  display: none !important;
+}
+
+.arcana-table-art {
+  background:
+    linear-gradient(180deg, rgba(2, 7, 17, 0.08), rgba(2, 7, 17, 0.32)),
+    url("/ui/shindoro-starry-table.svg") center / cover no-repeat !important;
+  opacity: 1 !important;
+  filter: saturate(1.12) contrast(1.05) !important;
+}
+
+.arcana-table-art::after {
+  background:
+    radial-gradient(ellipse at center, transparent 0 50%, rgba(2, 7, 17, 0.48) 100%),
+    linear-gradient(90deg, rgba(126, 225, 255, 0.1), transparent 32%, transparent 68%, rgba(167, 139, 255, 0.1)) !important;
+}
+
+.game-shell .board-shell {
+  border: 1px solid rgba(142, 197, 255, 0.42);
+  background:
+    linear-gradient(180deg, rgba(8, 17, 44, 0.78), rgba(4, 8, 22, 0.9)),
+    var(--bg-0) !important;
+  box-shadow: 0 24px 58px rgba(0, 0, 0, 0.46), 0 0 48px rgba(90, 182, 255, 0.16) !important;
+}
+
+.game-shell .board-shell::before {
+  border-color: rgba(142, 197, 255, 0.18);
+  background:
+    linear-gradient(90deg, rgba(126, 225, 255, 0.07), transparent 28%, transparent 72%, rgba(245, 216, 143, 0.08)),
+    radial-gradient(ellipse at 50% 49%, rgba(126, 225, 255, 0.08), transparent 50%) !important;
+}
+
+.turn-seal {
+  color: rgba(245, 216, 143, 0.72) !important;
+  border-color: rgba(245, 216, 143, 0.34) !important;
+  background: radial-gradient(circle, rgba(90, 182, 255, 0.1), rgba(167, 139, 255, 0.08) 62%, transparent 72%) !important;
+  box-shadow: inset 0 0 0 10px rgba(126, 225, 255, 0.06), 0 0 34px rgba(90, 182, 255, 0.14) !important;
+}
+
+.turn-seal::before,
+.turn-seal::after {
+  border-color: rgba(142, 197, 255, 0.42) !important;
+}
+
+.game-shell .field-zone,
+.game-shell .hand-zone,
+.game-shell .enemy-half .field-zone,
+.game-shell .player-half .field-zone {
+  background: transparent !important;
+  box-shadow: none !important;
+  backdrop-filter: none !important;
+}
+
+.game-shell .field-zone .zone-header {
+  color: var(--text-soft);
+}
+
+.game-shell .field-counts {
+  gap: 6px;
+}
+
+.game-shell .battlefield-slot:not(.occupied) {
+  border: 1px solid rgba(126, 225, 255, 0.16) !important;
+  background:
+    radial-gradient(circle at 50% 42%, rgba(126, 225, 255, 0.12), transparent 34%),
+    rgba(8, 17, 44, 0.18) !important;
+  box-shadow: inset 0 0 0 1px rgba(238, 244, 255, 0.04), 0 0 16px rgba(90, 182, 255, 0.08) !important;
+}
+
+.game-shell .battlefield-slot:not(.occupied)::after {
+  display: block !important;
+  left: 26%;
+  right: 26%;
+  bottom: 12%;
+  height: 2px;
+  background: rgba(126, 225, 255, 0.22) !important;
+}
+
+.game-shell .battlefield-slot:not(.occupied) .battlefield-slot-spark {
+  display: block !important;
+  opacity: 0.22;
+  color: var(--glow-cyan);
+}
+
+.game-shell .battlefield-slot:not(.occupied) .battlefield-slot-index,
+.game-shell .battlefield-slot:not(.occupied) .battlefield-slot-label {
+  display: none !important;
+}
+
+.game-shell .battlefield-slot.occupied {
+  border-color: rgba(245, 216, 143, 0.28) !important;
+  background: rgba(8, 17, 44, 0.28) !important;
+}
+
+/* HUD 与双槽：让跳跃槽/神抽槽成为对局内核心视觉模块。 */
+.game-shell .hud {
+  background:
+    linear-gradient(150deg, rgba(15, 34, 78, 0.9), rgba(6, 13, 34, 0.9) 56%, rgba(28, 18, 68, 0.82)) !important;
+}
+
+.game-shell .hud-header {
+  border-bottom: 1px solid rgba(126, 225, 255, 0.14);
+  padding-bottom: 7px;
+}
+
+.hud-title,
+.game-shell .hud-title {
+  color: var(--text-gold) !important;
+  text-shadow: 0 0 14px rgba(245, 216, 143, 0.16);
+}
+
+.hud-avatar {
+  border-color: rgba(245, 216, 143, 0.5) !important;
+  background: radial-gradient(circle at 50% 38%, rgba(126, 225, 255, 0.32), rgba(8, 17, 44, 0.92)) !important;
+  box-shadow: 0 0 18px rgba(90, 182, 255, 0.2), inset 0 0 0 1px rgba(238, 244, 255, 0.18) !important;
+}
+
+.hud-passive {
+  color: var(--text-soft) !important;
+  background: rgba(238, 244, 255, 0.06) !important;
+  border: 1px solid rgba(142, 197, 255, 0.16);
+}
+
+.hud-resource {
+  border-color: rgba(142, 197, 255, 0.24) !important;
+  background: linear-gradient(135deg, rgba(16, 33, 76, 0.86), rgba(6, 13, 34, 0.72)) !important;
+}
+
+.hud-resource.hp {
+  border-color: rgba(255, 109, 136, 0.38) !important;
+}
+
+.hud-resource.mana {
+  border-color: rgba(126, 225, 255, 0.42) !important;
+}
+
+.hud-resource-label {
+  color: var(--text-dim) !important;
+}
+
+.hud-resource-value {
+  color: var(--text-main) !important;
+  text-shadow: 0 0 14px rgba(126, 225, 255, 0.12);
+}
+
+.slot-metrics {
+  gap: 8px !important;
+}
+
+.slot-card {
+  position: relative;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  grid-template-rows: auto auto;
+  column-gap: 9px;
+  align-items: center;
+  min-height: 78px;
+  border: 1px solid rgba(126, 225, 255, 0.26) !important;
+  background:
+    radial-gradient(circle at 18% 50%, rgba(90, 182, 255, 0.18), transparent 34%),
+    linear-gradient(145deg, rgba(12, 30, 74, 0.88), rgba(5, 12, 34, 0.84)) !important;
+}
+
+.slot-card.god {
+  border-color: rgba(204, 141, 255, 0.32) !important;
+  background:
+    radial-gradient(circle at 18% 50%, rgba(204, 141, 255, 0.18), transparent 34%),
+    linear-gradient(145deg, rgba(24, 20, 74, 0.88), rgba(5, 12, 34, 0.84)) !important;
+}
+
+.slot-card-header,
+.slot-card-note,
+.slot-bar {
+  grid-column: 2;
+}
+
+.slot-orb {
+  grid-row: 1 / span 3;
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 54px;
+  height: 54px;
+  border-radius: 50%;
+  color: var(--text-main);
+  background:
+    radial-gradient(circle at 42% 36%, rgba(238, 244, 255, 0.44), transparent 18%),
+    conic-gradient(from -40deg, rgba(126, 225, 255, 0.98), rgba(90, 182, 255, 0.18), rgba(126, 225, 255, 0.98));
+  box-shadow: 0 0 18px rgba(90, 182, 255, 0.24);
+}
+
+.slot-orb.god {
+  background:
+    radial-gradient(circle at 42% 36%, rgba(238, 244, 255, 0.44), transparent 18%),
+    conic-gradient(from -40deg, rgba(204, 141, 255, 0.98), rgba(167, 139, 255, 0.18), rgba(204, 141, 255, 0.98));
+  box-shadow: 0 0 18px rgba(204, 141, 255, 0.24);
+}
+
+.slot-orb-ring {
+  position: absolute;
+  inset: 7px;
+  border: 1px solid rgba(238, 244, 255, 0.5);
+  border-radius: 50%;
+}
+
+.slot-orb strong {
+  font-size: 20px;
+  line-height: 1;
+}
+
+.slot-orb span:last-child {
+  margin-top: 24px;
+  font-size: 10px;
+  color: rgba(238, 244, 255, 0.74);
+}
+
+.slot-card-label {
+  color: var(--text-gold) !important;
+}
+
+.slot-card-count {
+  color: var(--text-accent-blue) !important;
+}
+
+.slot-card.god .slot-card-count {
+  color: var(--text-accent-purple) !important;
+}
+
+.slot-bar {
+  position: relative;
+  height: 8px !important;
+  border: 1px solid rgba(142, 197, 255, 0.18);
+  background: rgba(4, 8, 22, 0.72) !important;
+}
+
+.slot-fill.jump {
+  background: linear-gradient(90deg, #2b7fff, #7ee1ff) !important;
+  box-shadow: 0 0 16px rgba(90, 182, 255, 0.5);
+}
+
+.slot-fill.god {
+  background: linear-gradient(90deg, #7857ff, #cc8dff) !important;
+  box-shadow: 0 0 16px rgba(204, 141, 255, 0.5);
+}
+
+.slot-threshold {
+  position: absolute;
+  top: 50%;
+  width: 1px;
+  height: 16px;
+  display: flex;
+  justify-content: center;
+  overflow: visible;
+  padding-top: 16px;
+  background: rgba(245, 216, 143, 0.74);
+  color: var(--text-gold);
+  font-size: 9px;
+  line-height: 1;
+  transform: translate(-50%, -50%);
+}
+
+.slot-threshold.ten {
+  left: calc(100% * 10 / 13);
+}
+
+.slot-threshold.thirteen {
+  left: calc(100% - 1px);
+}
+
+.slot-card-note {
+  color: var(--text-dim) !important;
+}
+
+.slot-card.ready,
+.slot-card.full {
+  animation: shindoro-slot-pulse 1.35s ease-in-out infinite;
+}
+
+/* 卡牌与伏牌：深色卡框、蓝金描边、清楚的费用和三属性。 */
+.framed-card {
+  --card-frame-base: url("/card-frames/common/frame.png?v=shindoro-frame-20260501") !important;
+}
+
+.card.minion.framed-card,
+.minion-card.framed-card {
+  --card-frame-base: url("/card-frames/minion/frame.png?v=shindoro-frame-20260501") !important;
+}
+
+.card.spell.framed-card {
+  --card-frame-base: url("/card-frames/spell/frame.png?v=shindoro-frame-20260501") !important;
+}
+
+.card.persistent.framed-card,
+.persistent-card.persistent.framed-card {
+  --card-frame-base: url("/card-frames/persistent/frame.png?v=shindoro-frame-20260501") !important;
+}
+
+.card.trap.framed-card,
+.persistent-card.trap.framed-card {
+  --card-frame-base: url("/card-frames/trap/frame.png?v=shindoro-frame-20260501") !important;
+}
+
+.card.framed-card,
+.minion-card.framed-card,
+.persistent-card.framed-card {
+  color: var(--text-main) !important;
+  border: 1px solid rgba(142, 197, 255, 0.58) !important;
+  background:
+    var(--card-frame-base) center / 100% 100% no-repeat,
+    linear-gradient(180deg, rgba(238, 244, 255, 0.08), transparent 18%),
+    radial-gradient(circle at 50% 20%, rgba(90, 182, 255, 0.16), transparent 34%),
+    linear-gradient(155deg, #172c63, #08152f 55%, #211247) !important;
+  box-shadow:
+    inset 0 0 0 1px rgba(238, 244, 255, 0.12),
+    inset 0 0 0 5px rgba(4, 8, 22, 0.32),
+    0 14px 28px rgba(0, 0, 0, 0.34),
+    0 0 16px rgba(90, 182, 255, 0.14) !important;
+}
+
+.card-frame-base {
+  background:
+    linear-gradient(135deg, rgba(142, 197, 255, 0.7), transparent 18%, transparent 82%, rgba(245, 216, 143, 0.6)),
+    linear-gradient(180deg, rgba(238, 244, 255, 0.08), transparent 28%, rgba(126, 225, 255, 0.08)) !important;
+}
+
+.card-frame-art-window {
+  border: 1px solid rgba(126, 225, 255, 0.32);
+  border-radius: 8%;
+  background:
+    linear-gradient(135deg, rgba(126, 225, 255, 0.16), transparent 60%),
+    rgba(4, 8, 22, 0.22) !important;
+}
+
+.card-frame-title-plate,
+.card-frame-text-box {
+  background:
+    linear-gradient(90deg, transparent, rgba(245, 216, 143, 0.14), transparent),
+    rgba(4, 8, 22, 0.18) !important;
+}
+
+.card::before,
+.minion-card::before,
+.persistent-card::before {
+  background:
+    radial-gradient(circle at 18% 18%, rgba(238, 244, 255, 0.5), transparent 24%),
+    linear-gradient(135deg, rgba(90, 182, 255, 0.26), rgba(167, 139, 255, 0.16)) !important;
+  box-shadow: inset 0 1px 0 rgba(238, 244, 255, 0.2) !important;
+}
+
+.card::after {
+  background: linear-gradient(135deg, #f5d88f, #7ee1ff) !important;
+  filter: drop-shadow(0 0 8px rgba(245, 216, 143, 0.44)) !important;
+}
+
+.card-art {
+  border-color: rgba(142, 197, 255, 0.36) !important;
+  background-color: rgba(4, 8, 22, 0.78) !important;
+  box-shadow: inset 0 0 0 1px rgba(238, 244, 255, 0.1), 0 9px 18px rgba(0, 0, 0, 0.28) !important;
+}
+
+.card-art::before {
+  background:
+    linear-gradient(120deg, rgba(238, 244, 255, 0.22), transparent 30%, transparent 68%, rgba(126, 225, 255, 0.14)),
+    radial-gradient(circle at 18% 14%, rgba(245, 216, 143, 0.22), transparent 18%) !important;
+}
+
+.card-cost,
+.card-detail-cost {
+  color: var(--text-main) !important;
+  border: 1px solid rgba(238, 244, 255, 0.5) !important;
+  background:
+    radial-gradient(circle at 34% 24%, rgba(238, 244, 255, 0.82), transparent 24%),
+    linear-gradient(135deg, #2a74ff, #7b61ff 58%, #f5d88f) !important;
+  box-shadow: 0 7px 18px rgba(42, 116, 255, 0.34), 0 0 16px rgba(126, 225, 255, 0.18) !important;
+}
+
+.stat-badge {
+  border: 1px solid rgba(142, 197, 255, 0.28) !important;
+  background: rgba(4, 8, 22, 0.72) !important;
+}
+
+.stat-badge.attack {
+  color: #ffd6de !important;
+  border-color: rgba(255, 109, 136, 0.42) !important;
+}
+
+.stat-badge.health {
+  color: #c8d6ff !important;
+  border-color: rgba(126, 225, 255, 0.42) !important;
+}
+
+.stat-badge.threat {
+  color: #ffe6a8 !important;
+  border-color: rgba(245, 216, 143, 0.48) !important;
+}
+
+.stat-icon {
+  filter: drop-shadow(0 0 5px currentColor);
+}
+
+.minion-card.ready,
+.card.targetable,
+.minion-card.targetable,
+.hud.targetable {
+  outline-color: rgba(126, 225, 255, 0.86) !important;
+  animation: shindoro-target-pulse 1.25s ease-in-out infinite !important;
+}
+
+.minion-card.selected {
+  outline: 2px solid rgba(245, 216, 143, 0.8);
+  outline-offset: 3px;
+}
+
+.enemy-hand-card {
+  border: 1px solid rgba(142, 197, 255, 0.58) !important;
+  background:
+    linear-gradient(180deg, rgba(238, 244, 255, 0.1), transparent),
+    url("/ui/shindoro-card-back.svg") center / cover no-repeat !important;
+  box-shadow: 0 14px 28px rgba(0, 0, 0, 0.32), 0 0 18px rgba(90, 182, 255, 0.16) !important;
+}
+
+.enemy-hand-card::before {
+  background: none !important;
+}
+
+.enemy-hand-card-mark {
+  display: none !important;
+}
+
+.enemy-hand-card-glow {
+  background: rgba(126, 225, 255, 0.42) !important;
+}
+
+.backrow-secret-card {
+  color: var(--text-soft) !important;
+  border-color: rgba(142, 197, 255, 0.36) !important;
+  background:
+    linear-gradient(180deg, rgba(238, 244, 255, 0.08), transparent),
+    url("/ui/shindoro-card-back.svg") center / cover no-repeat !important;
+}
+
+.backrow-secret-gem {
+  background: linear-gradient(135deg, #f5d88f, #7ee1ff 56%, #a78bff) !important;
+}
+
+/* 日志、详情和弹窗：统一成深蓝发光信息层。 */
+.battle-log-drawer summary {
+  color: var(--text-main) !important;
+}
+
+.battle-log-drawer summary span {
+  color: var(--text-gold) !important;
+}
+
+.battle-log-drawer .log-item,
+.log-item {
+  color: var(--text-soft) !important;
+  border: 1px solid rgba(142, 197, 255, 0.14) !important;
+  background: rgba(238, 244, 255, 0.06) !important;
+}
+
+.card-detail-tooltip {
+  background:
+    linear-gradient(145deg, rgba(12, 30, 74, 0.96), rgba(5, 12, 34, 0.94)) !important;
+}
+
+.card-detail-stats span {
+  color: var(--text-main) !important;
+  border-color: rgba(142, 197, 255, 0.24) !important;
+  background: rgba(238, 244, 255, 0.08) !important;
+}
+
+.modal-backdrop {
+  background:
+    radial-gradient(circle at 50% 42%, rgba(90, 182, 255, 0.12), transparent 34%),
+    rgba(2, 7, 17, 0.72) !important;
+}
+
+.mulligan-choice-card.selected-for-mulligan {
+  outline-color: rgba(245, 216, 143, 0.86) !important;
+  box-shadow: 0 0 0 5px rgba(126, 225, 255, 0.16), 0 18px 36px rgba(0, 0, 0, 0.28) !important;
+}
+
+.card-selection-mark {
+  color: #4a3112 !important;
+  background: linear-gradient(180deg, #fff8dc, #f2d899) !important;
+  border-color: rgba(255, 237, 182, 0.78) !important;
+}
+
+.deck-setup {
+  display: grid;
+  gap: 16px;
+  margin-bottom: 22px;
+}
+
+.deck-builder-screen {
+  min-height: 100vh;
+  padding-block: 28px;
+}
+
+.deck-builder-shell {
+  display: grid;
+  gap: 18px;
+  width: min(1480px, calc(100vw - 32px));
+  margin: 0 auto;
+}
+
+.deck-builder-screen-head {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(260px, 360px);
+  gap: 18px;
+  align-items: end;
+  padding: 4px 2px 0;
+}
+
+.deck-builder-screen-head h1 {
+  margin: 8px 0 4px;
+  color: var(--text-main);
+  font-size: clamp(34px, 4vw, 56px);
+  line-height: 1;
+  letter-spacing: 0;
+}
+
+.deck-builder-screen-head p {
+  margin: 0;
+  color: var(--text-muted);
+}
+
+.deck-builder-screen-status {
+  align-self: stretch;
+  display: grid;
+  align-content: end;
+}
+
+.deck-choice-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.15fr) minmax(280px, 0.85fr);
+  gap: 14px;
+  align-items: start;
+}
+
+.deck-choice-main,
+.deck-choice-status,
+.deck-builder,
+.deck-pool-panel,
+.deck-detail-panel,
+.deck-current-panel,
+.deck-card-detail {
+  border: 1px solid rgba(142, 197, 255, 0.2);
+  background: rgba(6, 18, 46, 0.64);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.22);
+  border-radius: 8px;
+}
+
+.deck-choice-main {
+  display: grid;
+  gap: 10px;
+  padding: 12px;
+}
+
+.deck-choice-status {
+  display: grid;
+  gap: 12px;
+  padding: 14px;
+}
+
+.saved-deck-button {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+  padding: 12px 14px;
+  color: var(--text-main);
+  text-align: left;
+  border: 1px solid rgba(142, 197, 255, 0.22);
+  background: rgba(10, 28, 70, 0.68);
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.saved-deck-button.selected {
+  border-color: rgba(245, 216, 143, 0.76);
+  background: linear-gradient(135deg, rgba(35, 59, 118, 0.82), rgba(25, 35, 78, 0.74));
+}
+
+.deck-validation {
+  display: grid;
+  gap: 6px;
+  padding: 10px 12px;
+  border: 1px solid rgba(142, 197, 255, 0.2);
+  background: rgba(4, 12, 34, 0.58);
+  border-radius: 8px;
+}
+
+.deck-validation.valid strong {
+  color: #98f1c2;
+}
+
+.deck-validation.invalid strong,
+.deck-validation-list.error p {
+  color: #ffb2b2;
+}
+
+.deck-validation-list.warning p {
+  color: #f5d88f;
+}
+
+.deck-validation-list p {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.deck-message {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 13px;
+}
+
+.deck-builder {
+  display: grid;
+  gap: 14px;
+  padding: 14px;
+  min-height: calc(100vh - 180px);
+}
+
+.deck-builder-top,
+.deck-filter-row {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 10px;
+  align-items: center;
+}
+
+.deck-builder-top h3 {
+  margin: 0;
+}
+
+.deck-filter-row {
+  justify-content: flex-start;
+}
+
+.deck-filter-chip {
+  min-height: 32px;
+  padding: 6px 10px;
+  color: var(--text-main);
+  border: 1px solid rgba(142, 197, 255, 0.24);
+  background: rgba(10, 28, 70, 0.72);
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.deck-filter-chip.selected,
+.deck-filter-chip.search {
+  border-color: rgba(245, 216, 143, 0.7);
+  color: #fff4c8;
+}
+
+.deck-builder-grid {
+  display: grid;
+  grid-template-columns: minmax(220px, 1fr) minmax(220px, 0.85fr) minmax(260px, 1fr);
+  gap: 14px;
+  min-height: 520px;
+}
+
+.deck-pool-panel,
+.deck-detail-panel,
+.deck-current-panel {
+  min-width: 0;
+  padding: 12px;
+}
+
+.deck-pool-panel,
+.deck-current-panel {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  gap: 10px;
+}
+
+.deck-pool-list,
+.deck-current-list {
+  display: grid;
+  align-content: start;
+  gap: 8px;
+  max-height: 480px;
+  overflow: auto;
+  padding-right: 4px;
+}
+
+.deck-pool-card,
+.deck-card-summary {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 8px 10px;
+  align-items: center;
+  padding: 10px;
+  border: 1px solid rgba(142, 197, 255, 0.16);
+  background: rgba(3, 10, 28, 0.46);
+  border-radius: 8px;
+}
+
+.deck-card-summary {
+  grid-template-columns: minmax(0, 1fr) auto auto auto;
+}
+
+.deck-pool-card p {
+  grid-column: 1 / -1;
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 12px;
+}
+
+.deck-card-name {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+  padding: 0;
+  color: var(--text-main);
+  text-align: left;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+}
+
+.deck-card-name span,
+.deck-card-summary > span {
+  overflow: hidden;
+  color: var(--text-muted);
+  font-size: 12px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.deck-card-detail {
+  display: grid;
+  gap: 10px;
+  min-height: 100%;
+  padding: 16px;
+  align-content: start;
+}
+
+.deck-card-detail h3,
+.deck-card-detail p {
+  margin: 0;
+}
+
+.deck-detail-type {
+  width: fit-content;
+  padding: 4px 8px;
+  color: #fff4c8;
+  border: 1px solid rgba(245, 216, 143, 0.42);
+  background: rgba(116, 87, 30, 0.2);
+  border-radius: 8px;
+  font-size: 12px;
+}
+
+.compact {
+  min-height: 30px;
+  padding: 5px 9px;
+  font-size: 12px;
+}
+
+@keyframes shindoro-star-drift {
+  from {
+    background-position: 0 0, 34px 42px, 76px 18px;
+  }
+  to {
+    background-position: 124px 124px, 202px 210px, 292px 234px;
+  }
+}
+
+@keyframes shindoro-slot-pulse {
+  0%,
+  100% {
+    box-shadow: var(--shadow-panel), 0 0 12px rgba(90, 182, 255, 0.16);
+  }
+  50% {
+    box-shadow: var(--shadow-panel), 0 0 28px rgba(245, 216, 143, 0.24);
+  }
+}
+
+@keyframes shindoro-target-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 2px rgba(126, 225, 255, 0.34), 0 0 20px rgba(90, 182, 255, 0.18);
+  }
+  50% {
+    box-shadow: 0 0 0 3px rgba(245, 216, 143, 0.38), 0 0 30px rgba(126, 225, 255, 0.28);
+  }
+}
+
+@media (max-width: 1180px) {
+  .slot-card {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .slot-orb {
+    display: none;
+  }
+
+  .deck-choice-layout,
+  .deck-builder-grid,
+  .deck-builder-screen-head {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .deck-pool-list,
+  .deck-current-list {
+    max-height: 360px;
+  }
+}
+
+@media (max-width: 700px) {
+  .hero h1 {
+    font-size: clamp(32px, 12vw, 48px);
+  }
+
+  .hero,
+  .setup-panel,
+  .modal-card {
+    border-radius: 18px !important;
+  }
+
+  .game-shell .battlefield-slot:not(.occupied) {
+    background: rgba(8, 17, 44, 0.12) !important;
   }
 }

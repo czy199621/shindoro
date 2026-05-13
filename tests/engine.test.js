@@ -4,6 +4,7 @@ import assert from "node:assert/strict";
 import { getCardDefinition } from "../.test-dist/data/cards.js";
 import { CHARACTERS } from "../.test-dist/data/characters.js";
 import { STARTING_DECKS } from "../.test-dist/data/decks.js";
+import { getConstructibleCards, validateMainDeck } from "../.test-dist/data/deckValidation.js";
 import { TALENT_LOOKUP, getTalentCost } from "../.test-dist/data/talents.js";
 import {
   calculateAdvantage,
@@ -132,6 +133,59 @@ test("starting decks use legal card ids, 50-card main decks, public sideboards, 
       assert.ok(count <= 3);
     }
   }
+});
+
+test("deck validation blocks forbidden main-deck cards and exposes constructible pool", () => {
+  assert.equal(validateMainDeck(STARTING_DECKS.character_a.mainDeck).valid, true);
+
+  const invalidDeck = [
+    ...STARTING_DECKS.character_a.mainDeck.slice(0, 46),
+    "burn",
+    "burn",
+    "burn",
+    "burn",
+    "ouroboros_time_usurper",
+    "backup_fragment",
+    "coin",
+    "great_mana_gem",
+    "missing_card"
+  ];
+  const result = validateMainDeck(invalidDeck);
+
+  assert.equal(result.valid, false);
+  assert.ok(result.errors.some((message) => message.includes("必须正好 50 张")));
+  assert.ok(result.errors.some((message) => message.includes("超过同名 3 张限制")));
+  assert.ok(result.errors.some((message) => message.includes("公共备牌终结者")));
+  assert.ok(result.errors.some((message) => message.includes("衍生卡")));
+  assert.ok(result.errors.some((message) => message.includes("硬币不能进入主卡组")));
+  assert.ok(result.errors.some((message) => message.includes("大魔力宝石已删除")));
+  assert.ok(result.errors.some((message) => message.includes("未知卡牌 ID")));
+
+  const constructibleIds = new Set(getConstructibleCards().map((card) => card.id));
+  assert.equal(constructibleIds.has("cache_cub"), true);
+  assert.equal(constructibleIds.has("stardust_inspection"), true);
+  assert.equal(constructibleIds.has("backup_fragment"), false);
+  assert.equal(constructibleIds.has("ouroboros_time_usurper"), false);
+  assert.equal(constructibleIds.has("coin"), false);
+});
+
+test("setup match can use a selected custom main deck", () => {
+  const customDeck = [...STARTING_DECKS.character_a.mainDeck];
+  customDeck[0] = "cache_cub";
+  const game = new ShinDoroGame({ rng: () => 0.42 });
+
+  game.setupMatch({
+    playerCharacterId: "character_a",
+    aiCharacterId: "character_b",
+    playerTalentIds: [],
+    playerMainDeck: customDeck,
+    playerDeckName: "测试自定义卡组"
+  });
+
+  const state = game.getState();
+  const playerCards = [...state.players.P1.deck, ...state.players.P1.hand].map((card) => card.id);
+  assert.equal(state.config.playerDeckName, "测试自定义卡组");
+  assert.equal(playerCards.includes("cache_cub"), true);
 });
 
 test("v1.3 card balance patch updates key card stats and removes great mana gem", () => {
@@ -943,6 +997,142 @@ test("graveyard dragger destroys the minion that combat-destroyed it", () => {
   assert.equal(Boolean(entry?.wasCombatDestroyed), true);
   assert.equal(entry?.combatKillerInstanceId, attacker.instanceId);
   assert.equal(state.players.P2.board.some((minion) => minion.instanceId === attacker.instanceId), false);
+});
+
+test("backup tokens are created on top of deck and token spells exile after resolving", () => {
+  const game = new ShinDoroGame({ rng: () => 0.42 });
+  game.setupMatch({
+    playerCharacterId: "character_a",
+    aiCharacterId: "character_b",
+    playerTalentIds: []
+  });
+  game.completePlayerMulligan([]);
+
+  const state = game.getState();
+  const cub = game.summonMinion("P1", getCardDefinition("cache_cub"), { canTriggerTrap: false });
+  state.players.P1.deck = [];
+  cub.health = 0;
+  game.checkForDeaths();
+
+  assert.equal(state.players.P1.deck[0].id, "backup_fragment");
+  assert.equal(state.players.P1.graveyard.some((card) => card.id === "cache_cub"), true);
+
+  state.players.P1.hand = [state.players.P1.deck.shift()];
+  state.players.P1.deck = [createRuntimeCard(getCardDefinition("burn"))];
+  state.players.P1.mana = 1;
+  state.phase = "mainTurn";
+
+  assert.equal(game.playCardAtIndex("P1", 0), true);
+  assert.deepEqual(state.players.P1.hand.map((card) => card.id), ["burn"]);
+  assert.equal(state.players.P1.graveyard.some((card) => card.id === "backup_fragment"), false);
+});
+
+test("pollution minions place junk tokens on the opponent deck top", () => {
+  const game = new ShinDoroGame({ rng: () => 0.42 });
+  game.setupMatch({
+    playerCharacterId: "character_a",
+    aiCharacterId: "character_b",
+    playerTalentIds: []
+  });
+  game.completePlayerMulligan([]);
+
+  const state = game.getState();
+  const imp = game.summonMinion("P1", getCardDefinition("noise_imp"), { canTriggerTrap: false });
+  state.players.P2.deck = [createRuntimeCard(getCardDefinition("burn"))];
+  imp.health = 0;
+  game.checkForDeaths();
+
+  assert.equal(state.players.P2.deck[0].id, "blank_noise");
+  assert.equal(state.players.P2.deck[1].id, "burn");
+});
+
+test("tri-chain rollback bodies continue the chain after combat revenge", () => {
+  const game = new ShinDoroGame({ rng: () => 0.42 });
+  game.setupMatch({
+    playerCharacterId: "character_a",
+    aiCharacterId: "character_b",
+    playerTalentIds: []
+  });
+  game.completePlayerMulligan([]);
+
+  const state = game.getState();
+  const rollback = game.summonMinion("P1", getCardDefinition("anomaly_rollback_body"), { canTriggerTrap: false });
+  const attacker = game.summonMinion("P2", getCardDefinition("blade_dancer"), { canTriggerTrap: false });
+  state.players.P1.deck = [];
+  attacker.canAttack = true;
+  attacker.summonedThisTurn = false;
+  state.currentPlayer = "P2";
+  state.phase = "mainTurn";
+
+  assert.equal(game.attackWith("P2", attacker.instanceId, rollback.instanceId, "minion"), true);
+  assert.equal(state.players.P2.board.some((minion) => minion.instanceId === attacker.instanceId), false);
+  assert.equal(state.players.P1.deck[0].id, "deep_rollback_body");
+});
+
+test("grave lamp chain checks graveyard count before granting its bonus", () => {
+  const game = new ShinDoroGame({ rng: () => 0.42 });
+  game.setupMatch({
+    playerCharacterId: "character_a",
+    aiCharacterId: "character_b",
+    playerTalentIds: []
+  });
+  game.completePlayerMulligan([]);
+
+  const state = game.getState();
+  state.players.P1.graveyard = Array.from({ length: 4 }, (_, index) => ({
+    id: "burn",
+    cardId: "burn",
+    name: "灼烧",
+    runtimeId: `grave_test_${index}`,
+    ownerId: "P1",
+    fromZone: "stack",
+    reason: "used",
+    turn: state.turn
+  }));
+  state.players.P1.deck = [];
+
+  const wisp = game.summonMinion("P1", getCardDefinition("grave_lamp_wisp"), { canTriggerTrap: false });
+  wisp.health = 0;
+  game.checkForDeaths();
+
+  assert.equal(state.players.P1.deck[0].id, "grave_lamp_parader");
+  assert.equal(state.players.P1.godDrawSlot, 1);
+});
+
+test("scry and draw-phase astrolabe reorder deck tops without searching the deck", () => {
+  const game = new ShinDoroGame({ rng: () => 0.42 });
+  game.setupMatch({
+    playerCharacterId: "character_a",
+    aiCharacterId: "character_b",
+    playerTalentIds: []
+  });
+  game.completePlayerMulligan([]);
+
+  const state = game.getState();
+  state.players.P1.deck = [
+    createRuntimeCard(getCardDefinition("iron_colossus")),
+    createRuntimeCard(getCardDefinition("burn")),
+    createRuntimeCard(getCardDefinition("soul_shatter"))
+  ];
+
+  game.resolveAction("P1", { type: "scryDeck", target: "self", count: 3, bottomCount: 1 }, {});
+  assert.deepEqual(state.players.P1.deck.map((card) => card.id), ["burn", "soul_shatter", "iron_colossus"]);
+
+  state.players.P1.deck = [
+    createRuntimeCard(getCardDefinition("iron_colossus")),
+    createRuntimeCard(getCardDefinition("burn")),
+    createRuntimeCard(getCardDefinition("soul_shatter"))
+  ];
+  state.players.P2.traps = [createPersistentInstance(getCardDefinition("misaligned_astrolabe"), "P2")];
+  state.currentPlayer = "P1";
+  state.phase = "mainTurn";
+
+  game.beginTurn();
+
+  assert.equal(state.players.P1.hand.at(-1).id, "burn");
+  assert.deepEqual(state.players.P1.deck.map((card) => card.id), ["soul_shatter", "iron_colossus"]);
+  assert.equal(state.players.P2.traps.length, 0);
+  assert.equal(state.players.P2.graveyard.some((card) => card.id === "misaligned_astrolabe"), true);
 });
 
 test("public play API rejects cards from the non-current player", () => {

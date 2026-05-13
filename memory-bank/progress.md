@@ -1,6 +1,126 @@
 # Progress
 
+## 2026-05-10
+
+### 卡组构筑器改为独立子画面
+
+- 涉及文件：
+  - `src/App.tsx`
+  - `src/store/useGameStore.ts`
+  - `src/style.css`
+  - `memory-bank/architecture.md`
+  - `memory-bank/progress.md`
+- 本次改动：
+  - 将卡组构筑器从设置页内联区域改为独立子画面。
+  - 设置页只保留卡组选择、合法性摘要和“进入构筑器”入口。
+  - `uiState.setup.deckBuilderOpen` 为真时，`GameApp` 渲染 `renderDeckBuilderScreen()`，构筑器拥有独立标题、状态区和返回设置按钮。
+  - 从默认预组创建新卡组后会直接进入构筑器，方便立即编辑。
+- 验证：
+  - `npm.cmd run typecheck` 通过。
+  - `npm.cmd run build` 通过，并同步生成新的 `dist/` 产物。
+- 关联修正检查：
+  - 本次只调整开局 UI 组织方式，不修改卡组规则、卡牌数据、引擎结算或测试口径。
+
+### 按近期更新摘要落地构筑器、衍生链、污染与观星
+
+- 涉及文件：
+  - `src/types.ts`
+  - `src/data/deckValidation.ts`
+  - `src/data/cards/minions.ts`
+  - `src/data/cards/minions/tokenAndChain.ts`
+  - `src/data/cards/minions/guardPackage.ts`
+  - `src/data/cards/spells.ts`
+  - `src/data/cards/traps.ts`
+  - `src/engine/gameState.ts`
+  - `src/engine/effects.ts`
+  - `src/engine/phases.ts`
+  - `src/engine/ai.ts`
+  - `src/store/useGameStore.ts`
+  - `src/App.tsx`
+  - `src/components/react/ReactBattleBoard.tsx`
+  - `src/style.css`
+  - `tests/engine.test.js`
+  - `design/game_rule.md`
+  - `design/game_design.md`
+  - `design/minion.md`
+  - `design/spells.md`
+  - `design/traps.md`
+  - `memory-bank/architecture.md`
+  - `memory-bank/progress.md`
+- 本次改动：
+  - 新增本地卡组构筑与保存第一阶段，使用 `localStorage` 的 `shindoro.savedDecks.v1` 保存多个自定义卡组。
+  - 设置页新增卡组选择与构筑器，支持从默认预组创建、复制、删除、重命名、保存、筛选、搜索、查看详情、加入和移除卡牌。
+  - 新增 `deckValidation`，统一校验 50 张主卡组、同名最多 3 张、未知卡、公共备牌终结者、衍生卡、硬币和已删除的大魔力宝石。
+  - 对局创建支持传入玩家自定义主卡组，且引擎层会再次校验，避免非法卡组绕过 UI。
+  - 新增防 mill 备份碎片体系、三叠链备份体 / 回溯体 / 墓灯系列、污染垃圾卡体系、观星样例卡与错位星盘。
+  - 新增 `createCardOnTopDeck`、`scryDeck`、`ifOwnGraveyardAtLeast` 和 `enemyDrawPhaseStarts`，支撑置顶衍生卡、观星 / 扰星、墓地条件和抽牌阶段开始陷阱。
+  - 衍生法术可通过 `exileOnResolve` 在结算后移出游戏；衍生使魔仍进入墓地记录并参与墓地数量统计。
+- 验证：
+  - `npm.cmd run typecheck` 通过。
+  - `npm.cmd test` 通过，59/59。
+  - `npm.cmd run build` 通过，并同步生成新的 `dist/` 产物。
+- 关联修正检查：
+  - `design/game_rule.md` 已同步构筑禁止项、衍生卡、污染、观星和神抽独占原则。
+  - `design/game_design.md` 已记录本次系统落点与取舍。
+  - `design/minion.md`、`design/spells.md`、`design/traps.md` 已补新增卡牌。
+  - `memory-bank/architecture.md` 已补本次架构事实。
+
+## 2026-05-01
+
+### PNG card frame asset pass
+- Touched files:
+  - `public/card-frames/common/frame.png`
+  - `public/card-frames/minion/frame.png`
+  - `public/card-frames/spell/frame.png`
+  - `public/card-frames/persistent/frame.png`
+  - `public/card-frames/trap/frame.png`
+  - `src/style.css`
+  - `dist/`
+- Changes:
+  - Chose PNG as the only card-frame image format because the frame layer needs transparent rounded edges and must sit above card art.
+  - Rebuilt the common, minion, spell, persistent, and trap card-frame images in the Shindoro dark star-tech style.
+  - Applied the frame PNGs through `--card-frame-base` with `?v=shindoro-frame-20260501` cache busting.
+- Verification:
+  - `npm.cmd run build` passed.
+- Notes:
+  - Did not start a Vite dev server.
+
+### 星空幻想科技 UI 风格改版
+
+- 涉及文件：
+  - `src/style.css`
+  - `src/components/react/PlayerHUDView.tsx`
+  - `public/ui/shindoro-starry-table.svg`
+  - `public/ui/shindoro-card-back.svg`
+  - `design/game_design.md`
+  - `memory-bank/architecture.md`
+  - `memory-bank/progress.md`
+  - `dist/`
+- 本次改动：
+  - 按 `design/shindoro_ui_style_spec.md` 增加全局深蓝星空、蓝紫发光、金色高光的主题 token 与覆盖样式。
+  - 将启动/设置页、对局桌面、HUD、战场槽位、手牌、卡牌详情、弹窗、日志与按钮统一到“星空幻想科技卡牌界面”风格。
+  - 新增 `shindoro-starry-table.svg` 作为对局桌面与主页氛围底图；新增 `shindoro-card-back.svg` 作为敌方伏牌与盖伏卡背。
+  - 将双槽 UI 从普通横条强化为“徽记 + 进度条 + 10/13 阈值”的视觉组件，跳跃槽偏蓝、神抽槽偏紫。
+  - 本次只改视觉表现，不改规则、数据结构、AI 或出牌结算。
+- 验证：
+  - `npm.cmd run build` 通过，并同步生成新的 `dist/` 产物。
+
 ## 2026-04-30
+
+### 手牌区与结束回合按钮微调
+
+- 涉及文件：
+  - `src/components/react/ReactBattleBoard.tsx`
+  - `src/style.css`
+  - `dist/`
+  - `memory-bank/architecture.md`
+  - `memory-bank/progress.md`
+- 本次改动：
+  - 将“结束回合”从我方后场 footer 中移出，改为手牌区正上方居中显示。
+  - 删除右侧后场遗留的按钮 footer 结构与样式，避免后续布局继续受旧挂载点影响。
+  - 微调 `.hand-zone` / `.hand-row` 的底部留白与行间距，让手牌整体更靠下，视觉上更接近我方 HUD 的下沿。
+- 验证：
+  - `npm.cmd run build` 通过，并同步生成新的 `dist/` 产物。
 
 ### v1.3 实战平衡性大修补丁落地
 

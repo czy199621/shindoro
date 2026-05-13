@@ -67,7 +67,18 @@ const REMOVAL_IDS = new Set([
   "wrath_of_god"
 ]);
 const HEAL_IDS = new Set(["healing_prayer", "divine_intervention", "grave_knight", "dawn_healer", "shield_doll", "top_donor"]);
-const DRAW_IDS = new Set(["inspiration", "novice_mage", "archivist_owl", "mirror_sage", "sage_archive", "pact_weaver"]);
+const DRAW_IDS = new Set([
+  "inspiration",
+  "novice_mage",
+  "archivist_owl",
+  "mirror_sage",
+  "sage_archive",
+  "pact_weaver",
+  "backup_fragment",
+  "cache_kitten",
+  "deep_backup_body",
+  "stardust_inspection"
+]);
 const FACE_DAMAGE_IDS = new Set(["burn", "ashen_ranger", "judgment_beam", "burst_flame_lance"]);
 const JUMP_IDS = new Set(["tactical_insight", "blade_dancer"]);
 const GOD_DRAW_IDS = new Set(["shrine_guard", "desperate_gamble", "pact_weaver", "underdog_shrine"]);
@@ -521,6 +532,12 @@ function scoreEffectAction(state: GameState, playerId: PlayerId, card: RuntimeCa
       return action.amount * 1.15;
     case "setTopDeck":
       return 1.4;
+    case "createCardOnTopDeck":
+      return (action.target === "self" ? 1.8 : 1.2) * (action.count ?? 1);
+    case "scryDeck":
+      return action.target === "self" ? action.count * 0.45 : action.count * 0.25;
+    case "ifOwnGraveyardAtLeast":
+      return me.graveyard.length >= action.count ? scoreEffectAction(state, playerId, card, action.action) : 0.2;
     case "setMillOnDamageTaken":
       return me.character === "character_f" ? 4 : 1;
     case "exilePriorityEnemyMinionAndDamageHero":

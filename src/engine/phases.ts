@@ -323,6 +323,10 @@ export function finishStartTurn(game: ShinDoroGame): void {
   if (game.state.winner) return;
 
   game.state.phase = "draw";
+  game.triggerTraps(game.getOpponentId(player.id), "enemyDrawPhaseStarts", {});
+  game.checkForDeaths();
+  if (game.state.winner) return;
+
   applyDrawPhaseEffects(game, player.id);
   game.drawCards(player.id, 1, "抓牌阶段");
   if (game.state.winner) return;

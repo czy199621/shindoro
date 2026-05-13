@@ -15,7 +15,11 @@ export type GamePhase =
 export type CardType = "minion" | "spell" | "persistent" | "trap";
 export type SlotType = "jump" | "godDraw";
 export type EffectTrigger = "onPlay" | "onDeath" | "onTurnStart" | "onTriggerMet" | "onAttacked";
-export type TriggerConditionType = "enemyCastsSpell" | "enemySummonsMinion" | "enemyManaEquals";
+export type TriggerConditionType =
+  | "enemyCastsSpell"
+  | "enemySummonsMinion"
+  | "enemyManaEquals"
+  | "enemyDrawPhaseStarts";
 export type SlotTier = "jump10" | "jump13";
 export type GraveyardFromZone = "battlefield" | "hand" | "deck" | "backrow" | "stack";
 export type GraveyardReason = "destroyed" | "used" | "discarded" | "milled" | "sacrificed";
@@ -114,6 +118,26 @@ export interface DiscardWithEmptyHandDamageAction {
 export interface SetTopDeckAction {
   type: "setTopDeck";
   cardId: string;
+}
+
+export interface CreateCardOnTopDeckAction {
+  type: "createCardOnTopDeck";
+  target: "self" | "opponent";
+  cardId: string;
+  count?: number;
+}
+
+export interface ScryDeckAction {
+  type: "scryDeck";
+  target: "self" | "opponent";
+  count: number;
+  bottomCount?: number;
+}
+
+export interface ConditionalAction {
+  type: "ifOwnGraveyardAtLeast";
+  count: number;
+  action: EffectAction;
 }
 
 export interface DiscountNextDrawAction {
@@ -247,6 +271,9 @@ export type EffectAction =
   | DiscardAction
   | DiscardWithEmptyHandDamageAction
   | SetTopDeckAction
+  | CreateCardOnTopDeckAction
+  | ScryDeckAction
+  | ConditionalAction
   | DiscountNextDrawAction
   | AddCardToHandAction
   | GainManaAction
@@ -414,6 +441,28 @@ export interface DeckConfig {
   sideboard: string[];
 }
 
+export interface SavedDeck {
+  id: string;
+  name: string;
+  characterId: string;
+  mainDeck: string[];
+  createdAt: number;
+  updatedAt: number;
+}
+
+export interface SavedDeckCollection {
+  version: 1;
+  decks: SavedDeck[];
+}
+
+export interface DeckValidationResult {
+  valid: boolean;
+  errors: string[];
+  warnings: string[];
+  cardCount: number;
+  duplicateCounts: Record<string, number>;
+}
+
 export interface DeckChoice {
   cardId: string;
   count: number;
@@ -535,6 +584,8 @@ export interface SetupMatchConfig {
   playerCharacterId: string;
   aiCharacterId: string;
   playerTalentIds: string[];
+  playerMainDeck?: string[];
+  playerDeckName?: string;
 }
 
 export interface MatchConfig extends SetupMatchConfig {}

@@ -33,8 +33,8 @@ export const GUARD_PACKAGE_MINIONS: CardDefinition[] = [
     attack: 1,
     health: 1,
     threat: 1,
-    description: "护卫。",
-    tags: ["guard"],
+    description: "衍生。护卫。",
+    tags: ["guard", "token"],
     effects: []
   },
 {

@@ -71,7 +71,10 @@ const KEYWORD_LABELS: Record<string, string> = {
   regeneration: "回复",
   slotSeal: "封槽",
   sideboardFinisher: "大地",
-  ignoreGuard: "破卫"
+  ignoreGuard: "破卫",
+  token: "衍生",
+  junk: "垃圾",
+  exileOnResolve: "结算移除"
 };
 
 const TRIGGER_LABELS: Record<string, string> = {
@@ -119,7 +122,8 @@ const PLAYER_TARGET_LABELS: Record<DiscardTarget | "self" | "opponent" | "all" |
 const CONDITION_LABELS: Record<string, string> = {
   enemyCastsSpell: "敌方施放法术",
   enemySummonsMinion: "敌方召唤随从",
-  enemyManaEquals: "敌方法力达到指定值"
+  enemyManaEquals: "敌方法力达到指定值",
+  enemyDrawPhaseStarts: "敌方抽牌阶段开始"
 };
 
 function getPhaseLabel(phase: GamePhase): string {
@@ -194,6 +198,12 @@ function formatAction(action: EffectAction): string {
       return `对手弃掉 ${action.count} 张牌${formatMode(action.mode)}；手牌不足时造成 ${action.damageIfOne}/${action.damageIfZero} 点伤害`;
     case "setTopDeck":
       return `将 ${formatCardName(action.cardId)} 置于牌库顶`;
+    case "createCardOnTopDeck":
+      return `将 ${action.count ?? 1} 张 ${formatCardName(action.cardId)} 置于${formatTarget(action.target)}牌库顶`;
+    case "scryDeck":
+      return `${action.target === "self" ? "观星" : "扰星"} ${action.count}${action.bottomCount ? `，将 ${action.bottomCount} 张置于牌库底` : ""}`;
+    case "ifOwnGraveyardAtLeast":
+      return `若己方墓地至少 ${action.count} 张，则${formatAction(action.action)}`;
     case "discountNextDraw":
       return `下一张抽到的牌费用 -${action.amount}`;
     case "addCardToHand":
@@ -535,8 +545,7 @@ function BackrowSideZone({
   entries,
   rowClass,
   onInspect,
-  onClearInspect,
-  footer
+  onClearInspect
 }: {
   title: string;
   ownership: "player" | "enemy";
@@ -544,7 +553,6 @@ function BackrowSideZone({
   rowClass: string;
   onInspect: (info: CardDetailInfo, point: InspectPoint) => void;
   onClearInspect: () => void;
-  footer?: ReactNode;
 }) {
   return (
     <aside
@@ -577,7 +585,6 @@ function BackrowSideZone({
           );
         })}
       </div>
-      {footer ? <div className="side-backrow-footer">{footer}</div> : null}
     </aside>
   );
 }
@@ -953,11 +960,6 @@ export function ReactBattleBoard({
               rowClass={playerBackrowRowClass}
               onInspect={showCardDetail}
               onClearInspect={clearCardDetail}
-              footer={
-                <button type="button" className="primary-btn side-end-turn-btn" disabled={!canEndTurn} onClick={endTurn}>
-                  结束回合
-                </button>
-              }
             />
 
             <section className="battlefield-half player-half">
@@ -1068,7 +1070,13 @@ export function ReactBattleBoard({
                   </button>
                   <span className="mulligan-hand-count">已选 {selectedMulliganCount} 张</span>
                 </div>
-              ) : null}
+              ) : (
+                <div className="hand-end-turn-bar" aria-label="回合操作">
+                  <button type="button" className="primary-btn hand-end-turn-btn" disabled={!canEndTurn} onClick={endTurn}>
+                    结束回合
+                  </button>
+                </div>
+              )}
               <div className="hand-row">
                 {player.hand.length ? (
                   player.hand.map((card, index) => {

@@ -1,5 +1,28 @@
 # 架构
 
+## 2026-05-10 构筑器与衍生卡规则层
+
+- 设置页现在按“选择角色 → 选择卡组 → 购买天赋 → 开始对局”的顺序组织玩家开局流程；AI 角色选择仍保留在设置页左侧。
+- 卡组构筑器现在是设置页下的独立子画面：`uiState.setup.deckBuilderOpen` 为真时，`GameApp` 渲染专门的 `renderDeckBuilderScreen()`，而不是把构筑器嵌在设置页面板内。
+- 本地自定义卡组通过 `localStorage` 保存，键名为 `shindoro.savedDecks.v1`；保存结构为 `SavedDeckCollection`，每个 `SavedDeck` 记录 `id / name / characterId / mainDeck / createdAt / updatedAt`。
+- `src/data/deckValidation.ts` 是卡组合法性事实源，负责检查主卡组 50 张、同名最多 3 张、未知卡、公共备牌终结者、衍生卡、`coin` 与已删除的 `great_mana_gem`。
+- `src/store/useGameStore.ts` 持有构筑器 UI 状态、读取/保存本地卡组、筛选构筑卡池，并在开始对局前把合法的 `playerMainDeck` 传给引擎。
+- `src/engine/gameState.ts` 的 `setupMatch()` 与 `buildPlayer()` 已支持自定义玩家主卡组；引擎会再次调用卡组校验，防止非法卡组绕过 UI。
+- 新效果动作 `createCardOnTopDeck` 用于把衍生卡置于己方或对手牌库顶；新效果动作 `scryDeck` 用于观星 / 扰星；新包装动作 `ifOwnGraveyardAtLeast` 用于墓灯系列这类墓地数量条件。
+- `src/engine/phases.ts` 会在抽牌阶段正式抽牌前触发 `enemyDrawPhaseStarts` 陷阱，目前由 `错位星盘` 使用。
+- 第一批新卡池包括防 mill 备份碎片体系、三叠链备份体 / 回溯体 / 墓灯系列、污染垃圾卡体系，以及观星样例卡；衍生卡通过 `token` 标签从构筑卡池排除。
+- 数字版观星当前采用确定性整理：按费用从低到高、同费按卡名排序；这样先保留“只操作牌库顶、不检索整副卡组”的规则边界，后续再决定是否增加玩家选择弹窗。
+
+## 2026-05-01 星空幻想科技 UI 风格层
+
+- 当前 UI 风格事实源为 `design/shindoro_ui_style_spec.md`，目标是深蓝星空、蓝紫发光、金色高光、几何 HUD 和半透明面板。
+- 本次风格改造只落在视觉层：`src/style.css` 增加 Shindoro UI Style Spec 覆盖层，不改变 `GameState`、引擎规则、卡牌数据、AI 或出牌结算。
+- `public/ui/shindoro-starry-table.svg` 是新的星空魔法阵桌布资源，用于对局桌面 `.arcana-table-art` 和启动页背景氛围。
+- `public/ui/shindoro-card-back.svg` 是新的卡背资源，用于敌方手牌伏牌和后场盖伏显示。
+- `src/components/react/PlayerHUDView.tsx` 的 `SlotMeter` 增加了槽位徽记和 10 / 13 阈值标记；跳跃槽使用蓝色能量语义，神抽槽使用紫色能量语义。
+- 面板、按钮、HUD、弹窗、日志、卡牌详情、战场槽位和卡面都通过统一 token 覆盖成同一套发光边框与深色信息层。
+- 规则文档 `design/game_rule.md` 不需要同步修改，因为本次没有改变任何玩法规则；设计文档 `design/game_design.md` 已记录 UI 风格实现基准。
+
 ## 2026-04-30 v1.3 规则与内容层
 
 - 当前规则基准升级为 `design/game_rule.md` v1.3，补丁来源为 `design/shindoro_v1_3_patch_summary.md`。
@@ -22,8 +45,8 @@
 - 最新战斗布局按标注图改为三列四行：左列保留敌方 HUD 与敌方后场，中央列依次是敌方手牌、敌方前场、我方前场、我方手牌，右列保留日志入口、我方后场与玩家 HUD。中央 `field-zone` 只展示前场随从槽，左右 `side-backrow-zone` 承载持续物 + 陷阱共享后场 7 格。
 - 中央随从槽是视觉映射，不改变规则数组：`player.board` 仍为紧凑顺序，UI 渲染时按 7 格中心优先顺序展示，依次为中央、左一、右一、左二、右二、最左、最右。
 - 左右 `side-backrow-zone` 采用紧凑 2x4 矩阵：第一格是阵营计数牌，剩余 7 格是共享后场槽；该结构用于降低后场高度，避免与角落 HUD 互相覆盖。
-- 右上 `battle-control-dock` 统一承载战斗日志入口和主要战斗操作按钮；“重新开始 / 取消攻击选择 / 结束回合”竖排放在日志按钮下方，不再出现在手牌区。
-- 最新操作区约束：右上 `battle-control-dock` 只保留“重新开始”和“取消攻击选择”；“结束回合”属于我方后场，固定显示在我方 `side-backrow-zone` 下方。
+- 右上 `battle-control-dock` 统一承载战斗日志入口和辅助战斗操作按钮；“重新开始 / 取消攻击选择”竖排放在日志按钮下方，不再占用手牌或后场区域。
+- 最新操作区约束：“结束回合”属于手牌区主操作，固定显示在 `.hand-zone` 顶部居中、手牌行正上方；不要再挂回我方 `side-backrow-zone` footer。
 - 敌方 `side-backrow-zone` 的左边缘应跟敌方 HUD 左边缘对齐，保持左侧战斗信息的统一视觉基准。
 - 为保证上述对齐，敌方 `side-backrow-zone` 直接渲染在 `.enemy-hud-corner` 内，位于敌方 HUD 下方；不要再依赖 `battle-main` 的 `enemySide` 网格列或桌面端绝对定位来对齐敌方后场。
 - 手牌区最后由 `.hand-zone` / `.hand-row` 兜底规则保证完整可见：底部手牌行高度必须匹配图片式卡框比例，右侧通过 HUD 安全区避开玩家面板，矮屏桌面端优先缩小手牌卡而不是裁掉卡面。
@@ -531,3 +554,10 @@
 - Known technical debt: `src/style.css` is still very large and contains many late UI overrides from iterative layout work. It should be split into focused files or layers before the next major UI pass.
 - Known technical debt: `ReactBattleBoard.tsx` is large but still cohesive as the current battle surface. Good future split points are hand/mulligan hand, side backrow lanes, battlefield lanes, and battle log/control dock.
 - Known technical debt: setup remains the last legacy string-template island. It is active, not dead, but can later be migrated to React to remove `dangerouslySetInnerHTML` from `App.tsx`.
+
+## 2026-05-01 PNG Card Frame Layer
+
+- Card-frame image assets now standardize on PNG only. PNG is required because the frame layer has transparent rounded corners and overlays the card illustration; JPG would flatten the transparent areas.
+- The active frame files are `public/card-frames/common/frame.png`, `minion/frame.png`, `spell/frame.png`, `persistent/frame.png`, and `trap/frame.png`.
+- `src/style.css` applies these files through `--card-frame-base` and final cache-busted URLs using `?v=shindoro-frame-20260501`.
+- The bitmap frame is the primary visual shell; CSS remains responsible for cost/stat badges, readable labels, hover/detail behavior, and fallback gradients.

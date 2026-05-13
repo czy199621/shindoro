@@ -185,5 +185,62 @@ export const SPELL_CARDS: CardDefinition[] = [
     type: "spell",
     description: "对方下一个回合开始阶段获得的费用点减半，向下取整。",
     effects: [{ trigger: "onPlay", action: { type: "applyOpponentNextTurnManaMultiplier", multiplier: 0.5 } }]
+  },
+  {
+    id: "backup_fragment",
+    name: "备份碎片",
+    cost: 1,
+    type: "spell",
+    description: "衍生。抽 1 张牌。结算后将此卡移出游戏。",
+    tags: ["token", "exileOnResolve"],
+    effects: [{ trigger: "onPlay", action: { type: "draw", count: 1 } }]
+  },
+  {
+    id: "blank_noise",
+    name: "空白噪声",
+    cost: 1,
+    type: "spell",
+    description: "衍生，垃圾。无事发生。结算后将此卡移出游戏。",
+    tags: ["token", "junk", "exileOnResolve"],
+    effects: []
+  },
+  {
+    id: "infinite_loop_script",
+    name: "死循环脚本",
+    cost: 5,
+    type: "spell",
+    description: "衍生，垃圾。无事发生。结算后将此卡移出游戏。",
+    tags: ["token", "junk", "exileOnResolve"],
+    effects: []
+  },
+  {
+    id: "stardust_inspection",
+    name: "星屑检阅",
+    cost: 1,
+    type: "spell",
+    description: "观星 3。抽 1 张牌。",
+    effects: [
+      { trigger: "onPlay", action: { type: "scryDeck", target: "self", count: 3 } },
+      { trigger: "onPlay", action: { type: "draw", count: 1 } }
+    ]
+  },
+  {
+    id: "zenith_calibration",
+    name: "天顶校准",
+    cost: 2,
+    type: "spell",
+    description: "观星 5。",
+    effects: [{ trigger: "onPlay", action: { type: "scryDeck", target: "self", count: 5 } }]
+  },
+  {
+    id: "reversed_prophecy",
+    name: "逆位预言",
+    cost: 3,
+    type: "spell",
+    description: "查看对手牌库顶 3 张并调整顺序。然后观星 3。",
+    effects: [
+      { trigger: "onPlay", action: { type: "scryDeck", target: "opponent", count: 3 } },
+      { trigger: "onPlay", action: { type: "scryDeck", target: "self", count: 3 } }
+    ]
   }
 ];

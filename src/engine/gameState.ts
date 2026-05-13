@@ -1,6 +1,7 @@
 import { CHARACTER_LOOKUP } from "../data/characters.js";
 import { getCardDefinition } from "../data/cards.js";
 import { STARTING_DECKS } from "../data/decks.js";
+import { validateMainDeck } from "../data/deckValidation.js";
 import { TALENT_LOOKUP } from "../data/talents.js";
 import type {
   CardDefinition,
@@ -107,17 +108,19 @@ export class ShinDoroGame implements GameAiAdapter {
     return this.state;
   }
 
-  setupMatch({ playerCharacterId, aiCharacterId, playerTalentIds }: SetupMatchConfig): GameState {
+  setupMatch({ playerCharacterId, aiCharacterId, playerTalentIds, playerMainDeck, playerDeckName }: SetupMatchConfig): GameState {
     this.state = createEmptyState();
     this.state.screen = "mulligan";
     this.state.phase = "mulligan";
     this.state.config = {
       playerCharacterId,
       aiCharacterId,
-      playerTalentIds: [...playerTalentIds]
+      playerTalentIds: [...playerTalentIds],
+      playerMainDeck: playerMainDeck ? [...playerMainDeck] : undefined,
+      playerDeckName
     };
 
-    this.state.players[PLAYER_ID] = this.buildPlayer(PLAYER_ID, playerCharacterId, playerTalentIds);
+    this.state.players[PLAYER_ID] = this.buildPlayer(PLAYER_ID, playerCharacterId, playerTalentIds, playerMainDeck);
     this.state.players[AI_ID] = this.buildPlayer(AI_ID, aiCharacterId, chooseAiTalentIds(aiCharacterId, "second"));
 
     this.applyGameStartEffects(this.state.players[PLAYER_ID]);
@@ -131,7 +134,7 @@ export class ShinDoroGame implements GameAiAdapter {
     return this.state;
   }
 
-  buildPlayer(playerId: PlayerId, characterId: string, selectedTalentIds: string[]): PlayerState {
+  buildPlayer(playerId: PlayerId, characterId: string, selectedTalentIds: string[], mainDeckOverride?: string[]): PlayerState {
     const character = this.getCharacter(characterId);
     const deckConfig = STARTING_DECKS[characterId];
     if (!deckConfig) {
@@ -141,10 +144,12 @@ export class ShinDoroGame implements GameAiAdapter {
     player.maxHp = character.baseHp;
     player.hp = character.baseHp;
     player.selectedTalents = [...selectedTalentIds];
-    player.deck = shuffle(
-      deckConfig.mainDeck.map((cardId) => createRuntimeCard(getCardDefinition(cardId))),
-      this.rng
-    );
+    const mainDeck = mainDeckOverride ? [...mainDeckOverride] : deckConfig.mainDeck;
+    const validation = validateMainDeck(mainDeck);
+    if (!validation.valid) {
+      throw new Error(`Invalid deck for ${characterId}: ${validation.errors.join(" / ")}`);
+    }
+    player.deck = shuffle(mainDeck.map((cardId) => createRuntimeCard(getCardDefinition(cardId))), this.rng);
     player.reserveDeck = deckConfig.sideboard.map((cardId) => createRuntimeCard(getCardDefinition(cardId)));
     return player;
   }
@@ -338,7 +343,7 @@ export class ShinDoroGame implements GameAiAdapter {
 
   triggerTraps(
     ownerId: PlayerId,
-    conditionType: "enemyCastsSpell" | "enemySummonsMinion" | "enemyManaEquals",
+    conditionType: "enemyCastsSpell" | "enemySummonsMinion" | "enemyManaEquals" | "enemyDrawPhaseStarts",
     context: EffectContext
   ): void {
     triggerTraps(this, ownerId, conditionType, context);

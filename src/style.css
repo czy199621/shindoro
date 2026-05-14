@@ -7397,6 +7397,90 @@ body::before {
   padding: 12px;
 }
 
+.deck-choice-section-title {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  align-items: center;
+  color: var(--text-muted);
+  font-size: 12px;
+}
+
+.deck-choice-section-title strong {
+  color: var(--text-main);
+  font-size: 14px;
+}
+
+.starter-deck-grid {
+  display: grid;
+  gap: 10px;
+}
+
+.starter-deck-card {
+  display: grid;
+  gap: 8px;
+  width: 100%;
+  min-width: 0;
+  padding: 12px 14px;
+  color: var(--text-main);
+  text-align: left;
+  border: 1px solid rgba(142, 197, 255, 0.22);
+  background: linear-gradient(135deg, rgba(10, 28, 70, 0.72), rgba(4, 14, 38, 0.68));
+  border-radius: 8px;
+}
+
+.starter-deck-card.selected {
+  border-color: rgba(245, 216, 143, 0.82);
+  background: linear-gradient(135deg, rgba(36, 63, 130, 0.88), rgba(29, 42, 89, 0.78));
+  box-shadow: 0 0 0 1px rgba(245, 216, 143, 0.18), 0 12px 30px rgba(0, 0, 0, 0.22);
+}
+
+.starter-deck-topline,
+.starter-deck-meta {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  align-items: center;
+}
+
+.starter-deck-topline strong {
+  font-size: 15px;
+}
+
+.starter-deck-topline span,
+.starter-deck-meta,
+.starter-deck-description,
+.starter-deck-detail {
+  color: var(--text-muted);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.starter-deck-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.starter-deck-tags span {
+  padding: 3px 7px;
+  color: #fff4c8;
+  border: 1px solid rgba(245, 216, 143, 0.28);
+  background: rgba(245, 216, 143, 0.1);
+  border-radius: 999px;
+  font-size: 11px;
+}
+
+.starter-deck-detail {
+  display: grid;
+  gap: 2px;
+}
+
+.starter-deck-detail b {
+  color: var(--text-main);
+  font-size: 11px;
+}
+
 .deck-choice-status {
   display: grid;
   gap: 12px;
@@ -7598,6 +7682,44 @@ body::before {
   min-height: 30px;
   padding: 5px 9px;
   font-size: 12px;
+}
+
+.toast-layer {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  z-index: 120;
+  display: grid;
+  gap: 10px;
+  pointer-events: none;
+}
+
+.toast {
+  width: min(360px, calc(100vw - 40px));
+  padding: 13px 15px;
+  color: var(--text-main);
+  border-radius: 8px;
+  border: 1px solid rgba(142, 197, 255, 0.24);
+  background: rgba(8, 19, 48, 0.94);
+  box-shadow: 0 16px 38px rgba(0, 0, 0, 0.34), inset 0 1px 0 rgba(238, 244, 255, 0.12);
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.toast-success {
+  border-color: rgba(103, 228, 159, 0.48);
+}
+
+.toast-error {
+  border-color: rgba(255, 129, 129, 0.56);
+}
+
+.toast-warning {
+  border-color: rgba(245, 216, 143, 0.62);
+}
+
+.toast-info {
+  border-color: rgba(126, 225, 255, 0.42);
 }
 
 @keyframes shindoro-star-drift {

@@ -4,8 +4,8 @@ import { getCharacterArt, toCssUrl } from "./data/characterArt.js";
 import { TALENTS } from "./data/talents.js";
 import { ReactBattleBoard } from "./components/react/ReactBattleBoard.js";
 import { escapeHtml } from "./components/html.js";
-import { createGameStore, type GameStore } from "./store/useGameStore.js";
-import type { CardDefinition, CardType, CharacterDefinition, DeckValidationResult, SavedDeck } from "./types.js";
+import { createGameStore, type GameStore, type ToastState } from "./store/useGameStore.js";
+import type { CardDefinition, CardType, CharacterDefinition, DeckValidationResult, SavedDeck, StarterDeckPreset } from "./types.js";
 
 const PixiBattlefieldHost = lazy(() =>
   import("./game-view/pixi/PixiBattlefieldHost.js").then((module) => ({
@@ -95,6 +95,33 @@ function renderSavedDeckButton(deck: SavedDeck, selected: boolean): string {
   `;
 }
 
+function renderDifficulty(difficulty: StarterDeckPreset["difficulty"]): string {
+  return `${"★".repeat(difficulty)}${"☆".repeat(3 - difficulty)}`;
+}
+
+function renderStarterDeckButton(store: GameStore, preset: StarterDeckPreset, selected: boolean): string {
+  const tags = preset.tags.map((tag) => `<span>${escapeHtml(tag)}</span>`).join("");
+  const keyCards = preset.keyCards.map((cardId) => escapeHtml(store.getCardName(cardId))).join(" / ");
+  const talents = preset.recommendedTalents.map((talentId) => escapeHtml(store.getTalentName(talentId))).join(" / ");
+
+  return `
+    <button class="starter-deck-card ${selected ? "selected" : ""}" data-action="select-starter-deck" data-preset-id="${escapeHtml(preset.id)}">
+      <span class="starter-deck-topline">
+        <strong>${escapeHtml(preset.name)}</strong>
+        <span>${preset.mainDeck.length}/50</span>
+      </span>
+      <span class="starter-deck-meta">
+        <span>难度 ${renderDifficulty(preset.difficulty)}</span>
+        <span>${escapeHtml(preset.speed)}</span>
+      </span>
+      <span class="starter-deck-tags">${tags}</span>
+      <span class="starter-deck-description">${escapeHtml(preset.description)}</span>
+      <span class="starter-deck-detail"><b>关键卡</b>${keyCards}</span>
+      <span class="starter-deck-detail"><b>推荐天赋</b>${talents}</span>
+    </button>
+  `;
+}
+
 function renderDeckCardSummary(card: CardDefinition, count: number): string {
   return `
     <div class="deck-card-summary">
@@ -153,6 +180,7 @@ function renderDeckBuilder(store: GameStore): string {
   const poolCards = store.getDeckBuilderCards();
   const duplicateCounts = validation.duplicateCounts;
   const deckCards = store.getDeckCardCounts();
+  const selectedSavedDeck = store.getSelectedSavedDeck();
   const filterOptions: Array<{ value: string; label: string }> = [
     { value: "all", label: "全部" },
     { value: "minion", label: "使魔" },
@@ -181,10 +209,10 @@ function renderDeckBuilder(store: GameStore): string {
         </div>
         <div class="row">
           <button class="ghost-btn" data-action="toggle-deck-builder">返回设置</button>
-          <button class="secondary-btn" data-action="rename-deck">重命名</button>
+          <button class="secondary-btn" data-action="rename-deck" ${selectedSavedDeck ? "" : "disabled"}>重命名</button>
           <button class="secondary-btn" data-action="duplicate-deck">复制</button>
-          <button class="ghost-btn" data-action="delete-deck">删除</button>
-          <button class="primary-btn" data-action="save-deck">保存</button>
+          <button class="ghost-btn" data-action="delete-deck" ${selectedSavedDeck ? "" : "disabled"}>删除</button>
+          <button class="primary-btn" data-action="save-deck" ${store.uiState.setup.deckSaving ? "disabled" : ""}>${store.uiState.setup.deckSaving ? "保存中…" : "保存"}</button>
         </div>
       </div>
 
@@ -249,6 +277,8 @@ function renderDeckBuilderScreen(store: GameStore): string {
 function renderDeckSelection(store: GameStore): string {
   const selectedDeck = store.getSelectedSavedDeck();
   const savedDecks = store.getSavedDecks();
+  const selectedPreset = store.getSelectedStarterDeckPreset();
+  const presets = store.getStarterDeckPresets();
   const validation = store.getActiveDeckValidation();
 
   return `
@@ -259,21 +289,29 @@ function renderDeckSelection(store: GameStore): string {
       </div>
       <div class="deck-choice-layout">
         <section class="deck-choice-main">
-          <button class="saved-deck-button ${selectedDeck ? "" : "selected"}" data-action="select-deck" data-deck-id="default">
-            <strong>默认预组</strong>
-            <span>50/50</span>
-          </button>
+          <div class="deck-choice-section-title">
+            <strong>开局预设卡组</strong>
+            <span>每名角色 3 套</span>
+          </div>
+          <div class="starter-deck-grid">
+            ${presets.map((preset) => renderStarterDeckButton(store, preset, !selectedDeck && selectedPreset.id === preset.id)).join("")}
+          </div>
+
+          <div class="deck-choice-section-title">
+            <strong>本机自定义卡组</strong>
+            <span>${savedDecks.length} 套</span>
+          </div>
           ${
             savedDecks.length
               ? savedDecks.map((deck) => renderSavedDeckButton(deck, selectedDeck?.id === deck.id)).join("")
-              : `<p class="small-note">该角色还没有自定义卡组。你可以使用默认预组，或前往卡组构筑器创建卡组。</p>`
+              : `<p class="small-note">该角色还没有自定义卡组。你可以使用开局预设，或从当前预设创建一套本机卡组。</p>`
           }
         </section>
         <aside class="deck-choice-status">
           <h3>${escapeHtml(store.getActiveDeckName())}</h3>
           ${renderDeckValidation(validation)}
           <div class="row">
-            <button class="secondary-btn" data-action="create-deck-from-default">从默认预组创建</button>
+            <button class="secondary-btn" data-action="create-deck-from-default">从当前预设创建</button>
             <button class="secondary-btn" data-action="toggle-deck-builder">进入构筑器</button>
           </div>
           ${store.uiState.setup.deckMessage ? `<p class="deck-message">${escapeHtml(store.uiState.setup.deckMessage)}</p>` : ""}
@@ -416,6 +454,12 @@ function onSetupAction(store: GameStore, target: HTMLElement): boolean {
     return true;
   }
 
+  if (action === "select-starter-deck") {
+    const presetId = target.dataset.presetId;
+    if (presetId) store.selectStarterDeckPreset(presetId);
+    return true;
+  }
+
   if (action === "toggle-deck-builder") {
     store.toggleDeckBuilder();
     return true;
@@ -432,7 +476,7 @@ function onSetupAction(store: GameStore, target: HTMLElement): boolean {
   }
 
   if (action === "delete-deck") {
-    if (window.confirm("确定删除当前自定义卡组吗？默认预组不会被删除。")) {
+    if (window.confirm("确定删除当前自定义卡组吗？开局预设不会被删除。")) {
       store.deleteSelectedDeck();
     }
     return true;
@@ -510,6 +554,20 @@ function onSetupAction(store: GameStore, target: HTMLElement): boolean {
   return false;
 }
 
+function ToastLayer({ toasts }: { toasts: ToastState[] }) {
+  if (!toasts.length) return null;
+
+  return (
+    <div className="toast-layer" aria-live="polite" aria-atomic="true">
+      {toasts.map((toast) => (
+        <div key={toast.id} className={`toast toast-${toast.type}`}>
+          {toast.message}
+        </div>
+      ))}
+    </div>
+  );
+}
+
 export function GameApp() {
   const storeRef = useRef<GameStore | null>(null);
   const [, setRenderVersion] = useState(0);
@@ -562,12 +620,16 @@ export function GameApp() {
           <PixiBattlefieldHost state={state} attackFx={store.uiState.attackFx} cardFx={store.uiState.cardFx} />
         </Suspense>
         <ReactBattleBoard store={store} state={state} onChange={forceRender} />
+        <ToastLayer toasts={store.uiState.toasts} />
       </>
     );
   }
 
   return (
-    <div className="legacy-app-root" onClick={handleClick} dangerouslySetInnerHTML={{ __html: markup }} />
+    <>
+      <div className="legacy-app-root" onClick={handleClick} dangerouslySetInnerHTML={{ __html: markup }} />
+      <ToastLayer toasts={store.uiState.toasts} />
+    </>
   );
 }
 

@@ -441,6 +441,21 @@ export interface DeckConfig {
   sideboard: string[];
 }
 
+export type StarterDeckSpeed = "快" | "中快" | "中速" | "中慢" | "慢";
+
+export interface StarterDeckPreset {
+  id: string;
+  characterId: string;
+  name: string;
+  difficulty: 1 | 2 | 3;
+  speed: StarterDeckSpeed;
+  tags: string[];
+  recommendedTalents: string[];
+  description: string;
+  keyCards: string[];
+  mainDeck: string[];
+}
+
 export interface SavedDeck {
   id: string;
   name: string;

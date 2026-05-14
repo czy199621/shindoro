@@ -8,7 +8,7 @@ export const SPELL_TALENTS: TalentDefinition[] = [
     pricing: { first: 3, second: 2 },
     availableFor: "both",
     repeatLimit: 1,
-    description: "你的法术伤害 +2。",
-    effect: { type: "increaseSpellDamage", amount: 2 }
+    description: "你的法术伤害 +1。",
+    effect: { type: "increaseSpellDamage", amount: 1 }
   }
 ];

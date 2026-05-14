@@ -1,6 +1,6 @@
 import { CARD_LIBRARY, getCardDefinition } from "../data/cards.js";
 import { CHARACTERS } from "../data/characters.js";
-import { STARTING_DECKS } from "../data/decks.js";
+import { getDefaultStarterDeckPreset, getStarterDeckPreset, getStarterDeckPresets } from "../data/decks.js";
 import {
   DECK_STORAGE_KEY,
   getConstructibleCards,
@@ -19,6 +19,7 @@ import type {
   PlayerId,
   SavedDeck,
   SavedDeckCollection,
+  StarterDeckPreset,
   TalentDefinition
 } from "../types.js";
 
@@ -28,8 +29,17 @@ const ATTACK_RESOLVE_DELAY_MS = 140;
 const ATTACK_FX_TAIL_MS = 220;
 const CARD_FX_DURATION_MS = 620;
 const DEFAULT_DECK_ID = "default";
+const DECK_SAVE_DELAY_MS = 220;
+const TOAST_DURATION_MS = 3200;
 
 type DeckFilter = "all" | CardType | "cost_1" | "cost_2" | "cost_3" | "cost_4" | "cost_5" | "cost_6" | "cost_7_plus" | "guard" | "rush" | "battlecry" | "deathrattle";
+type ToastType = "success" | "error" | "warning" | "info";
+
+export interface ToastState {
+  id: number;
+  type: ToastType;
+  message: string;
+}
 
 export interface AttackFxState {
   attackerId: string;
@@ -122,6 +132,7 @@ export interface UiState {
   setup: {
     playerCharacterId: string;
     aiCharacterId: string;
+    selectedPresetId: string;
     selectedTalentIds: string[];
     selectedDeckId: string;
     deckBuilderOpen: boolean;
@@ -129,7 +140,9 @@ export interface UiState {
     deckSearch: string;
     activeDeckCardId: string | null;
     deckMessage: string;
+    deckSaving: boolean;
   };
+  toasts: ToastState[];
   mulliganSelection: Set<string>;
   selectedAttackerId: string | null;
   attackFx: AttackFxState | null;
@@ -145,11 +158,15 @@ export interface GameStore {
   getCharacter(characterId: string): CharacterDefinition;
   getSelectedCharacter(): CharacterDefinition;
   getTalent(talentId: string): TalentDefinition | undefined;
+  getTalentName(talentId: string): string;
+  getCardName(cardId: string): string;
   getTalentCost(talent: TalentDefinition): number | null;
   getTalentCount(talentId: string): number;
   getSpentTalentPoints(): number;
   getRemainingTalentPoints(): number;
   canAddTalent(talent: TalentDefinition): boolean;
+  getStarterDeckPresets(characterId?: string): StarterDeckPreset[];
+  getSelectedStarterDeckPreset(): StarterDeckPreset;
   getSavedDecks(characterId?: string): SavedDeck[];
   getSelectedSavedDeck(): SavedDeck | null;
   getActiveMainDeck(): string[];
@@ -163,8 +180,11 @@ export interface GameStore {
   buildTargetSet(): Set<string>;
   scheduleAiTurn(onChange: () => void): void;
   dispose(): void;
+  showToast(type: ToastType, message: string): void;
+  dismissToast(toastId: number): void;
   selectPlayerCharacter(characterId: string): void;
   selectAiCharacter(characterId: string): void;
+  selectStarterDeckPreset(presetId: string): void;
   selectDeck(deckId: string): void;
   toggleDeckBuilder(): void;
   createDeckFromDefault(): void;
@@ -194,18 +214,22 @@ export interface GameStore {
 
 export function createGameStore({ game = new ShinDoroGame() }: { game?: ShinDoroGame } = {}): GameStore {
   let savedDecks = loadSavedDecks();
+  const initialPreset = getDefaultStarterDeckPreset("character_a");
   const uiState: UiState = {
     setup: {
       playerCharacterId: "character_a",
       aiCharacterId: "character_b",
+      selectedPresetId: initialPreset.id,
       selectedTalentIds: [],
       selectedDeckId: DEFAULT_DECK_ID,
       deckBuilderOpen: false,
       deckFilter: "all",
       deckSearch: "",
       activeDeckCardId: null,
-      deckMessage: ""
+      deckMessage: "",
+      deckSaving: false
     },
+    toasts: [],
     mulliganSelection: new Set<string>(),
     selectedAttackerId: null,
     attackFx: null,
@@ -216,7 +240,10 @@ export function createGameStore({ game = new ShinDoroGame() }: { game?: ShinDoro
   let attackResolveTimer: number | null = null;
   let attackFxTimer: number | null = null;
   let cardFxTimer: number | null = null;
+  let deckSaveTimer: number | null = null;
+  const toastTimers = new Map<number, number>();
   let fxSerial = 0;
+  let toastSerial = 0;
   let onChangeListener: (() => void) | null = null;
 
   function notifyChange(): void {
@@ -233,6 +260,14 @@ export function createGameStore({ game = new ShinDoroGame() }: { game?: ShinDoro
 
   function getTalent(talentId: string): TalentDefinition | undefined {
     return TALENTS.find((item) => item.id === talentId);
+  }
+
+  function getTalentName(talentId: string): string {
+    return getTalent(talentId)?.name ?? talentId;
+  }
+
+  function getCardName(cardId: string): string {
+    return CARD_LIBRARY.find((card) => card.id === cardId)?.name ?? cardId;
   }
 
   function getTalentCostForPlayer(talent: TalentDefinition): number | null {
@@ -264,6 +299,21 @@ export function createGameStore({ game = new ShinDoroGame() }: { game?: ShinDoro
     );
   }
 
+  function getStarterDeckPresetsForCharacter(characterId = uiState.setup.playerCharacterId): StarterDeckPreset[] {
+    return getStarterDeckPresets(characterId);
+  }
+
+  function getSelectedStarterDeckPreset(): StarterDeckPreset {
+    const selected = getStarterDeckPreset(uiState.setup.selectedPresetId);
+    if (selected?.characterId === uiState.setup.playerCharacterId) {
+      return selected;
+    }
+
+    const fallback = getDefaultStarterDeckPreset(uiState.setup.playerCharacterId);
+    uiState.setup.selectedPresetId = fallback.id;
+    return fallback;
+  }
+
   function getSavedDecks(characterId = uiState.setup.playerCharacterId): SavedDeck[] {
     return savedDecks
       .filter((deck) => deck.characterId === characterId)
@@ -278,7 +328,10 @@ export function createGameStore({ game = new ShinDoroGame() }: { game?: ShinDoro
   }
 
   function getDefaultMainDeck(characterId = uiState.setup.playerCharacterId): string[] {
-    return STARTING_DECKS[characterId]?.mainDeck ?? STARTING_DECKS.character_a.mainDeck;
+    if (characterId === uiState.setup.playerCharacterId) {
+      return getSelectedStarterDeckPreset().mainDeck;
+    }
+    return getDefaultStarterDeckPreset(characterId).mainDeck;
   }
 
   function getActiveMainDeck(): string[] {
@@ -286,7 +339,7 @@ export function createGameStore({ game = new ShinDoroGame() }: { game?: ShinDoro
   }
 
   function getActiveDeckName(): string {
-    return getSelectedSavedDeck()?.name ?? "默认预组";
+    return getSelectedSavedDeck()?.name ?? getSelectedStarterDeckPreset().name;
   }
 
   function getActiveDeckValidation(): DeckValidationResult {
@@ -342,10 +395,43 @@ export function createGameStore({ game = new ShinDoroGame() }: { game?: ShinDoro
       });
   }
 
-  function commitDecks(message: string): void {
+  function dismissToast(toastId: number): void {
+    const timer = toastTimers.get(toastId);
+    if (timer !== undefined && typeof window !== "undefined") {
+      window.clearTimeout(timer);
+    }
+    toastTimers.delete(toastId);
+    uiState.toasts = uiState.toasts.filter((toast) => toast.id !== toastId);
+    notifyChange();
+  }
+
+  function showToast(type: ToastType, message: string): void {
+    toastSerial += 1;
+    const toast: ToastState = { id: toastSerial, type, message };
+    uiState.toasts = [toast, ...uiState.toasts].slice(0, 4);
+    notifyChange();
+
+    if (typeof window === "undefined") return;
+    const timer = window.setTimeout(() => {
+      toastTimers.delete(toast.id);
+      uiState.toasts = uiState.toasts.filter((item) => item.id !== toast.id);
+      notifyChange();
+    }, TOAST_DURATION_MS);
+    toastTimers.set(toast.id, timer);
+  }
+
+  function clearDeckSaveTimer(): void {
+    if (deckSaveTimer !== null && typeof window !== "undefined") {
+      window.clearTimeout(deckSaveTimer);
+    }
+    deckSaveTimer = null;
+  }
+
+  function commitDecks(message: string, toastType: ToastType = "success"): void {
     savedDecks = [...savedDecks];
     persistSavedDecks(savedDecks);
     uiState.setup.deckMessage = message;
+    showToast(toastType, message);
   }
 
   function createDeckFromDefaultWithName(name: string): SavedDeck {
@@ -565,11 +651,15 @@ export function createGameStore({ game = new ShinDoroGame() }: { game?: ShinDoro
     getCharacter,
     getSelectedCharacter,
     getTalent,
+    getTalentName,
+    getCardName,
     getTalentCost: getTalentCostForPlayer,
     getTalentCount,
     getSpentTalentPoints,
     getRemainingTalentPoints,
     canAddTalent,
+    getStarterDeckPresets: getStarterDeckPresetsForCharacter,
+    getSelectedStarterDeckPreset,
     getSavedDecks,
     getSelectedSavedDeck,
     getActiveMainDeck,
@@ -600,32 +690,56 @@ export function createGameStore({ game = new ShinDoroGame() }: { game?: ShinDoro
       clearAiTimer();
       clearAttackFx();
       clearCardFx();
+      clearDeckSaveTimer();
+      for (const timer of toastTimers.values()) {
+        if (typeof window !== "undefined") window.clearTimeout(timer);
+      }
+      toastTimers.clear();
     },
+    showToast,
+    dismissToast,
     selectPlayerCharacter(characterId: string): void {
       uiState.setup.playerCharacterId = characterId;
+      uiState.setup.selectedPresetId = getDefaultStarterDeckPreset(characterId).id;
       uiState.setup.selectedTalentIds = [];
       uiState.setup.selectedDeckId = DEFAULT_DECK_ID;
       uiState.setup.activeDeckCardId = null;
-      uiState.setup.deckMessage = "已切换角色，卡组选择已回到默认预组。";
+      uiState.setup.deckMessage = "已切换角色，卡组选择已回到该角色第一套预设。";
+      showToast("info", uiState.setup.deckMessage);
     },
     selectAiCharacter(characterId: string): void {
       uiState.setup.aiCharacterId = characterId;
+    },
+    selectStarterDeckPreset(presetId: string): void {
+      const preset = getStarterDeckPreset(presetId);
+      if (!preset || preset.characterId !== uiState.setup.playerCharacterId) {
+        uiState.setup.deckMessage = "这个预设不属于当前角色。";
+        showToast("error", uiState.setup.deckMessage);
+        return;
+      }
+      uiState.setup.selectedPresetId = preset.id;
+      uiState.setup.selectedDeckId = DEFAULT_DECK_ID;
+      uiState.setup.activeDeckCardId = null;
+      uiState.setup.deckMessage = `已选择预设卡组：${preset.name}。`;
+      showToast("success", uiState.setup.deckMessage);
     },
     selectDeck(deckId: string): void {
       if (deckId === DEFAULT_DECK_ID || savedDecks.some((deck) => deck.id === deckId && deck.characterId === uiState.setup.playerCharacterId)) {
         uiState.setup.selectedDeckId = deckId;
         uiState.setup.activeDeckCardId = null;
-        uiState.setup.deckMessage = deckId === DEFAULT_DECK_ID ? "已选择默认预组。" : "已选择自定义卡组。";
+        uiState.setup.deckMessage = deckId === DEFAULT_DECK_ID ? "已切回开局预设卡组。" : "已选择自定义卡组。";
+        showToast("success", uiState.setup.deckMessage);
       }
     },
     toggleDeckBuilder(): void {
       uiState.setup.deckBuilderOpen = !uiState.setup.deckBuilderOpen;
       uiState.setup.deckMessage = uiState.setup.deckBuilderOpen ? "已打开卡组构筑器。" : "已收起卡组构筑器。";
+      showToast("info", uiState.setup.deckMessage);
     },
     createDeckFromDefault(): void {
       createDeckFromDefaultWithName(`${getSelectedCharacter().name} 新卡组`);
       uiState.setup.deckBuilderOpen = true;
-      commitDecks("已从默认预组创建新卡组。");
+      commitDecks(`已从预设「${getSelectedStarterDeckPreset().name}」创建新卡组。`);
     },
     duplicateActiveDeck(): void {
       const now = Date.now();
@@ -645,19 +759,21 @@ export function createGameStore({ game = new ShinDoroGame() }: { game?: ShinDoro
     deleteSelectedDeck(): void {
       const selected = getSelectedSavedDeck();
       if (!selected) {
-        uiState.setup.deckMessage = "默认预组不能删除。";
+        uiState.setup.deckMessage = "开局预设不能删除。";
+        showToast("warning", uiState.setup.deckMessage);
         return;
       }
       savedDecks = savedDecks.filter((deck) => deck.id !== selected.id);
       uiState.setup.selectedDeckId = DEFAULT_DECK_ID;
       uiState.setup.activeDeckCardId = null;
-      commitDecks("已删除自定义卡组，并切回默认预组。");
+      commitDecks("已删除自定义卡组，并切回当前开局预设。");
     },
     renameSelectedDeck(name: string): void {
       const selected = getSelectedSavedDeck();
       const nextName = name.trim();
       if (!selected || !nextName) {
-        uiState.setup.deckMessage = selected ? "卡组名称不能为空。" : "默认预组不能重命名。";
+        uiState.setup.deckMessage = selected ? "卡组名称不能为空。" : "开局预设不能重命名。";
+        showToast("warning", uiState.setup.deckMessage);
         return;
       }
       selected.name = nextName.slice(0, 32);
@@ -668,6 +784,7 @@ export function createGameStore({ game = new ShinDoroGame() }: { game?: ShinDoro
       const card = CARD_LIBRARY.find((item) => item.id === cardId);
       if (!card || !isConstructibleCard(card)) {
         uiState.setup.deckMessage = "这张卡不能加入主卡组。";
+        showToast("error", uiState.setup.deckMessage);
         return;
       }
       const deck = ensureEditableDeck();
@@ -679,12 +796,14 @@ export function createGameStore({ game = new ShinDoroGame() }: { game?: ShinDoro
     removeCardFromDeck(cardId: string): void {
       const deck = getSelectedSavedDeck();
       if (!deck) {
-        uiState.setup.deckMessage = "默认预组不能直接编辑，请先创建或复制自定义卡组。";
+        uiState.setup.deckMessage = "开局预设不能直接编辑，请先创建或复制自定义卡组。";
+        showToast("warning", uiState.setup.deckMessage);
         return;
       }
       const index = deck.mainDeck.lastIndexOf(cardId);
       if (index < 0) {
         uiState.setup.deckMessage = "当前卡组中没有这张卡。";
+        showToast("warning", uiState.setup.deckMessage);
         return;
       }
       const card = CARD_LIBRARY.find((item) => item.id === cardId);
@@ -704,10 +823,53 @@ export function createGameStore({ game = new ShinDoroGame() }: { game?: ShinDoro
       uiState.setup.deckSearch = query;
       uiState.setup.activeDeckCardId = null;
       uiState.setup.deckMessage = query ? `搜索：${query}` : "已清空搜索。";
+      showToast("info", uiState.setup.deckMessage);
     },
     saveDecks(): void {
-      persistSavedDecks(savedDecks);
-      uiState.setup.deckMessage = "卡组已保存到本机。";
+      if (uiState.setup.deckSaving) {
+        showToast("info", "卡组正在保存中。");
+        return;
+      }
+
+      const selected = getSelectedSavedDeck();
+      if (!selected) {
+        uiState.setup.deckMessage = "开局预设不需要保存，请先创建或复制为自定义卡组。";
+        showToast("warning", uiState.setup.deckMessage);
+        return;
+      }
+
+      const validation = validateMainDeck(selected.mainDeck);
+      if (!validation.valid) {
+        uiState.setup.deckMessage = `保存失败：${validation.errors[0] ?? "请检查卡组。"}`;
+        showToast("error", uiState.setup.deckMessage);
+        return;
+      }
+
+      uiState.setup.deckSaving = true;
+      uiState.setup.deckMessage = "正在保存卡组……";
+      showToast("info", uiState.setup.deckMessage);
+
+      const finishSave = () => {
+        deckSaveTimer = null;
+        try {
+          persistSavedDecks(savedDecks);
+          uiState.setup.deckMessage = `已保存「${selected.name}」。`;
+          showToast("success", uiState.setup.deckMessage);
+        } catch {
+          uiState.setup.deckMessage = "保存失败：浏览器本地存储不可用。";
+          showToast("error", uiState.setup.deckMessage);
+        } finally {
+          uiState.setup.deckSaving = false;
+          notifyChange();
+        }
+      };
+
+      clearDeckSaveTimer();
+      if (typeof window === "undefined") {
+        finishSave();
+      } else {
+        deckSaveTimer = window.setTimeout(finishSave, DECK_SAVE_DELAY_MS);
+      }
     },
     addTalent(talentId: string): void {
       const talent = getTalent(talentId);
@@ -725,6 +887,7 @@ export function createGameStore({ game = new ShinDoroGame() }: { game?: ShinDoro
       const deckValidation = getActiveDeckValidation();
       if (!deckValidation.valid) {
         uiState.setup.deckMessage = `卡组不合法：${deckValidation.errors[0] ?? "请检查卡组。"}`;
+        showToast("error", uiState.setup.deckMessage);
         return false;
       }
       game.setupMatch({

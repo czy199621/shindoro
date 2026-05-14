@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 
 import { getCardDefinition } from "../.test-dist/data/cards.js";
 import { CHARACTERS } from "../.test-dist/data/characters.js";
-import { STARTING_DECKS } from "../.test-dist/data/decks.js";
+import { STARTER_DECK_PRESETS, STARTING_DECKS } from "../.test-dist/data/decks.js";
 import { getConstructibleCards, validateMainDeck } from "../.test-dist/data/deckValidation.js";
 import { TALENT_LOOKUP, getTalentCost } from "../.test-dist/data/talents.js";
 import {
@@ -131,6 +131,25 @@ test("starting decks use legal card ids, 50-card main decks, public sideboards, 
 
     for (const count of counts.values()) {
       assert.ok(count <= 3);
+    }
+  }
+});
+
+test("starter deck presets provide three legal 50-card options per character", () => {
+  assert.equal(STARTER_DECK_PRESETS.length, CHARACTERS.length * 3);
+
+  for (const character of CHARACTERS) {
+    const presets = STARTER_DECK_PRESETS.filter((preset) => preset.characterId === character.id);
+    assert.equal(presets.length, 3, `${character.id} should have three starter presets`);
+
+    for (const preset of presets) {
+      assert.equal(validateMainDeck(preset.mainDeck).valid, true, `${preset.id} should be legal`);
+      assert.equal(preset.mainDeck.length, 50);
+      assert.ok(preset.name.length > 0);
+      assert.ok(preset.tags.length > 0);
+      assert.ok(preset.recommendedTalents.length > 0);
+      assert.ok(preset.description.length > 0);
+      assert.ok(preset.keyCards.length > 0);
     }
   }
 });
@@ -600,7 +619,7 @@ test("new spells and spell focus use updated damage values", () => {
 
   const hpBefore = state.players.P2.hp;
   assert.equal(game.playCardAtIndex("P1", 0), true);
-  assert.equal(state.players.P2.hp, hpBefore - 7);
+  assert.equal(state.players.P2.hp, hpBefore - 6);
 });
 
 test("revised draw minions use death draw and draw-discard timing", () => {

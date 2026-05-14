@@ -1,5 +1,14 @@
 # 架构
 
+## 2026-05-13 开局预设与反馈层
+
+- `src/data/decks.ts` 现在维护 `STARTER_DECK_PRESETS`：每名角色 3 套 starter preset，共 21 套完整 50 张主卡组；每套包含展示名、难度、速度、标签、推荐天赋、描述与关键卡。
+- `STARTING_DECKS` 仍作为引擎兼容入口保留，但现在由每名角色的第一套 starter preset 派生；AI 默认卡组仍读取这个兼容结构。
+- 设置页卡组选择分为“开局预设卡组”和“本机自定义卡组”；选择 starter preset 会切回默认选择态，从当前预设创建卡组会复制该 preset 的 50 张主卡组。
+- `UiState.setup` 新增 `selectedPresetId` 与 `deckSaving`；`UiState.toasts` 负责全局 Toast 反馈。`GameApp` 在设置页、Mulligan 与战斗页都会渲染同一层 Toast。
+- 构筑器保存前会重新调用 `validateMainDeck()`；保存按钮在 `deckSaving` 时禁用并显示保存中，保存成功、失败、删除、复制、使用卡组和进入构筑器都会通过 Toast 给出明确反馈。
+- 本次平衡落地：`src/data/talents/spell.ts` 的 `spell_focus` 从法术伤害 +2 改为 +1；`src/data/characters/characterA.ts` 的 `jump10 / jump13` 从 6 / 9 改为 5 / 7。
+
 ## 2026-05-10 构筑器与衍生卡规则层
 
 - 设置页现在按“选择角色 → 选择卡组 → 购买天赋 → 开始对局”的顺序组织玩家开局流程；AI 角色选择仍保留在设置页左侧。
@@ -29,7 +38,7 @@
 - 硬币系统已从“默认后手补偿”改为天赋投资：`src/data/talents/resource.ts` 的 `tactical_coin` 会在游戏开始时把 1 张 `coin` 放入手牌；`src/engine/gameState.ts` 不再默认给 P2 塞硬币。
 - `coin` 仍是法术卡，但效果随回合成长：第 1～3 回合 +1，第 4～6 回合 +2，第 7～8 回合 +3；`src/engine/phases.ts` 会在第 9 回合开始时把未使用的硬币移出游戏。
 - `great_mana_gem` 已从 `src/data/cards/spells.ts` 删除，并且不进入任何 v1.3 预组主卡组。
-- `src/data/decks.ts` 已按 v1.3 草案重排 7 套 50 张预组；公共备牌仍为 5 张终结者，且不进入主卡组。
+- `src/data/decks.ts` 已按 v1.3 草案和 additional update 重排 21 套 50 张 starter 预设；公共备牌仍为 5 张终结者，且不进入主卡组。
 - 新增测试使魔 `graveyard_dragger`（坟场拖拽者），用于验证战斗破坏同归于尽亡语。
 - 墓地记录在 `src/types.ts` 中扩展为带 `cardId / ownerId / fromZone / reason / turn / wasCombatDestroyed / combatKillerInstanceId` 的结构，便于后续墓地主题卡池读取。
 - `src/engine/effects.ts` 现在统一通过墓地记录 helper 处理被使用、破坏、弃置和磨掉的卡牌；战斗破坏会记录破坏者。
@@ -350,7 +359,7 @@
   - 天赋总入口
   - 对外提供 `TALENTS`、`TALENT_LOOKUP`、`getTalentCost()`、`isTalentAvailableForSeat()`
 - `src/data/decks.ts`
-  - 七名角色的默认卡组配置
+  - 七名角色的 21 套 starter 预设与 `STARTING_DECKS` 兼容入口
 
 ### 角色模块
 

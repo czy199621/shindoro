@@ -1,5 +1,39 @@
 # Progress
 
+## 2026-05-13
+
+### additional update：starter 预设、Toast 反馈与平衡削弱
+
+- 涉及文件：
+  - `src/types.ts`
+  - `src/data/decks.ts`
+  - `src/data/talents/spell.ts`
+  - `src/data/characters/characterA.ts`
+  - `src/store/useGameStore.ts`
+  - `src/App.tsx`
+  - `src/style.css`
+  - `tests/engine.test.js`
+  - `design/game_rule.md`
+  - `design/game_design.md`
+  - `design/角色图鉴.md`
+  - `memory-bank/architecture.md`
+  - `memory-bank/progress.md`
+- 本次改动：
+  - 新增 `StarterDeckPreset` 类型与 21 套 starter 预设卡组，每名角色 3 套，均为合法 50 张主卡组。
+  - 设置页卡组选择改为展示当前角色的 3 套开局预设，并保留本机自定义卡组区域；从预设创建会复制当前选中预设。
+  - 全局接入 Toast 反馈，覆盖选择预设、使用自定义卡组、进入构筑器、创建、复制、删除、搜索和保存等操作。
+  - 保存按钮新增保存中状态，并在保存前重新校验卡组合法性；默认 starter preset 不需要保存，需复制成自定义卡组后再保存。
+  - `法术专注` 从法术伤害 +2 改为 +1；钱陈飞扬 `定点爆破 / 极限爆破` 从 6 / 9 伤害改为 5 / 7。
+- 验证：
+  - `npm.cmd run typecheck` 通过。
+  - `npm.cmd test` 通过，60/60。
+  - `npm.cmd run build` 通过，并同步生成新的 `dist/` 产物。
+- 关联修正检查：
+  - `design/game_rule.md` 已同步 21 套 starter 预设与 `巨步推进`费用口径。
+  - `design/game_design.md` 已记录 additional update 的落地内容与 AI 人设资料暂不作为规则事实源。
+  - `design/角色图鉴.md` 已同步钱陈飞扬 5 / 7 伤害，并新增 21 套预设索引。
+  - `memory-bank/architecture.md` 已补 starter 预设、Toast、保存状态和本次平衡改动的架构事实。
+
 ## 2026-05-10
 
 ### 卡组构筑器改为独立子画面

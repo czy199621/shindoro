@@ -10,13 +10,13 @@ export const CHARACTER_A_PASSIVE: PassiveAbility = {
 export const CHARACTER_A_SLOT_ABILITIES: CharacterDefinition["slotAbilities"] = {
   jump10: {
     name: "定点爆破",
-    description: "抓牌阶段后，对敌方核心目标造成 6 点伤害。",
-    effects: [{ type: "damage", target: "enemyHero", amount: 6 }]
+    description: "抓牌阶段后，对敌方核心目标造成 5 点伤害。",
+    effects: [{ type: "damage", target: "enemyHero", amount: 5 }]
   },
   jump13: {
     name: "极限爆破",
-    description: "强制造成 9 点爆发伤害。",
-    effects: [{ type: "damage", target: "enemyHero", amount: 9 }]
+    description: "强制造成 7 点爆发伤害。",
+    effects: [{ type: "damage", target: "enemyHero", amount: 7 }]
   }
 };
 
